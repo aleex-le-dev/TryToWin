@@ -35,6 +35,7 @@ const MainTabNavigator = () => {
           } else if (route.name === "Profile") {
             iconName = focused ? "person" : "person-outline";
           } else if (route.name === "Social") {
+            iconName = focused ? "people" : "people-outline";
           }
 
           return <Ionicons name={iconName} size={size} color={color} />;
