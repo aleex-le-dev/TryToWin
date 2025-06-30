@@ -141,6 +141,31 @@ const dailyChallenges = [
   },
 ];
 
+// Composant GameCard : carte de jeu moderne avec gestion de l'appui (pressed)
+function GameCard({ item, onPress }) {
+  const [pressed, setPressed] = React.useState(false);
+  return (
+    <TouchableOpacity
+      style={[styles.gameCard, pressed && styles.gameCardPressed]}
+      onPress={onPress}
+      activeOpacity={0.85}
+      onPressIn={() => setPressed(true)}
+      onPressOut={() => setPressed(false)}>
+      <LinearGradient
+        colors={[item.color, item.color + "cc"]}
+        style={styles.gameCardGradient}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}>
+        <View style={styles.gameCardContent}>
+          <Text style={styles.gameIconCentered}>{item.image}</Text>
+          <Text style={styles.gameTitleModern}>{item.title}</Text>
+          <Text style={styles.gameDescriptionModern}>{item.description}</Text>
+        </View>
+      </LinearGradient>
+    </TouchableOpacity>
+  );
+}
+
 // Écran d'accueil fusionné avec liste des jeux
 const HomeScreen = ({ navigation }) => {
   const [userName] = useState("Alex");
@@ -159,20 +184,12 @@ const HomeScreen = ({ navigation }) => {
     return selectedCategory === "Tous" || game.category === selectedCategory;
   });
 
+  // Utilisation du composant GameCard dans renderGameCard
   const renderGameCard = ({ item }) => (
-    <TouchableOpacity
-      style={styles.gameCard}
-      onPress={() => navigation.navigate("GameDetails", { game: item })}>
-      <LinearGradient
-        colors={[item.color, item.color + "80"]}
-        style={styles.gameCardGradient}>
-        <View style={styles.gameCardContent}>
-          <Text style={styles.gameIcon}>{item.image}</Text>
-          <Text style={styles.gameTitle}>{item.title}</Text>
-          <Text style={styles.gameDescription}>{item.description}</Text>
-        </View>
-      </LinearGradient>
-    </TouchableOpacity>
+    <GameCard
+      item={item}
+      onPress={() => navigation.navigate("GameDetails", { game: item })}
+    />
   );
 
   const renderCategoryButton = ({ item }) => (
@@ -267,7 +284,6 @@ const HomeScreen = ({ navigation }) => {
             style={styles.gamesList}
           />
         </View>
-
       </ScrollView>
     </View>
   );
@@ -476,44 +492,97 @@ const styles = StyleSheet.create({
   },
   gameCard: {
     width: (width - 60) / 2,
-    marginBottom: 15,
-    borderRadius: 15,
+    marginBottom: 18,
+    borderRadius: 28,
     overflow: "hidden",
     shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.18,
+    shadowRadius: 12,
+    elevation: 10,
+    backgroundColor: "#fff",
+    transform: [{ scale: 1 }],
+  },
+  gameCardPressed: {
+    transform: [{ scale: 0.97 }],
+    shadowOpacity: 0.08,
   },
   gameCardGradient: {
-    padding: 20,
-    height: 160,
+    padding: 22,
+    height: 180,
     justifyContent: "center",
     alignItems: "center",
+    borderRadius: 28,
   },
   gameCardContent: {
     alignItems: "center",
     width: "100%",
+    flex: 1,
+    justifyContent: "space-between",
   },
-  gameIcon: {
-    fontSize: 40,
-    marginBottom: 10,
+  gameCardHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    width: "100%",
+    justifyContent: "space-between",
+    marginBottom: 8,
   },
-  gameTitle: {
-    fontSize: 16,
+  difficultyBadgeModern: {
+    backgroundColor: "rgba(0,0,0,0.18)",
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: 12,
+    alignSelf: "flex-end",
+  },
+  difficultyTextModern: {
+    fontSize: 11,
+    color: "#fff",
+    fontWeight: "bold",
+    letterSpacing: 0.5,
+  },
+  gameTitleModern: {
+    fontSize: 18,
     fontWeight: "bold",
     color: "#fff",
     textAlign: "center",
-    marginBottom: 5,
+    marginBottom: 2,
+    marginTop: 2,
+    textShadowColor: "rgba(0,0,0,0.12)",
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
   },
-  gameDescription: {
-    fontSize: 12,
-    color: "rgba(255,255,255,0.8)",
+  gameDescriptionModern: {
+    fontSize: 13,
+    color: "rgba(255,255,255,0.92)",
     textAlign: "center",
     marginBottom: 10,
+    marginTop: 2,
+  },
+  gameMetaModern: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    width: "100%",
+    marginTop: 8,
+  },
+  gameMetaItemModern: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.10)",
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    marginHorizontal: 2,
+  },
+  gameMetaTextModern: {
+    fontSize: 12,
+    color: "#fff",
+    marginLeft: 4,
+    fontWeight: "600",
+  },
+  gameIconCentered: {
+    fontSize: 44,
+    marginBottom: 10,
+    alignSelf: "center",
   },
   gameMeta: {
     flexDirection: "row",
