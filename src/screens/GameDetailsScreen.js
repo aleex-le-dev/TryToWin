@@ -89,7 +89,13 @@ const GameDetailsScreen = ({ route, navigation }) => {
     setLoading(true);
     setTimeout(() => {
       setLoading(false);
-      // navigation vers le jeu réel ici
+      // Navigation vers le jeu réel
+      if (game.title === "Morpion") {
+        navigation.navigate("TicTacToe");
+      } else {
+        // Pour les autres jeux, garder le comportement actuel
+        // navigation vers le jeu réel ici
+      }
     }, 1500);
   };
 
@@ -137,10 +143,7 @@ const GameDetailsScreen = ({ route, navigation }) => {
             </Text>
           </View>
           <Text
-            style={[
-              styles.userStats,
-              item.isCurrentUser && { color: "#fff", opacity: 0.9 },
-            ]}>
+            style={[styles.userStats, item.isCurrentUser && { color: "#fff" }]}>
             {item.gamesPlayed} parties • {item.winRate}% victoires
           </Text>
         </View>
@@ -156,10 +159,7 @@ const GameDetailsScreen = ({ route, navigation }) => {
           {item.score}
         </Text>
         <Text
-          style={[
-            styles.scoreLabel,
-            item.isCurrentUser && { color: "#fff", opacity: 0.9 },
-          ]}>
+          style={[styles.scoreLabel, item.isCurrentUser && { color: "#fff" }]}>
           points
         </Text>
       </View>
