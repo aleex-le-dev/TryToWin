@@ -52,11 +52,38 @@ const gameLeaderboardData = [
   },
 ];
 
+// Liste de pays avec drapeau (emoji)
+const countries = [
+  { code: "FR", name: "France", flag: "🇫🇷" },
+  { code: "US", name: "États-Unis", flag: "🇺🇸" },
+  { code: "DE", name: "Allemagne", flag: "🇩🇪" },
+  { code: "ES", name: "Espagne", flag: "🇪🇸" },
+  { code: "IT", name: "Italie", flag: "🇮🇹" },
+  { code: "GB", name: "Royaume-Uni", flag: "🇬🇧" },
+  { code: "MA", name: "Maroc", flag: "🇲🇦" },
+  { code: "CA", name: "Canada", flag: "🇨🇦" },
+  { code: "JP", name: "Japon", flag: "🇯🇵" },
+  { code: "BR", name: "Brésil", flag: "🇧🇷" },
+];
+
 // Écran de détails d'un jeu avec focus sur classement et statistiques
 const GameDetailsScreen = ({ route, navigation }) => {
-  const { game } = route.params;
+  const { game, selectedCountry = countries[0] } = route.params;
   const [activeTab, setActiveTab] = useState("leaderboard");
   const [loading, setLoading] = useState(false);
+  // Switch classement mondial/pays
+  const [leaderboardType, setLeaderboardType] = useState("global");
+  // Attribution d'un pays à chaque joueur (pour la démo)
+  const gameLeaderboardWithCountry = gameLeaderboardData.map((item, idx) => ({
+    ...item,
+    country: countries[idx % countries.length],
+  }));
+  // Top 10 mondial
+  const top10Global = gameLeaderboardWithCountry.slice(0, 10);
+  // Top 10 du pays sélectionné
+  const top10Country = gameLeaderboardWithCountry
+    .filter((item) => item.country.code === selectedCountry.code)
+    .slice(0, 10);
 
   const handlePlayGame = () => {
     setLoading(true);
@@ -94,10 +121,21 @@ const GameDetailsScreen = ({ route, navigation }) => {
       <View style={styles.userInfo}>
         <Text style={styles.userAvatar}>{item.avatar}</Text>
         <View style={styles.userDetails}>
-          <Text
-            style={[styles.username, item.isCurrentUser && { color: "#fff" }]}>
-            {item.username}
-          </Text>
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
+            {/* Affiche le drapeau du pays dans le classement mondial */}
+            {leaderboardType === "global" && item.country && (
+              <Text style={{ fontSize: 18, marginRight: 5 }}>
+                {item.country.flag}
+              </Text>
+            )}
+            <Text
+              style={[
+                styles.username,
+                item.isCurrentUser && { color: "#fff" },
+              ]}>
+              {item.username}
+            </Text>
+          </View>
           <Text
             style={[
               styles.userStats,
@@ -168,19 +206,6 @@ const GameDetailsScreen = ({ route, navigation }) => {
               <View style={styles.gameInfo}>
                 <Text style={styles.gameTitle}>{game.title}</Text>
                 <Text style={styles.gameDescription}>{game.description}</Text>
-                <View style={styles.gameMeta}>
-                  <View style={styles.gameMetaItem}>
-                    <Ionicons name='people-outline' size={16} color='#fff' />
-                    <Text style={styles.gameMetaText}>{game.players}</Text>
-                  </View>
-                  <View style={styles.gameMetaItem}>
-                    <Ionicons name='star' size={16} color='#FFD700' />
-                    <Text style={styles.gameMetaText}>{game.rating}</Text>
-                  </View>
-                  <View style={styles.difficultyBadge}>
-                    <Text style={styles.difficultyText}>{game.difficulty}</Text>
-                  </View>
-                </View>
               </View>
             </View>
           </LinearGradient>
@@ -289,23 +314,71 @@ const GameDetailsScreen = ({ route, navigation }) => {
             </View>
           ) : (
             <View style={styles.leaderboardContent}>
+              {/* Switch Mondial / Par pays */}
+              <View style={styles.leaderboardSwitchRow}>
+                <TouchableOpacity
+                  style={[
+                    styles.leaderboardSwitchBtn,
+                    leaderboardType === "global" &&
+                      styles.leaderboardSwitchActive,
+                  ]}
+                  onPress={() => setLeaderboardType("global")}>
+                  <Text
+                    style={[
+                      styles.leaderboardSwitchText,
+                      leaderboardType === "global" &&
+                        styles.leaderboardSwitchTextActive,
+                    ]}>
+                    Mondial
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    styles.leaderboardSwitchBtn,
+                    leaderboardType === "country" &&
+                      styles.leaderboardSwitchActive,
+                  ]}
+                  onPress={() => setLeaderboardType("country")}>
+                  <Text
+                    style={[
+                      styles.leaderboardSwitchText,
+                      leaderboardType === "country" &&
+                        styles.leaderboardSwitchTextActive,
+                    ]}>
+                    {selectedCountry.flag} {selectedCountry.name}
+                  </Text>
+                </TouchableOpacity>
+              </View>
               {/* En-tête du classement */}
               <View style={styles.leaderboardHeader}>
                 <Text style={styles.leaderboardTitle}>
-                  Classement {game.title}
+                  {leaderboardType === "global"
+                    ? `Classement ${game.title} (Mondial)`
+                    : `Top 10 - ${selectedCountry.name}`}
                 </Text>
                 <Text style={styles.leaderboardSubtitle}>
-                  Top 3 des meilleurs joueurs
+                  {leaderboardType === "global"
+                    ? `Top 10 des meilleurs joueurs tous pays`
+                    : `Joueurs du pays : ${selectedCountry.flag} ${selectedCountry.name}`}
                 </Text>
               </View>
-
               {/* Liste du classement */}
               <FlatList
-                data={gameLeaderboardData}
+                data={leaderboardType === "global" ? top10Global : top10Country}
                 renderItem={renderLeaderboardItem}
                 keyExtractor={(item) => item.id}
                 scrollEnabled={false}
                 style={styles.leaderboardList}
+                ListEmptyComponent={
+                  <Text
+                    style={{
+                      color: "#6c757d",
+                      textAlign: "center",
+                      marginTop: 20,
+                    }}>
+                    Aucun joueur trouvé pour ce pays.
+                  </Text>
+                }
               />
             </View>
           )}
@@ -652,6 +725,30 @@ const styles = StyleSheet.create({
     marginTop: 18,
     fontWeight: "bold",
     letterSpacing: 0.5,
+  },
+  leaderboardSwitchRow: {
+    flexDirection: "row",
+    justifyContent: "center",
+    marginBottom: 12,
+    gap: 10,
+  },
+  leaderboardSwitchBtn: {
+    backgroundColor: "#f1f3f4",
+    borderRadius: 16,
+    paddingVertical: 7,
+    paddingHorizontal: 18,
+    marginHorizontal: 2,
+  },
+  leaderboardSwitchActive: {
+    backgroundColor: "#667eea",
+  },
+  leaderboardSwitchText: {
+    color: "#667eea",
+    fontWeight: "bold",
+    fontSize: 15,
+  },
+  leaderboardSwitchTextActive: {
+    color: "#fff",
   },
 });
 

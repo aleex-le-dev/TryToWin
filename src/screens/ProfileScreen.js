@@ -129,6 +129,7 @@ const ProfileScreen = ({ navigation }) => {
   const [bannerColor, setBannerColor] = useState("#fff");
   const [bannerModalVisible, setBannerModalVisible] = useState(false);
   const [showColorPicker, setShowColorPicker] = useState(false);
+  const [leaderboardType, setLeaderboardType] = useState("global");
 
   const userStats = {
     totalScore: 2847,
@@ -139,6 +140,16 @@ const ProfileScreen = ({ navigation }) => {
     currentStreak: 8,
     totalTime: "12h 34m",
   };
+
+  const leaderboardDataWithCountry = leaderboardData.map((item, idx) => ({
+    ...item,
+    country: countries[idx % countries.length],
+  }));
+
+  const top10Global = leaderboardDataWithCountry.slice(0, 10);
+  const top10Country = leaderboardDataWithCountry
+    .filter((item) => item.country.code === selectedCountry.code)
+    .slice(0, 10);
 
   const handleLogout = () => {
     Toast.show({
@@ -181,13 +192,21 @@ const ProfileScreen = ({ navigation }) => {
       <View style={styles.userInfo}>
         <Text style={styles.userAvatar}>{item.avatar}</Text>
         <View style={styles.userDetails}>
-          <Text
-            style={[
-              styles.username,
-              item.isCurrentUser && styles.currentUsername,
-            ]}>
-            {item.username}
-          </Text>
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
+            {/* Affiche le drapeau du pays dans le classement mondial */}
+            {leaderboardType === "global" && item.country && (
+              <Text style={{ fontSize: 18, marginRight: 5 }}>
+                {item.country.flag}
+              </Text>
+            )}
+            <Text
+              style={[
+                styles.username,
+                item.isCurrentUser && styles.currentUsername,
+              ]}>
+              {item.username}
+            </Text>
+          </View>
           <Text style={styles.userStats}>
             {item.gamesPlayed} parties • {item.score} pts
           </Text>
@@ -195,8 +214,14 @@ const ProfileScreen = ({ navigation }) => {
       </View>
 
       <View style={styles.scoreContainer}>
-        <Text style={styles.scoreText}>{item.score}</Text>
-        <Text style={styles.scoreLabel}>points</Text>
+        <Text
+          style={[styles.scoreText, item.isCurrentUser && { color: "#fff" }]}>
+          {item.score}
+        </Text>
+        <Text
+          style={[styles.scoreLabel, item.isCurrentUser && { color: "#fff" }]}>
+          points
+        </Text>
       </View>
     </View>
   );
@@ -330,27 +355,75 @@ const ProfileScreen = ({ navigation }) => {
               {/* Bio du joueur */}
               <Text style={styles.playerBio}>{profileBio}</Text>
             </View>
- 
           </View>
         ) : activeTab === "leaderboard" ? (
           <View style={styles.leaderboardContent}>
+            {/* Switch Mondial / Par pays */}
+            <View style={styles.leaderboardSwitchRow}>
+              <TouchableOpacity
+                style={[
+                  styles.leaderboardSwitchBtn,
+                  leaderboardType === "global" &&
+                    styles.leaderboardSwitchActive,
+                ]}
+                onPress={() => setLeaderboardType("global")}>
+                <Text
+                  style={[
+                    styles.leaderboardSwitchText,
+                    leaderboardType === "global" &&
+                      styles.leaderboardSwitchTextActive,
+                  ]}>
+                  Mondial
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.leaderboardSwitchBtn,
+                  leaderboardType === "country" &&
+                    styles.leaderboardSwitchActive,
+                ]}
+                onPress={() => setLeaderboardType("country")}>
+                <Text
+                  style={[
+                    styles.leaderboardSwitchText,
+                    leaderboardType === "country" &&
+                      styles.leaderboardSwitchTextActive,
+                  ]}>
+                  {selectedCountry.flag} {selectedCountry.name}
+                </Text>
+              </TouchableOpacity>
+            </View>
             {/* En-tête du classement */}
             <View style={styles.leaderboardHeader}>
-              <Text style={styles.leaderboardTitle}>Classement Global</Text>
+              <Text style={styles.leaderboardTitle}>
+                {leaderboardType === "global"
+                  ? "Classement Mondial"
+                  : `Top 10 - ${selectedCountry.name}`}
+              </Text>
               <Text style={styles.leaderboardSubtitle}>
-                Top 8 des meilleurs joueurs
+                {leaderboardType === "global"
+                  ? "Top 10 des meilleurs joueurs tous pays"
+                  : `Joueurs du pays : ${selectedCountry.flag} ${selectedCountry.name}`}
               </Text>
             </View>
-
             {/* Liste du classement */}
             <FlatList
-              data={leaderboardData}
+              data={leaderboardType === "global" ? top10Global : top10Country}
               renderItem={renderLeaderboardItem}
               keyExtractor={(item) => item.id}
               scrollEnabled={false}
               style={styles.leaderboardList}
+              ListEmptyComponent={
+                <Text
+                  style={{
+                    color: "#6c757d",
+                    textAlign: "center",
+                    marginTop: 20,
+                  }}>
+                  Aucun joueur trouvé pour ce pays.
+                </Text>
+              }
             />
-
             {/* Informations supplémentaires */}
             <View style={styles.leaderboardInfo}>
               <View style={styles.infoItem}>
@@ -1096,6 +1169,30 @@ const styles = StyleSheet.create({
     color: "#667eea",
     marginTop: 3,
     fontWeight: "500",
+  },
+  leaderboardSwitchRow: {
+    flexDirection: "row",
+    justifyContent: "center",
+    marginBottom: 12,
+    gap: 10,
+  },
+  leaderboardSwitchBtn: {
+    backgroundColor: "#f1f3f4",
+    borderRadius: 16,
+    paddingVertical: 7,
+    paddingHorizontal: 18,
+    marginHorizontal: 2,
+  },
+  leaderboardSwitchActive: {
+    backgroundColor: "#667eea",
+  },
+  leaderboardSwitchText: {
+    color: "#667eea",
+    fontWeight: "bold",
+    fontSize: 15,
+  },
+  leaderboardSwitchTextActive: {
+    color: "#fff",
   },
 });
 
