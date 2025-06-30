@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Dimensions,
   FlatList,
+  ActivityIndicator,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
@@ -55,25 +56,27 @@ const gameLeaderboardData = [
 const GameDetailsScreen = ({ route, navigation }) => {
   const { game } = route.params;
   const [activeTab, setActiveTab] = useState("leaderboard");
+  const [loading, setLoading] = useState(false);
 
   const handlePlayGame = () => {
-    Toast.show({
-      type: "success",
-      text1: `${game.title} lancé !`,
-      text2: `Préparez-vous à affronter l'IA dans ${game.title}`,
-      position: "top",
-      visibilityTime: 3000,
-    });
+    setLoading(true);
+    setTimeout(() => {
+      setLoading(false);
+      // navigation vers le jeu réel ici
+    }, 1500);
   };
 
   const renderLeaderboardItem = ({ item }) => (
     <View
       style={[
         styles.leaderboardItem,
-        item.isCurrentUser && styles.currentUserItem,
+        item.isCurrentUser && { backgroundColor: game.color },
       ]}>
       <View style={styles.rankContainer}>
-        <Text style={styles.rankText}>#{item.rank}</Text>
+        <Text
+          style={[styles.rankText, item.isCurrentUser && { color: "#fff" }]}>
+          #{item.rank}
+        </Text>
         {item.rank <= 3 && (
           <Ionicons
             name='trophy'
@@ -88,30 +91,39 @@ const GameDetailsScreen = ({ route, navigation }) => {
           />
         )}
       </View>
-
       <View style={styles.userInfo}>
         <Text style={styles.userAvatar}>{item.avatar}</Text>
         <View style={styles.userDetails}>
           <Text
-            style={[
-              styles.username,
-              item.isCurrentUser && styles.currentUsername,
-            ]}>
+            style={[styles.username, item.isCurrentUser && { color: "#fff" }]}>
             {item.username}
           </Text>
-          <Text style={styles.userStats}>
+          <Text
+            style={[
+              styles.userStats,
+              item.isCurrentUser && { color: "#fff", opacity: 0.9 },
+            ]}>
             {item.gamesPlayed} parties • {item.winRate}% victoires
           </Text>
         </View>
       </View>
-
       <View style={styles.scoreContainer}>
         <Text
-          style={[styles.scoreText, item.isCurrentUser && { color: "#000" }]}>
+          style={[
+            styles.scoreText,
+            item.isCurrentUser
+              ? { color: "#fff" }
+              : { color: game.color, fontWeight: "bold" },
+          ]}>
           {item.score}
         </Text>
-        <Text style={styles.scoreLabel}>points</Text>
-        <Text style={styles.bestMoveText}>Meilleur: {item.bestMove}</Text>
+        <Text
+          style={[
+            styles.scoreLabel,
+            item.isCurrentUser && { color: "#fff", opacity: 0.9 },
+          ]}>
+          points
+        </Text>
       </View>
     </View>
   );
@@ -129,147 +141,176 @@ const GameDetailsScreen = ({ route, navigation }) => {
 
   return (
     <View style={styles.container}>
-      <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Header avec informations du jeu */}
-        <LinearGradient
-          colors={[game.color, game.color + "80"]}
-          style={styles.header}>
-          <View style={styles.headerContent}>
+      {loading && (
+        <View style={styles.fullScreenLoading}>
+          <ActivityIndicator size='large' color='#fff' />
+          <Text style={styles.loadingText}>Chargement du jeu...</Text>
+        </View>
+      )}
+      {!loading && (
+        <ScrollView showsVerticalScrollIndicator={false}>
+          {/* Header avec informations du jeu */}
+          <LinearGradient
+            colors={[game.color, game.color + "80"]}
+            style={styles.header}>
+            <View style={styles.headerContent}>
+              <TouchableOpacity
+                style={styles.backButton}
+                onPress={() => navigation.goBack()}>
+                <Ionicons name='arrow-back' size={24} color='#fff' />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.gameHeader}>
+              <View style={styles.gameIconContainer}>
+                <Text style={styles.gameIcon}>{game.image}</Text>
+              </View>
+              <View style={styles.gameInfo}>
+                <Text style={styles.gameTitle}>{game.title}</Text>
+                <Text style={styles.gameDescription}>{game.description}</Text>
+                <View style={styles.gameMeta}>
+                  <View style={styles.gameMetaItem}>
+                    <Ionicons name='people-outline' size={16} color='#fff' />
+                    <Text style={styles.gameMetaText}>{game.players}</Text>
+                  </View>
+                  <View style={styles.gameMetaItem}>
+                    <Ionicons name='star' size={16} color='#FFD700' />
+                    <Text style={styles.gameMetaText}>{game.rating}</Text>
+                  </View>
+                  <View style={styles.difficultyBadge}>
+                    <Text style={styles.difficultyText}>{game.difficulty}</Text>
+                  </View>
+                </View>
+              </View>
+            </View>
+          </LinearGradient>
+
+          {/* Bouton de jeu principal */}
+          <View style={styles.playButtonContainer}>
             <TouchableOpacity
-              style={styles.backButton}
-              onPress={() => navigation.goBack()}>
-              <Ionicons name='arrow-back' size={24} color='#fff' />
+              style={[styles.playButton, { backgroundColor: game.color }]}
+              onPress={handlePlayGame}>
+              <View style={styles.playButtonGradientFake}>
+                <Ionicons name='game-controller' size={24} color='#fff' />
+                <Text style={styles.playButtonText}>Jouer</Text>
+              </View>
             </TouchableOpacity>
           </View>
 
-          <View style={styles.gameHeader}>
-            <View style={styles.gameIconContainer}>
-              <Text style={styles.gameIcon}>{game.image}</Text>
-            </View>
-            <View style={styles.gameInfo}>
-              <Text style={styles.gameTitle}>{game.title}</Text>
-              <Text style={styles.gameDescription}>{game.description}</Text>
-              <View style={styles.gameMeta}>
-                <View style={styles.gameMetaItem}>
-                  <Ionicons name='people-outline' size={16} color='#fff' />
-                  <Text style={styles.gameMetaText}>{game.players}</Text>
-                </View>
-                <View style={styles.gameMetaItem}>
-                  <Ionicons name='star' size={16} color='#FFD700' />
-                  <Text style={styles.gameMetaText}>{game.rating}</Text>
-                </View>
-                <View style={styles.difficultyBadge}>
-                  <Text style={styles.difficultyText}>{game.difficulty}</Text>
+          {/* Onglets avec couleur dynamique pour l'onglet actif */}
+          <View style={styles.tabsContainer}>
+            <TouchableOpacity
+              style={[
+                styles.tab,
+                activeTab === "leaderboard" && {
+                  borderBottomColor: game.color,
+                  borderBottomWidth: 2,
+                },
+              ]}
+              onPress={() => setActiveTab("leaderboard")}>
+              <Text
+                style={[
+                  styles.tabText,
+                  activeTab === "leaderboard" && {
+                    color: game.color,
+                    fontWeight: "bold",
+                  },
+                ]}>
+                Classement
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.tab,
+                activeTab === "stats" && {
+                  borderBottomColor: game.color,
+                  borderBottomWidth: 2,
+                },
+              ]}
+              onPress={() => setActiveTab("stats")}>
+              <Text
+                style={[
+                  styles.tabText,
+                  activeTab === "stats" && {
+                    color: game.color,
+                    fontWeight: "bold",
+                  },
+                ]}>
+                Statistiques
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Contenu des onglets */}
+          {activeTab === "stats" ? (
+            <View style={styles.statsContent}>
+              {/* Statistiques personnelles */}
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>Statistiques</Text>
+                <View style={styles.personalStats}>
+                  <View style={styles.personalStatRow}>
+                    <Ionicons name='trophy' size={20} color='#FFD700' />
+                    <Text style={styles.personalStatLabel}>Meilleur score</Text>
+                    <Text style={styles.personalStatValue}>2,847 points</Text>
+                  </View>
+                  <View style={styles.personalStatRow}>
+                    <Ionicons name='time' size={20} color='#4ECDC4' />
+                    <Text style={styles.personalStatLabel}>Temps record</Text>
+                    <Text style={styles.personalStatValue}>15.3 secondes</Text>
+                  </View>
+                  <View style={styles.personalStatRow}>
+                    <Ionicons
+                      name='checkmark-circle'
+                      size={20}
+                      color='#4CAF50'
+                    />
+                    <Text style={styles.personalStatLabel}>Victoires</Text>
+                    <Text style={styles.personalStatValue}>32 sur 45</Text>
+                  </View>
+                  <View style={styles.personalStatRow}>
+                    <Ionicons name='trending-up' size={20} color='#2196F3' />
+                    <Text style={styles.personalStatLabel}>
+                      Taux de victoire
+                    </Text>
+                    <Text style={styles.personalStatValue}>71%</Text>
+                  </View>
+                  <View style={styles.personalStatRow}>
+                    <Ionicons name='flame' size={20} color='#FF5722' />
+                    <Text style={styles.personalStatLabel}>Série actuelle</Text>
+                    <Text style={styles.personalStatValue}>8 victoires</Text>
+                  </View>
+                  <View style={styles.personalStatRow}>
+                    <Ionicons name='medal' size={20} color='#FF9800' />
+                    <Text style={styles.personalStatLabel}>Position</Text>
+                    <Text style={styles.personalStatValue}>#1 sur 1,247</Text>
+                  </View>
                 </View>
               </View>
             </View>
-          </View>
-        </LinearGradient>
-
-        {/* Bouton de jeu principal */}
-        <View style={styles.playButtonContainer}>
-          <TouchableOpacity style={styles.playButton} onPress={handlePlayGame}>
-            <LinearGradient
-              colors={["#FF6B6B", "#ee5a24"]}
-              style={styles.playButtonGradient}>
-              <Ionicons name='game-controller' size={24} color='#fff' />
-              <Text style={styles.playButtonText}>Jouer</Text>
-            </LinearGradient>
-          </TouchableOpacity>
-        </View>
-
-        {/* Onglets */}
-        <View style={styles.tabsContainer}>
-          <TouchableOpacity
-            style={[
-              styles.tab,
-              activeTab === "leaderboard" && styles.activeTab,
-            ]}
-            onPress={() => setActiveTab("leaderboard")}>
-            <Text
-              style={[
-                styles.tabText,
-                activeTab === "leaderboard" && styles.activeTabText,
-              ]}>
-              Classement
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.tab, activeTab === "stats" && styles.activeTab]}
-            onPress={() => setActiveTab("stats")}>
-            <Text
-              style={[
-                styles.tabText,
-                activeTab === "stats" && styles.activeTabText,
-              ]}>
-              Statistiques
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Contenu des onglets */}
-        {activeTab === "stats" ? (
-          <View style={styles.statsContent}>
-            {/* Statistiques personnelles */}
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Statistiques</Text>
-              <View style={styles.personalStats}>
-                <View style={styles.personalStatRow}>
-                  <Ionicons name='trophy' size={20} color='#FFD700' />
-                  <Text style={styles.personalStatLabel}>Meilleur score</Text>
-                  <Text style={styles.personalStatValue}>2,847 points</Text>
-                </View>
-                <View style={styles.personalStatRow}>
-                  <Ionicons name='time' size={20} color='#4ECDC4' />
-                  <Text style={styles.personalStatLabel}>Temps record</Text>
-                  <Text style={styles.personalStatValue}>15.3 secondes</Text>
-                </View>
-                <View style={styles.personalStatRow}>
-                  <Ionicons name='checkmark-circle' size={20} color='#4CAF50' />
-                  <Text style={styles.personalStatLabel}>Victoires</Text>
-                  <Text style={styles.personalStatValue}>32 sur 45</Text>
-                </View>
-                <View style={styles.personalStatRow}>
-                  <Ionicons name='trending-up' size={20} color='#2196F3' />
-                  <Text style={styles.personalStatLabel}>Taux de victoire</Text>
-                  <Text style={styles.personalStatValue}>71%</Text>
-                </View>
-                <View style={styles.personalStatRow}>
-                  <Ionicons name='flame' size={20} color='#FF5722' />
-                  <Text style={styles.personalStatLabel}>Série actuelle</Text>
-                  <Text style={styles.personalStatValue}>8 victoires</Text>
-                </View>
-                <View style={styles.personalStatRow}>
-                  <Ionicons name='medal' size={20} color='#FF9800' />
-                  <Text style={styles.personalStatLabel}>Position</Text>
-                  <Text style={styles.personalStatValue}>#1 sur 1,247</Text>
-                </View>
+          ) : (
+            <View style={styles.leaderboardContent}>
+              {/* En-tête du classement */}
+              <View style={styles.leaderboardHeader}>
+                <Text style={styles.leaderboardTitle}>
+                  Classement {game.title}
+                </Text>
+                <Text style={styles.leaderboardSubtitle}>
+                  Top 3 des meilleurs joueurs
+                </Text>
               </View>
-            </View>
-          </View>
-        ) : (
-          <View style={styles.leaderboardContent}>
-            {/* En-tête du classement */}
-            <View style={styles.leaderboardHeader}>
-              <Text style={styles.leaderboardTitle}>
-                Classement {game.title}
-              </Text>
-              <Text style={styles.leaderboardSubtitle}>
-                Top 3 des meilleurs joueurs
-              </Text>
-            </View>
 
-            {/* Liste du classement */}
-            <FlatList
-              data={gameLeaderboardData}
-              renderItem={renderLeaderboardItem}
-              keyExtractor={(item) => item.id}
-              scrollEnabled={false}
-              style={styles.leaderboardList}
-            />
-          </View>
-        )}
-      </ScrollView>
+              {/* Liste du classement */}
+              <FlatList
+                data={gameLeaderboardData}
+                renderItem={renderLeaderboardItem}
+                keyExtractor={(item) => item.id}
+                scrollEnabled={false}
+                style={styles.leaderboardList}
+              />
+            </View>
+          )}
+        </ScrollView>
+      )}
     </View>
   );
 };
@@ -357,7 +398,7 @@ const styles = StyleSheet.create({
     borderRadius: 25,
     overflow: "hidden",
   },
-  playButtonGradient: {
+  playButtonGradientFake: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
@@ -597,6 +638,20 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "bold",
     color: "#667eea",
+  },
+  fullScreenLoading: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "#2363eb",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 100,
+  },
+  loadingText: {
+    color: "#fff",
+    fontSize: 18,
+    marginTop: 18,
+    fontWeight: "bold",
+    letterSpacing: 0.5,
   },
 });
 
