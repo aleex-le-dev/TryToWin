@@ -5,7 +5,6 @@ import { Ionicons } from "@expo/vector-icons";
 
 // Import des écrans
 import HomeScreen from "../screens/HomeScreen";
-import GamesScreen from "../screens/GamesScreen";
 import ProfileScreen from "../screens/ProfileScreen";
 import GameDetailsScreen from "../screens/GameDetailsScreen";
 
@@ -16,17 +15,7 @@ const Stack = createStackNavigator();
 const GamesStack = () => {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
-      <Stack.Screen name='GamesList' component={GamesScreen} />
-      <Stack.Screen name='GameDetails' component={GameDetailsScreen} />
-    </Stack.Navigator>
-  );
-};
-
-// Stack pour l'écran d'accueil
-const HomeStack = () => {
-  return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
-      <Stack.Screen name='HomeMain' component={HomeScreen} />
+      <Stack.Screen name='GamesMain' component={HomeScreen} />
       <Stack.Screen name='GameDetails' component={GameDetailsScreen} />
     </Stack.Navigator>
   );
@@ -40,9 +29,7 @@ const MainTabNavigator = () => {
         tabBarIcon: ({ focused, color, size }) => {
           let iconName;
 
-          if (route.name === "Home") {
-            iconName = focused ? "home" : "home-outline";
-          } else if (route.name === "Games") {
+          if (route.name === "Games") {
             iconName = focused ? "game-controller" : "game-controller-outline";
           } else if (route.name === "Profile") {
             iconName = focused ? "person" : "person-outline";
@@ -74,13 +61,6 @@ const MainTabNavigator = () => {
         },
         headerShown: false,
       })}>
-      <Tab.Screen
-        name='Home'
-        component={HomeStack}
-        options={{
-          title: "Accueil",
-        }}
-      />
       <Tab.Screen
         name='Games'
         component={GamesStack}

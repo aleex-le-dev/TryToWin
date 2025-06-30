@@ -6,51 +6,128 @@ import {
   ScrollView,
   TouchableOpacity,
   Dimensions,
-  Alert,
+  FlatList,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
+import Toast from "react-native-toast-message";
 
 const { width } = Dimensions.get("window");
 
-// Écran de détails d'un jeu
+// Données du classement spécifique au jeu
+const gameLeaderboardData = [
+  {
+    id: "1",
+    username: "AlexGamer",
+    rank: 1,
+    score: 2847,
+    bestMove: "15.3s",
+    winRate: 89,
+    gamesPlayed: 45,
+    avatar: "👑",
+    isCurrentUser: true,
+  },
+  {
+    id: "2",
+    username: "MariePro",
+    rank: 2,
+    score: 2654,
+    bestMove: "18.7s",
+    winRate: 76,
+    gamesPlayed: 38,
+    avatar: "🎮",
+    isCurrentUser: false,
+  },
+  {
+    id: "3",
+    username: "PierreMaster",
+    rank: 3,
+    score: 2489,
+    bestMove: "22.1s",
+    winRate: 71,
+    gamesPlayed: 42,
+    avatar: "⚡",
+    isCurrentUser: false,
+  },
+];
+
+// Écran de détails d'un jeu avec focus sur classement et statistiques
 const GameDetailsScreen = ({ route, navigation }) => {
   const { game } = route.params;
-  const [isFavorite, setIsFavorite] = useState(false);
+  const [activeTab, setActiveTab] = useState("leaderboard");
 
   const handlePlayGame = () => {
-    Alert.alert(
-      "Lancer le jeu",
-      `Voulez-vous commencer une partie de ${game.title} ?`,
-      [
-        {
-          text: "Annuler",
-          style: "cancel",
-        },
-        {
-          text: "Jouer",
-          onPress: () => {
-            Alert.alert("Jeu lancé !", "Le jeu va se charger...");
-          },
-        },
-      ]
-    );
+    Toast.show({
+      type: "success",
+      text1: `${game.title} lancé !`,
+      text2: `Préparez-vous à affronter l'IA dans ${game.title}`,
+      position: "top",
+      visibilityTime: 3000,
+    });
   };
 
-  const toggleFavorite = () => {
-    setIsFavorite(!isFavorite);
-    Alert.alert(
-      isFavorite ? "Retiré des favoris" : "Ajouté aux favoris",
-      `${game.title} a été ${
-        isFavorite ? "retiré de" : "ajouté aux"
-      } vos favoris`
-    );
-  };
+  const renderLeaderboardItem = ({ item }) => (
+    <View
+      style={[
+        styles.leaderboardItem,
+        item.isCurrentUser && styles.currentUserItem,
+      ]}>
+      <View style={styles.rankContainer}>
+        <Text style={styles.rankText}>#{item.rank}</Text>
+        {item.rank <= 3 && (
+          <Ionicons
+            name='trophy'
+            size={16}
+            color={
+              item.rank === 1
+                ? "#FFD700"
+                : item.rank === 2
+                ? "#C0C0C0"
+                : "#CD7F32"
+            }
+          />
+        )}
+      </View>
+
+      <View style={styles.userInfo}>
+        <Text style={styles.userAvatar}>{item.avatar}</Text>
+        <View style={styles.userDetails}>
+          <Text
+            style={[
+              styles.username,
+              item.isCurrentUser && styles.currentUsername,
+            ]}>
+            {item.username}
+          </Text>
+          <Text style={styles.userStats}>
+            {item.gamesPlayed} parties • {item.winRate}% victoires
+          </Text>
+        </View>
+      </View>
+
+      <View style={styles.scoreContainer}>
+        <Text style={styles.scoreText}>{item.score}</Text>
+        <Text style={styles.scoreLabel}>points</Text>
+        <Text style={styles.bestMoveText}>Meilleur: {item.bestMove}</Text>
+      </View>
+    </View>
+  );
+
+  const renderStatCard = (icon, value, label, color, subtitle = "") => (
+    <View style={styles.statCard}>
+      <View style={[styles.statIcon, { backgroundColor: color }]}>
+        <Ionicons name={icon} size={24} color='#fff' />
+      </View>
+      <Text style={styles.statValue}>{value}</Text>
+      <Text style={styles.statLabel}>{label}</Text>
+      {subtitle && <Text style={styles.statSubtitle}>{subtitle}</Text>}
+    </View>
+  );
 
   return (
     <View style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Header avec image et informations principales */}
+        {/* Header avec informations du jeu */}
         <LinearGradient
           colors={[game.color, game.color + "80"]}
           style={styles.header}>
@@ -59,16 +136,6 @@ const GameDetailsScreen = ({ route, navigation }) => {
               style={styles.backButton}
               onPress={() => navigation.goBack()}>
               <Ionicons name='arrow-back' size={24} color='#fff' />
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.favoriteButton}
-              onPress={toggleFavorite}>
-              <Ionicons
-                name={isFavorite ? "heart" : "heart-outline"}
-                size={24}
-                color={isFavorite ? "#FF6B6B" : "#fff"}
-              />
             </TouchableOpacity>
           </View>
 
@@ -102,130 +169,103 @@ const GameDetailsScreen = ({ route, navigation }) => {
             <LinearGradient
               colors={["#FF6B6B", "#ee5a24"]}
               style={styles.playButtonGradient}>
-              <Ionicons name='play' size={24} color='#fff' />
-              <Text style={styles.playButtonText}>Jouer maintenant</Text>
+              <Ionicons name='game-controller' size={24} color='#fff' />
+              <Text style={styles.playButtonText}>Jouer</Text>
             </LinearGradient>
           </TouchableOpacity>
         </View>
 
-        {/* Statistiques du jeu */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Statistiques</Text>
-          <View style={styles.statsGrid}>
-            <View style={styles.statItem}>
-              <Ionicons name='people' size={20} color='#667eea' />
-              <Text style={styles.statNumber}>1,247</Text>
-              <Text style={styles.statLabel}>Joueurs actifs</Text>
-            </View>
-            <View style={styles.statItem}>
-              <Ionicons name='time' size={20} color='#4ECDC4' />
-              <Text style={styles.statNumber}>5-10 min</Text>
-              <Text style={styles.statLabel}>Durée moyenne</Text>
-            </View>
-            <View style={styles.statItem}>
-              <Ionicons name='trophy' size={20} color='#FFD700' />
-              <Text style={styles.statNumber}>89%</Text>
-              <Text style={styles.statLabel}>Taux de satisfaction</Text>
-            </View>
-          </View>
+        {/* Onglets */}
+        <View style={styles.tabsContainer}>
+          <TouchableOpacity
+            style={[
+              styles.tab,
+              activeTab === "leaderboard" && styles.activeTab,
+            ]}
+            onPress={() => setActiveTab("leaderboard")}>
+            <Text
+              style={[
+                styles.tabText,
+                activeTab === "leaderboard" && styles.activeTabText,
+              ]}>
+              Classement
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.tab, activeTab === "stats" && styles.activeTab]}
+            onPress={() => setActiveTab("stats")}>
+            <Text
+              style={[
+                styles.tabText,
+                activeTab === "stats" && styles.activeTabText,
+              ]}>
+              Statistiques
+            </Text>
+          </TouchableOpacity>
         </View>
 
-        {/* Description détaillée */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>À propos du jeu</Text>
-          <Text style={styles.description}>
-            {game.title} est un jeu passionnant qui teste vos compétences et
-            votre rapidité. Avec des niveaux de difficulté progressifs et un
-            système de points innovant, vous ne vous ennuierez jamais !
-          </Text>
-        </View>
-
-        {/* Instructions */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Comment jouer</Text>
-          <View style={styles.instructionsList}>
-            <View style={styles.instructionItem}>
-              <View style={styles.instructionNumber}>
-                <Text style={styles.instructionNumberText}>1</Text>
-              </View>
-              <Text style={styles.instructionText}>
-                Cliquez sur "Jouer maintenant" pour commencer
-              </Text>
-            </View>
-            <View style={styles.instructionItem}>
-              <View style={styles.instructionNumber}>
-                <Text style={styles.instructionNumberText}>2</Text>
-              </View>
-              <Text style={styles.instructionText}>
-                Suivez les instructions à l'écran
-              </Text>
-            </View>
-            <View style={styles.instructionItem}>
-              <View style={styles.instructionNumber}>
-                <Text style={styles.instructionNumberText}>3</Text>
-              </View>
-              <Text style={styles.instructionText}>
-                Gagnez des points et grimpez dans le classement
-              </Text>
-            </View>
-          </View>
-        </View>
-
-        {/* Avis des joueurs */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Avis des joueurs</Text>
-          <View style={styles.reviewsList}>
-            <View style={styles.reviewItem}>
-              <View style={styles.reviewHeader}>
-                <Text style={styles.reviewerName}>Marie L.</Text>
-                <View style={styles.reviewStars}>
-                  <Ionicons name='star' size={14} color='#FFD700' />
-                  <Ionicons name='star' size={14} color='#FFD700' />
-                  <Ionicons name='star' size={14} color='#FFD700' />
-                  <Ionicons name='star' size={14} color='#FFD700' />
-                  <Ionicons name='star' size={14} color='#FFD700' />
+        {/* Contenu des onglets */}
+        {activeTab === "stats" ? (
+          <View style={styles.statsContent}>
+            {/* Statistiques personnelles */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Statistiques</Text>
+              <View style={styles.personalStats}>
+                <View style={styles.personalStatRow}>
+                  <Ionicons name='trophy' size={20} color='#FFD700' />
+                  <Text style={styles.personalStatLabel}>Meilleur score</Text>
+                  <Text style={styles.personalStatValue}>2,847 points</Text>
+                </View>
+                <View style={styles.personalStatRow}>
+                  <Ionicons name='time' size={20} color='#4ECDC4' />
+                  <Text style={styles.personalStatLabel}>Temps record</Text>
+                  <Text style={styles.personalStatValue}>15.3 secondes</Text>
+                </View>
+                <View style={styles.personalStatRow}>
+                  <Ionicons name='checkmark-circle' size={20} color='#4CAF50' />
+                  <Text style={styles.personalStatLabel}>Victoires</Text>
+                  <Text style={styles.personalStatValue}>32 sur 45</Text>
+                </View>
+                <View style={styles.personalStatRow}>
+                  <Ionicons name='trending-up' size={20} color='#2196F3' />
+                  <Text style={styles.personalStatLabel}>Taux de victoire</Text>
+                  <Text style={styles.personalStatValue}>71%</Text>
+                </View>
+                <View style={styles.personalStatRow}>
+                  <Ionicons name='flame' size={20} color='#FF5722' />
+                  <Text style={styles.personalStatLabel}>Série actuelle</Text>
+                  <Text style={styles.personalStatValue}>8 victoires</Text>
+                </View>
+                <View style={styles.personalStatRow}>
+                  <Ionicons name='medal' size={20} color='#FF9800' />
+                  <Text style={styles.personalStatLabel}>Position</Text>
+                  <Text style={styles.personalStatValue}>#1 sur 1,247</Text>
                 </View>
               </View>
-              <Text style={styles.reviewText}>
-                "Excellent jeu ! Très addictif et amusant. Je recommande !"
-              </Text>
-            </View>
-            <View style={styles.reviewItem}>
-              <View style={styles.reviewHeader}>
-                <Text style={styles.reviewerName}>Pierre M.</Text>
-                <View style={styles.reviewStars}>
-                  <Ionicons name='star' size={14} color='#FFD700' />
-                  <Ionicons name='star' size={14} color='#FFD700' />
-                  <Ionicons name='star' size={14} color='#FFD700' />
-                  <Ionicons name='star' size={14} color='#FFD700' />
-                  <Ionicons name='star-outline' size={14} color='#FFD700' />
-                </View>
-              </View>
-              <Text style={styles.reviewText}>
-                "Bon jeu, mais pourrait avoir plus de niveaux."
-              </Text>
             </View>
           </View>
-        </View>
+        ) : (
+          <View style={styles.leaderboardContent}>
+            {/* En-tête du classement */}
+            <View style={styles.leaderboardHeader}>
+              <Text style={styles.leaderboardTitle}>
+                Classement {game.title}
+              </Text>
+              <Text style={styles.leaderboardSubtitle}>
+                Top 3 des meilleurs joueurs
+              </Text>
+            </View>
 
-        {/* Jeux similaires */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Jeux similaires</Text>
-          <View style={styles.similarGames}>
-            <TouchableOpacity style={styles.similarGameCard}>
-              <Text style={styles.similarGameIcon}>🎯</Text>
-              <Text style={styles.similarGameTitle}>Target Practice</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.similarGameCard}>
-              <Text style={styles.similarGameIcon}>⚡</Text>
-              <Text style={styles.similarGameTitle}>Speed Test</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.similarGameCard}>
-              <Text style={styles.similarGameIcon}>🧩</Text>
-              <Text style={styles.similarGameTitle}>Puzzle Master</Text>
-            </TouchableOpacity>
+            {/* Liste du classement */}
+            <FlatList
+              data={gameLeaderboardData}
+              renderItem={renderLeaderboardItem}
+              keyExtractor={(item) => item.id}
+              scrollEnabled={false}
+              style={styles.leaderboardList}
+            />
           </View>
-        </View>
+        )}
       </ScrollView>
     </View>
   );
@@ -248,9 +288,6 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   backButton: {
-    padding: 10,
-  },
-  favoriteButton: {
     padding: 10,
   },
   gameHeader: {
@@ -330,10 +367,35 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginLeft: 10,
   },
-  section: {
-    padding: 20,
+  tabsContainer: {
+    flexDirection: "row",
     backgroundColor: "#fff",
-    marginBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: "#e9ecef",
+  },
+  tab: {
+    flex: 1,
+    paddingVertical: 15,
+    alignItems: "center",
+  },
+  activeTab: {
+    borderBottomWidth: 2,
+    borderBottomColor: "#667eea",
+  },
+  tabText: {
+    fontSize: 16,
+    color: "#6c757d",
+    fontWeight: "500",
+  },
+  activeTabText: {
+    color: "#667eea",
+    fontWeight: "bold",
+  },
+  statsContent: {
+    padding: 20,
+  },
+  section: {
+    marginBottom: 20,
   },
   sectionTitle: {
     fontSize: 20,
@@ -341,106 +403,197 @@ const styles = StyleSheet.create({
     color: "#333",
     marginBottom: 15,
   },
-  statsGrid: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-  },
-  statItem: {
-    alignItems: "center",
-  },
-  statNumber: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#333",
-    marginTop: 5,
-    marginBottom: 5,
-  },
-  statLabel: {
-    fontSize: 12,
-    color: "#6c757d",
-    textAlign: "center",
-  },
-  description: {
-    fontSize: 16,
-    color: "#6c757d",
-    lineHeight: 24,
-  },
-  instructionsList: {
-    marginTop: 10,
-  },
-  instructionItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 15,
-  },
-  instructionNumber: {
-    width: 30,
-    height: 30,
+  personalStats: {
+    backgroundColor: "#fff",
     borderRadius: 15,
-    backgroundColor: "#667eea",
-    justifyContent: "center",
+    padding: 20,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  personalStatRow: {
+    flexDirection: "row",
     alignItems: "center",
-    marginRight: 15,
-  },
-  instructionNumberText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-  instructionText: {
-    flex: 1,
-    fontSize: 16,
-    color: "#333",
-  },
-  reviewsList: {
-    marginTop: 10,
-  },
-  reviewItem: {
-    marginBottom: 15,
-    paddingBottom: 15,
+    paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: "#f1f3f4",
   },
-  reviewHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 5,
-  },
-  reviewerName: {
-    fontSize: 14,
-    fontWeight: "600",
+  personalStatLabel: {
+    flex: 1,
+    fontSize: 16,
     color: "#333",
+    marginLeft: 15,
   },
-  reviewStars: {
+  personalStatValue: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#667eea",
+  },
+  tipsList: {
+    backgroundColor: "#fff",
+    borderRadius: 15,
+    padding: 20,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  tipItem: {
     flexDirection: "row",
+    alignItems: "flex-start",
+    marginBottom: 15,
   },
-  reviewText: {
+  tipText: {
+    flex: 1,
     fontSize: 14,
-    color: "#6c757d",
+    color: "#333",
+    marginLeft: 15,
     lineHeight: 20,
   },
-  similarGames: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+  leaderboardContent: {
+    padding: 20,
   },
-  similarGameCard: {
-    flex: 1,
-    backgroundColor: "#f8f9fa",
+  leaderboardHeader: {
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  leaderboardTitle: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "#333",
+    marginBottom: 5,
+  },
+  leaderboardSubtitle: {
+    fontSize: 14,
+    color: "#6c757d",
+  },
+  leaderboardList: {
+    marginBottom: 20,
+  },
+  leaderboardItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#fff",
     borderRadius: 15,
     padding: 15,
+    marginBottom: 10,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  currentUserItem: {
+    backgroundColor: "#667eea",
+  },
+  rankContainer: {
+    width: 40,
     alignItems: "center",
-    marginHorizontal: 5,
+    marginRight: 15,
   },
-  similarGameIcon: {
-    fontSize: 30,
-    marginBottom: 8,
-  },
-  similarGameTitle: {
-    fontSize: 12,
-    fontWeight: "500",
+  rankText: {
+    fontSize: 16,
+    fontWeight: "bold",
     color: "#333",
-    textAlign: "center",
+  },
+  userInfo: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  userAvatar: {
+    fontSize: 24,
+    marginRight: 10,
+  },
+  userDetails: {
+    flex: 1,
+  },
+  username: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#333",
+    marginBottom: 2,
+  },
+  currentUsername: {
+    color: "#fff",
+  },
+  userStats: {
+    fontSize: 12,
+    color: "#6c757d",
+  },
+  scoreContainer: {
+    alignItems: "center",
+  },
+  scoreText: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#667eea",
+  },
+  scoreLabel: {
+    fontSize: 10,
+    color: "#6c757d",
+  },
+  bestMoveText: {
+    fontSize: 10,
+    color: "#4CAF50",
+    fontWeight: "500",
+    marginTop: 2,
+  },
+  aiInfo: {
+    backgroundColor: "#fff",
+    borderRadius: 15,
+    padding: 20,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  aiHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 15,
+  },
+  aiTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#333",
+    marginLeft: 10,
+  },
+  aiStats: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+  },
+  aiStatItem: {
+    width: "48%",
+    alignItems: "center",
+    marginBottom: 15,
+  },
+  aiStatLabel: {
+    fontSize: 12,
+    color: "#6c757d",
+    marginBottom: 5,
+  },
+  aiStatValue: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#667eea",
   },
 });
 

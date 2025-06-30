@@ -6,13 +6,13 @@ import {
   TouchableOpacity,
   StyleSheet,
   ImageBackground,
-  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
+import Toast from "react-native-toast-message";
 
 // Écran de connexion principal avec design moderne et interactif
 const LoginScreen = ({ navigation }) => {
@@ -22,16 +22,17 @@ const LoginScreen = ({ navigation }) => {
 
   const handleLogin = () => {
     if (!email || !password) {
-      Alert.alert("Erreur", "Veuillez remplir tous les champs");
+      Toast.show({
+        type: "error",
+        text1: "Erreur",
+        text2: "Veuillez remplir tous les champs",
+        position: "top",
+        visibilityTime: 3000,
+      });
       return;
     }
-    // Simulation de connexion réussie
-    Alert.alert("Succès", "Connexion réussie !", [
-      {
-        text: "OK",
-        onPress: () => navigation.navigate("MainTabs"),
-      },
-    ]);
+    // Connexion directe pour les tests
+    navigation.navigate("MainTabs");
   };
 
   const handleRegister = () => {

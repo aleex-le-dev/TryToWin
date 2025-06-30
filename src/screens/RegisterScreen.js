@@ -5,13 +5,13 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
+import Toast from "react-native-toast-message";
 
 // Écran d'inscription avec validation des champs
 const RegisterScreen = ({ navigation }) => {
@@ -24,30 +24,40 @@ const RegisterScreen = ({ navigation }) => {
 
   const handleRegister = () => {
     if (!username || !email || !password || !confirmPassword) {
-      Alert.alert("Erreur", "Veuillez remplir tous les champs");
+      Toast.show({
+        type: "error",
+        text1: "Erreur",
+        text2: "Veuillez remplir tous les champs",
+        position: "top",
+        visibilityTime: 3000,
+      });
       return;
     }
 
     if (password !== confirmPassword) {
-      Alert.alert("Erreur", "Les mots de passe ne correspondent pas");
+      Toast.show({
+        type: "error",
+        text1: "Erreur",
+        text2: "Les mots de passe ne correspondent pas",
+        position: "top",
+        visibilityTime: 3000,
+      });
       return;
     }
 
     if (password.length < 6) {
-      Alert.alert(
-        "Erreur",
-        "Le mot de passe doit contenir au moins 6 caractères"
-      );
+      Toast.show({
+        type: "error",
+        text1: "Erreur",
+        text2: "Le mot de passe doit contenir au moins 6 caractères",
+        position: "top",
+        visibilityTime: 3000,
+      });
       return;
     }
 
-    // Simulation d'inscription réussie
-    Alert.alert("Succès", "Compte créé avec succès !", [
-      {
-        text: "OK",
-        onPress: () => navigation.navigate("MainTabs"),
-      },
-    ]);
+    // Inscription directe pour les tests
+    navigation.navigate("MainTabs");
   };
 
   return (

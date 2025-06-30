@@ -13,31 +13,103 @@ import { Ionicons } from "@expo/vector-icons";
 
 const { width } = Dimensions.get("window");
 
-// Données des jeux populaires
-const popularGames = [
+// Données des jeux simples
+const gamesData = [
   {
     id: "1",
-    title: "Memory Game",
-    players: "1.2k",
+    title: "Puissance 4",
+    description: "Alignez 4 pions pour gagner",
+    category: "Stratégie",
+    difficulty: "Facile",
+    players: "2",
     rating: 4.8,
-    image: "🧠",
+    image: "🔴",
     color: "#FF6B6B",
+    gameType: "grid",
   },
   {
     id: "2",
-    title: "Quiz Challenge",
-    players: "856",
+    title: "Othello",
+    description: "Retournez les pions adverses",
+    category: "Stratégie",
+    difficulty: "Moyen",
+    players: "2",
     rating: 4.6,
-    image: "❓",
+    image: "⚫",
     color: "#4ECDC4",
+    gameType: "grid",
   },
   {
     id: "3",
-    title: "Math Race",
-    players: "1.5k",
-    rating: 4.9,
-    image: "🔢",
+    title: "Tic Tac Toe",
+    description: "3 en ligne pour gagner",
+    category: "Logique",
+    difficulty: "Facile",
+    players: "2",
+    rating: 4.5,
+    image: "❌",
+    color: "#45B7D1",
+    gameType: "grid",
+  },
+  {
+    id: "4",
+    title: "Memory Game",
+    description: "Retrouvez les paires",
+    category: "Mémoire",
+    difficulty: "Facile",
+    players: "1-4",
+    rating: 4.7,
+    image: "🧠",
     color: "#96CEB4",
+    gameType: "cards",
+  },
+  {
+    id: "5",
+    title: "Snake",
+    description: "Mangez et grandissez",
+    category: "Arcade",
+    difficulty: "Moyen",
+    players: "1",
+    rating: 4.4,
+    image: "🐍",
+    color: "#FFEAA7",
+    gameType: "arcade",
+  },
+  {
+    id: "6",
+    title: "Tetris",
+    description: "Empilez les blocs",
+    category: "Puzzle",
+    difficulty: "Difficile",
+    players: "1",
+    rating: 4.9,
+    image: "🧩",
+    color: "#DDA0DD",
+    gameType: "puzzle",
+  },
+  {
+    id: "7",
+    title: "Pong",
+    description: "Bataille de raquettes",
+    category: "Arcade",
+    difficulty: "Moyen",
+    players: "2",
+    rating: 4.3,
+    image: "🏓",
+    color: "#FFB6C1",
+    gameType: "arcade",
+  },
+  {
+    id: "8",
+    title: "2048",
+    description: "Fusionnez les nombres",
+    category: "Puzzle",
+    difficulty: "Difficile",
+    players: "1",
+    rating: 4.8,
+    image: "��",
+    color: "#98D8C8",
+    gameType: "puzzle",
   },
 ];
 
@@ -69,30 +141,67 @@ const dailyChallenges = [
   },
 ];
 
-// Écran d'accueil principal
+// Écran d'accueil fusionné avec liste des jeux
 const HomeScreen = ({ navigation }) => {
   const [userName] = useState("Alex");
+  const [selectedCategory, setSelectedCategory] = useState("Tous");
 
-  const renderPopularGame = ({ item }) => (
+  const categories = [
+    "Tous",
+    "Stratégie",
+    "Logique",
+    "Mémoire",
+    "Arcade",
+    "Puzzle",
+  ];
+
+  const filteredGames = gamesData.filter((game) => {
+    return selectedCategory === "Tous" || game.category === selectedCategory;
+  });
+
+  const renderGameCard = ({ item }) => (
     <TouchableOpacity
-      style={styles.popularGameCard}
+      style={styles.gameCard}
       onPress={() => navigation.navigate("GameDetails", { game: item })}>
       <LinearGradient
         colors={[item.color, item.color + "80"]}
-        style={styles.popularGameGradient}>
-        <Text style={styles.popularGameIcon}>{item.image}</Text>
-        <Text style={styles.popularGameTitle}>{item.title}</Text>
-        <View style={styles.popularGameMeta}>
-          <View style={styles.popularGameMetaItem}>
-            <Ionicons name='people-outline' size={12} color='#fff' />
-            <Text style={styles.popularGameMetaText}>{item.players}</Text>
-          </View>
-          <View style={styles.popularGameMetaItem}>
-            <Ionicons name='star' size={12} color='#FFD700' />
-            <Text style={styles.popularGameMetaText}>{item.rating}</Text>
+        style={styles.gameCardGradient}>
+        <View style={styles.gameCardContent}>
+          <Text style={styles.gameIcon}>{item.image}</Text>
+          <Text style={styles.gameTitle}>{item.title}</Text>
+          <Text style={styles.gameDescription}>{item.description}</Text>
+          <View style={styles.gameMeta}>
+            <View style={styles.gameMetaItem}>
+              <Ionicons name='people-outline' size={12} color='#fff' />
+              <Text style={styles.gameMetaText}>{item.players}</Text>
+            </View>
+            <View style={styles.gameMetaItem}>
+              <Ionicons name='star' size={12} color='#FFD700' />
+              <Text style={styles.gameMetaText}>{item.rating}</Text>
+            </View>
+            <View style={styles.difficultyBadge}>
+              <Text style={styles.difficultyText}>{item.difficulty}</Text>
+            </View>
           </View>
         </View>
       </LinearGradient>
+    </TouchableOpacity>
+  );
+
+  const renderCategoryButton = ({ item }) => (
+    <TouchableOpacity
+      style={[
+        styles.categoryButton,
+        selectedCategory === item && styles.categoryButtonActive,
+      ]}
+      onPress={() => setSelectedCategory(item)}>
+      <Text
+        style={[
+          styles.categoryButtonText,
+          selectedCategory === item && styles.categoryButtonTextActive,
+        ]}>
+        {item}
+      </Text>
     </TouchableOpacity>
   );
 
@@ -127,7 +236,7 @@ const HomeScreen = ({ navigation }) => {
           <View style={styles.headerContent}>
             <View style={styles.greetingContainer}>
               <Text style={styles.greeting}>Bonjour, {userName} ! 👋</Text>
-              <Text style={styles.subtitle}>Prêt à gagner ?</Text>
+              <Text style={styles.subtitle}>Prêt à jouer ?</Text>
             </View>
             <View style={styles.headerStats}>
               <View style={styles.statItem}>
@@ -143,121 +252,35 @@ const HomeScreen = ({ navigation }) => {
           </View>
         </LinearGradient>
 
-        {/* Actions rapides */}
-        <View style={styles.quickActions}>
-          <TouchableOpacity
-            style={styles.quickActionButton}
-            onPress={() => navigation.navigate("Games")}>
-            <LinearGradient
-              colors={["#FF6B6B", "#ee5a24"]}
-              style={styles.quickActionGradient}>
-              <Ionicons name='game-controller' size={30} color='#fff' />
-              <Text style={styles.quickActionText}>Jouer</Text>
-            </LinearGradient>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.quickActionButton}
-            onPress={() => navigation.navigate("Profile")}>
-            <LinearGradient
-              colors={["#4ECDC4", "#44A08D"]}
-              style={styles.quickActionGradient}>
-              <Ionicons name='trophy' size={30} color='#fff' />
-              <Text style={styles.quickActionText}>Classement</Text>
-            </LinearGradient>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.quickActionButton}
-            onPress={() => navigation.navigate("Profile")}>
-            <LinearGradient
-              colors={["#45B7D1", "#96C93D"]}
-              style={styles.quickActionGradient}>
-              <Ionicons name='person' size={30} color='#fff' />
-              <Text style={styles.quickActionText}>Profil</Text>
-            </LinearGradient>
-          </TouchableOpacity>
-        </View>
-
-        {/* Défis quotidiens */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Défis Quotidiens</Text>
-            <TouchableOpacity>
-              <Text style={styles.seeAllText}>Voir tout</Text>
-            </TouchableOpacity>
-          </View>
+        {/* Filtres par catégorie */}
+        <View style={styles.filtersContainer}>
           <FlatList
-            data={dailyChallenges}
-            renderItem={renderChallenge}
-            keyExtractor={(item) => item.id}
-            scrollEnabled={false}
-            style={styles.challengesList}
-          />
-        </View>
-
-        {/* Jeux populaires */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Jeux Populaires</Text>
-            <TouchableOpacity onPress={() => navigation.navigate("Games")}>
-              <Text style={styles.seeAllText}>Voir tout</Text>
-            </TouchableOpacity>
-          </View>
-          <FlatList
-            data={popularGames}
-            renderItem={renderPopularGame}
-            keyExtractor={(item) => item.id}
+            data={categories}
+            renderItem={renderCategoryButton}
+            keyExtractor={(item) => item}
             horizontal
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.popularGamesList}
+            contentContainerStyle={styles.categoriesList}
           />
         </View>
 
-        {/* Statistiques rapides */}
+        {/* Liste des jeux (2 par ligne) */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Vos Statistiques</Text>
-          <View style={styles.statsGrid}>
-            <View style={styles.statCard}>
-              <Ionicons name='checkmark-circle' size={24} color='#4CAF50' />
-              <Text style={styles.statCardNumber}>32</Text>
-              <Text style={styles.statCardLabel}>Victoires</Text>
-            </View>
-            <View style={styles.statCard}>
-              <Ionicons name='time' size={24} color='#FF9800' />
-              <Text style={styles.statCardNumber}>12h</Text>
-              <Text style={styles.statCardLabel}>Temps de jeu</Text>
-            </View>
-            <View style={styles.statCard}>
-              <Ionicons name='trending-up' size={24} color='#2196F3' />
-              <Text style={styles.statCardNumber}>71%</Text>
-              <Text style={styles.statCardLabel}>Taux de victoire</Text>
-            </View>
-            <View style={styles.statCard}>
-              <Ionicons name='flame' size={24} color='#FF5722' />
-              <Text style={styles.statCardNumber}>8</Text>
-              <Text style={styles.statCardLabel}>Série actuelle</Text>
-            </View>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Jeux Disponibles</Text>
+            <Text style={styles.gamesCount}>{filteredGames.length} jeux</Text>
           </View>
+          <FlatList
+            data={filteredGames}
+            renderItem={renderGameCard}
+            keyExtractor={(item) => item.id}
+            numColumns={2}
+            columnWrapperStyle={styles.gameRow}
+            scrollEnabled={false}
+            style={styles.gamesList}
+          />
         </View>
 
-        {/* Section d'actualités */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Actualités</Text>
-          <View style={styles.newsCard}>
-            <View style={styles.newsHeader}>
-              <Ionicons name='megaphone' size={20} color='#667eea' />
-              <Text style={styles.newsTitle}>Nouveau jeu disponible !</Text>
-            </View>
-            <Text style={styles.newsContent}>
-              Découvrez "Speed Typing", le nouveau défi de vitesse de frappe.
-              Testez vos compétences et grimpez dans le classement !
-            </Text>
-            <TouchableOpacity style={styles.newsButton}>
-              <Text style={styles.newsButtonText}>En savoir plus</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
       </ScrollView>
     </View>
   );
@@ -369,6 +392,10 @@ const styles = StyleSheet.create({
     color: "#667eea",
     fontWeight: "500",
   },
+  gamesCount: {
+    fontSize: 14,
+    color: "#6c757d",
+  },
   challengesList: {
     marginBottom: 10,
   },
@@ -424,12 +451,45 @@ const styles = StyleSheet.create({
     color: "#6c757d",
     fontWeight: "500",
   },
-  popularGamesList: {
-    paddingRight: 20,
+  filtersContainer: {
+    backgroundColor: "#fff",
+    paddingVertical: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: "#e9ecef",
   },
-  popularGameCard: {
-    width: 150,
-    marginRight: 15,
+  categoriesList: {
+    paddingHorizontal: 20,
+  },
+  categoryButton: {
+    paddingHorizontal: 20,
+    paddingVertical: 8,
+    marginRight: 10,
+    borderRadius: 20,
+    backgroundColor: "#f8f9fa",
+    borderWidth: 1,
+    borderColor: "#e9ecef",
+  },
+  categoryButtonActive: {
+    backgroundColor: "#667eea",
+    borderColor: "#667eea",
+  },
+  categoryButtonText: {
+    fontSize: 14,
+    color: "#6c757d",
+    fontWeight: "500",
+  },
+  categoryButtonTextActive: {
+    color: "#fff",
+  },
+  gamesList: {
+    marginTop: 10,
+  },
+  gameRow: {
+    justifyContent: "space-between",
+  },
+  gameCard: {
+    width: (width - 60) / 2,
+    marginBottom: 15,
     borderRadius: 15,
     overflow: "hidden",
     shadowColor: "#000",
@@ -441,36 +501,57 @@ const styles = StyleSheet.create({
     shadowRadius: 3.84,
     elevation: 5,
   },
-  popularGameGradient: {
+  gameCardGradient: {
     padding: 20,
-    alignItems: "center",
-    height: 120,
+    height: 160,
     justifyContent: "center",
+    alignItems: "center",
   },
-  popularGameIcon: {
-    fontSize: 30,
+  gameCardContent: {
+    alignItems: "center",
+    width: "100%",
+  },
+  gameIcon: {
+    fontSize: 40,
     marginBottom: 10,
   },
-  popularGameTitle: {
-    fontSize: 14,
+  gameTitle: {
+    fontSize: 16,
     fontWeight: "bold",
     color: "#fff",
     textAlign: "center",
+    marginBottom: 5,
+  },
+  gameDescription: {
+    fontSize: 12,
+    color: "rgba(255,255,255,0.8)",
+    textAlign: "center",
     marginBottom: 10,
   },
-  popularGameMeta: {
+  gameMeta: {
     flexDirection: "row",
     justifyContent: "space-around",
     width: "100%",
   },
-  popularGameMetaItem: {
+  gameMetaItem: {
     flexDirection: "row",
     alignItems: "center",
   },
-  popularGameMetaText: {
+  gameMetaText: {
     fontSize: 10,
     color: "#fff",
     marginLeft: 3,
+  },
+  difficultyBadge: {
+    backgroundColor: "rgba(255,255,255,0.2)",
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+  },
+  difficultyText: {
+    fontSize: 8,
+    color: "#fff",
+    fontWeight: "500",
   },
   statsGrid: {
     flexDirection: "row",
@@ -504,48 +585,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#6c757d",
     textAlign: "center",
-  },
-  newsCard: {
-    backgroundColor: "#fff",
-    borderRadius: 15,
-    padding: 20,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  newsHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 10,
-  },
-  newsTitle: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#333",
-    marginLeft: 10,
-  },
-  newsContent: {
-    fontSize: 14,
-    color: "#6c757d",
-    lineHeight: 20,
-    marginBottom: 15,
-  },
-  newsButton: {
-    backgroundColor: "#667eea",
-    borderRadius: 20,
-    paddingVertical: 8,
-    paddingHorizontal: 20,
-    alignSelf: "flex-start",
-  },
-  newsButtonText: {
-    color: "#fff",
-    fontSize: 12,
-    fontWeight: "600",
   },
 });
 

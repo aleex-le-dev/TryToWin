@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
+import Toast from "react-native-toast-message";
 
 const { width } = Dimensions.get("window");
 
@@ -104,6 +105,21 @@ const ProfileScreen = ({ navigation }) => {
     totalTime: "12h 34m",
   };
 
+  const handleLogout = () => {
+    Toast.show({
+      type: "info",
+      text1: "Déconnexion",
+      text2: "Vous avez été déconnecté avec succès",
+      position: "top",
+      visibilityTime: 2000,
+    });
+
+    // Navigation vers la page de connexion
+    setTimeout(() => {
+      navigation.navigate("Login");
+    }, 1000);
+  };
+
   const renderLeaderboardItem = ({ item, index }) => (
     <View
       style={[
@@ -171,15 +187,11 @@ const ProfileScreen = ({ navigation }) => {
           </View>
           <View style={styles.userInfo}>
             <Text style={styles.userName}>AlexGamer</Text>
-            <Text style={styles.userLevel}>Niveau 15 • Pro Gamer</Text>
-            <View style={styles.badges}>
-              <Ionicons name='trophy' size={16} color='#FFD700' />
-              <Ionicons name='star' size={16} color='#FFD700' />
-              <Ionicons name='medal' size={16} color='#FFD700' />
-            </View>
           </View>
-          <TouchableOpacity style={styles.settingsButton}>
-            <Ionicons name='settings-outline' size={24} color='#fff' />
+          <TouchableOpacity
+            style={styles.settingsButton}
+            onPress={handleLogout}>
+            <Ionicons name='log-out-outline' size={24} color='#fff' />
           </TouchableOpacity>
         </View>
       </LinearGradient>
