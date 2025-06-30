@@ -106,7 +106,10 @@ const GameDetailsScreen = ({ route, navigation }) => {
       </View>
 
       <View style={styles.scoreContainer}>
-        <Text style={styles.scoreText}>{item.score}</Text>
+        <Text
+          style={[styles.scoreText, item.isCurrentUser && { color: "#000" }]}>
+          {item.score}
+        </Text>
         <Text style={styles.scoreLabel}>points</Text>
         <Text style={styles.bestMoveText}>Meilleur: {item.bestMove}</Text>
       </View>
@@ -432,7 +435,7 @@ const styles = StyleSheet.create({
   personalStatValue: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#667eea",
+    color: "#000",
   },
   tipsList: {
     backgroundColor: "#fff",
