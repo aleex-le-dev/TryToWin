@@ -15,31 +15,31 @@ import Toast from "react-native-toast-message";
 const { width } = Dimensions.get("window");
 
 // Composant principal du jeu Morpion
-const TicTacToe = ({ navigation, route }) => {
-  const [board, setBoard] = useState(Array(9).fill(null));
-  const [xIsNext, setXIsNext] = useState(true);
-  const [gameOver, setGameOver] = useState(false);
-  const [winner, setWinner] = useState(null);
+const Morpion = ({ navigation, route }) => {
+  const [plateau, setPlateau] = useState(Array(9).fill(null));
+  const [tourJoueur, setTourJoueur] = useState(true);
+  const [partieTerminee, setPartieTerminee] = useState(false);
+  const [gagnant, setGagnant] = useState(null);
   const [score, setScore] = useState(0);
-  const [timeElapsed, setTimeElapsed] = useState(0);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [gameHistory, setGameHistory] = useState([]);
+  const [tempsEcoule, setTempsEcoule] = useState(0);
+  const [enPartie, setEnPartie] = useState(false);
+  const [chargement, setChargement] = useState(false);
+  const [historiqueParties, setHistoriqueParties] = useState([]);
 
   // Timer pour le jeu
   useEffect(() => {
     let interval = null;
-    if (isPlaying && !gameOver) {
+    if (enPartie && !partieTerminee) {
       interval = setInterval(() => {
-        setTimeElapsed((prev) => prev + 1);
+        setTempsEcoule((prev) => prev + 1);
       }, 1000);
     }
     return () => clearInterval(interval);
-  }, [isPlaying, gameOver]);
+  }, [enPartie, partieTerminee]);
 
   // Vérifier s'il y a un gagnant
-  const calculateWinner = (squares) => {
-    const lines = [
+  const verifierGagnant = (cases) => {
+    const lignesGagnantes = [
       [0, 1, 2],
       [3, 4, 5],
       [6, 7, 8], // horizontales
@@ -50,70 +50,62 @@ const TicTacToe = ({ navigation, route }) => {
       [2, 4, 6], // diagonales
     ];
 
-    for (let i = 0; i < lines.length; i++) {
-      const [a, b, c] = lines[i];
-      if (
-        squares[a] &&
-        squares[a] === squares[b] &&
-        squares[a] === squares[c]
-      ) {
-        return squares[a];
+    for (let i = 0; i < lignesGagnantes.length; i++) {
+      const [a, b, c] = lignesGagnantes[i];
+      if (cases[a] && cases[a] === cases[b] && cases[a] === cases[c]) {
+        return cases[a];
       }
     }
     return null;
   };
 
   // Vérifier si le jeu est nul
-  const isDraw = (squares) => {
-    return squares.every((square) => square !== null);
+  const verifierMatchNul = (cases) => {
+    return cases.every((case_) => case_ !== null);
   };
 
   // Gérer un clic sur une case
-  const handleClick = (i) => {
-    if (board[i] || gameOver) return;
+  const gererClicCase = (index) => {
+    if (plateau[index] || partieTerminee) return;
 
-    const newBoard = board.slice();
-    newBoard[i] = xIsNext ? "X" : "O";
-    setBoard(newBoard);
-    setXIsNext(!xIsNext);
+    const nouveauPlateau = plateau.slice();
+    nouveauPlateau[index] = tourJoueur ? "X" : "O";
+    setPlateau(nouveauPlateau);
+    setTourJoueur(!tourJoueur);
 
     // Vérifier le gagnant
-    const winner = calculateWinner(newBoard);
-    if (winner) {
-      setWinner(winner);
-      setGameOver(true);
-      setIsPlaying(false);
-      handleGameEnd(winner, timeElapsed);
-    } else if (isDraw(newBoard)) {
-      setGameOver(true);
-      setIsPlaying(false);
-      handleGameEnd("draw", timeElapsed);
+    const gagnant = verifierGagnant(nouveauPlateau);
+    if (gagnant) {
+      setGagnant(gagnant);
+      setPartieTerminee(true);
+      setEnPartie(false);
+      gererFinPartie(gagnant, tempsEcoule);
+    } else if (verifierMatchNul(nouveauPlateau)) {
+      setPartieTerminee(true);
+      setEnPartie(false);
+      gererFinPartie("nul", tempsEcoule);
     }
   };
 
   // Gérer la fin du jeu
-  const handleGameEnd = (result, time) => {
-    let newScore = 0;
-    let message = "";
+  const gererFinPartie = (resultat, temps) => {
+    let nouveauScore = 0;
 
-    if (result === "X") {
-      newScore = Math.max(1000 - time * 10, 100); // Score basé sur le temps
-      message = "🎉 Victoire ! Vous avez gagné !";
+    if (resultat === "X") {
+      nouveauScore = Math.max(1000 - temps * 10, 100); // Score basé sur le temps
       Toast.show({
         type: "success",
         text1: "Victoire !",
-        text2: `Score: ${newScore} points`,
+        text2: `Score: ${nouveauScore} points`,
       });
-    } else if (result === "O") {
-      message = "😔 Défaite ! L'IA a gagné.";
+    } else if (resultat === "O") {
       Toast.show({
         type: "error",
         text1: "Défaite",
         text2: "L'IA a gagné cette partie",
       });
     } else {
-      newScore = 50; // Score pour match nul
-      message = "🤝 Match nul !";
+      nouveauScore = 50; // Score pour match nul
       Toast.show({
         type: "info",
         text1: "Match nul",
@@ -121,109 +113,115 @@ const TicTacToe = ({ navigation, route }) => {
       });
     }
 
-    setScore((prev) => prev + newScore);
+    setScore((prev) => prev + nouveauScore);
 
     // Sauvegarder la partie
-    const gameResult = {
+    const resultatPartie = {
       id: Date.now(),
-      result,
-      score: newScore,
-      time,
+      resultat,
+      score: nouveauScore,
+      temps,
       date: new Date().toISOString(),
     };
-    setGameHistory((prev) => [gameResult, ...prev]);
+    setHistoriqueParties((prev) => [resultatPartie, ...prev]);
   };
 
   // Recommencer une partie
-  const resetGame = () => {
-    setBoard(Array(9).fill(null));
-    setXIsNext(true);
-    setGameOver(false);
-    setWinner(null);
-    setTimeElapsed(0);
-    setIsPlaying(true);
+  const recommencerPartie = () => {
+    setPlateau(Array(9).fill(null));
+    setTourJoueur(true);
+    setPartieTerminee(false);
+    setGagnant(null);
+    setTempsEcoule(0);
+    setEnPartie(true);
   };
 
   // Nouvelle partie
-  const newGame = () => {
-    setLoading(true);
+  const nouvellePartie = () => {
+    setChargement(true);
     setTimeout(() => {
-      resetGame();
-      setLoading(false);
+      recommencerPartie();
+      setChargement(false);
     }, 500);
   };
 
   // Rendre une case du plateau
-  const renderSquare = (i) => {
-    const value = board[i];
-    const isWinningSquare = winner && calculateWinner(board) === value;
+  const rendreCase = (index) => {
+    const valeur = plateau[index];
+    const estCaseGagnante = gagnant && verifierGagnant(plateau) === valeur;
 
     return (
       <TouchableOpacity
-        key={i}
-        style={[styles.square, isWinningSquare && styles.winningSquare]}
-        onPress={() => handleClick(i)}
-        disabled={gameOver}>
+        key={index}
+        style={[styles.case, estCaseGagnante && styles.caseGagnante]}
+        onPress={() => gererClicCase(index)}
+        disabled={partieTerminee}>
         <Text
           style={[
-            styles.squareText,
-            value === "X" && styles.xText,
-            value === "O" && styles.oText,
-            isWinningSquare && styles.winningText,
+            styles.texteCase,
+            valeur === "X" && styles.texteX,
+            valeur === "O" && styles.texteO,
+            estCaseGagnante && styles.texteGagnant,
           ]}>
-          {value}
+          {valeur}
         </Text>
       </TouchableOpacity>
     );
   };
 
   // Rendre le plateau complet
-  const renderBoard = () => {
+  const rendrePlateau = () => {
     return (
-      <View style={styles.board}>
-        <View style={styles.boardRow}>
-          {renderSquare(0)}
-          {renderSquare(1)}
-          {renderSquare(2)}
+      <View style={styles.plateau}>
+        <View style={styles.lignePlateau}>
+          {rendreCase(0)}
+          {rendreCase(1)}
+          {rendreCase(2)}
         </View>
-        <View style={styles.boardRow}>
-          {renderSquare(3)}
-          {renderSquare(4)}
-          {renderSquare(5)}
+        <View style={styles.lignePlateau}>
+          {rendreCase(3)}
+          {rendreCase(4)}
+          {rendreCase(5)}
         </View>
-        <View style={styles.boardRow}>
-          {renderSquare(6)}
-          {renderSquare(7)}
-          {renderSquare(8)}
+        <View style={styles.lignePlateau}>
+          {rendreCase(6)}
+          {rendreCase(7)}
+          {rendreCase(8)}
         </View>
       </View>
     );
   };
 
   // Rendre les statistiques
-  const renderStats = () => {
-    const wins = gameHistory.filter((game) => game.result === "X").length;
-    const losses = gameHistory.filter((game) => game.result === "O").length;
-    const draws = gameHistory.filter((game) => game.result === "draw").length;
-    const totalGames = gameHistory.length;
+  const rendreStatistiques = () => {
+    const victoires = historiqueParties.filter(
+      (partie) => partie.resultat === "X"
+    ).length;
+    const defaites = historiqueParties.filter(
+      (partie) => partie.resultat === "O"
+    ).length;
+    const nuls = historiqueParties.filter(
+      (partie) => partie.resultat === "nul"
+    ).length;
+    const totalParties = historiqueParties.length;
 
     return (
-      <View style={styles.statsContainer}>
-        <View style={styles.statItem}>
-          <Text style={styles.statValue}>{wins}</Text>
-          <Text style={styles.statLabel}>Victoires</Text>
+      <View style={styles.containerStatistiques}>
+        <View style={styles.elementStat}>
+          <Text style={styles.valeurStat}>{victoires}</Text>
+          <Text style={styles.labelStat}>Victoires</Text>
         </View>
-        <View style={styles.statItem}>
-          <Text style={styles.statValue}>{losses}</Text>
-          <Text style={styles.statLabel}>Défaites</Text>
+        <View style={styles.elementStat}>
+          <Text style={styles.valeurStat}>{defaites}</Text>
+          <Text style={styles.labelStat}>Défaites</Text>
         </View>
-        <View style={styles.statItem}>
-          <Text style={styles.statValue}>{draws}</Text>
-          <Text style={styles.statLabel}>Nuls</Text>
+        <View style={styles.elementStat}>
+          <Text style={styles.valeurStat}>{nuls}</Text>
+          <Text style={styles.labelStat}>Nuls</Text>
         </View>
-        <View style={styles.statItem}>
-          <Text style={styles.statValue}>{totalGames}</Text>
-          <Text style={styles.statLabel}>Total</Text>
+        <View style={styles.elementStat}>
+          <Text style={styles.valeurStat}>{totalParties}</Text>
+          <Text style={styles.labelStat}>Total</Text>
         </View>
       </View>
     );
@@ -231,74 +229,76 @@ const TicTacToe = ({ navigation, route }) => {
 
   return (
     <View style={styles.container}>
-      {loading && (
-        <View style={styles.loadingContainer}>
+      {chargement && (
+        <View style={styles.containerChargement}>
           <ActivityIndicator size='large' color='#667eea' />
-          <Text style={styles.loadingText}>Nouvelle partie...</Text>
+          <Text style={styles.texteChargement}>Nouvelle partie...</Text>
         </View>
       )}
 
-      {!loading && (
+      {!chargement && (
         <>
-          {/* Header */}
-          <LinearGradient colors={["#667eea", "#764ba2"]} style={styles.header}>
-            <View style={styles.headerContent}>
+          {/* En-tête */}
+          <LinearGradient colors={["#667eea", "#764ba2"]} style={styles.enTete}>
+            <View style={styles.contenuEnTete}>
               <TouchableOpacity
-                style={styles.backButton}
+                style={styles.boutonRetour}
                 onPress={() => navigation.goBack()}>
                 <Ionicons name='arrow-back' size={24} color='#fff' />
               </TouchableOpacity>
-              <Text style={styles.gameTitle}>Morpion</Text>
-              <View style={styles.scoreContainer}>
-                <Text style={styles.scoreText}>{score}</Text>
-                <Text style={styles.scoreLabel}>points</Text>
+              <Text style={styles.titreJeu}>Morpion</Text>
+              <View style={styles.containerScore}>
+                <Text style={styles.texteScore}>{score}</Text>
+                <Text style={styles.labelScore}>points</Text>
               </View>
             </View>
           </LinearGradient>
 
           {/* Informations du jeu */}
-          <View style={styles.gameInfo}>
-            <View style={styles.playerInfo}>
-              <Text style={styles.playerLabel}>
-                {xIsNext ? "Votre tour" : "Tour de l'IA"}
+          <View style={styles.infoJeu}>
+            <View style={styles.infoJoueur}>
+              <Text style={styles.labelJoueur}>
+                {tourJoueur ? "Votre tour" : "Tour de l'IA"}
               </Text>
-              <Text style={styles.playerSymbol}>{xIsNext ? "X" : "O"}</Text>
+              <Text style={styles.symboleJoueur}>{tourJoueur ? "X" : "O"}</Text>
             </View>
 
-            <View style={styles.timerContainer}>
+            <View style={styles.containerTimer}>
               <Ionicons name='time' size={20} color='#667eea' />
-              <Text style={styles.timerText}>
-                {Math.floor(timeElapsed / 60)}:
-                {(timeElapsed % 60).toString().padStart(2, "0")}
+              <Text style={styles.texteTimer}>
+                {Math.floor(tempsEcoule / 60)}:
+                {(tempsEcoule % 60).toString().padStart(2, "0")}
               </Text>
             </View>
           </View>
 
           {/* Plateau de jeu */}
-          <View style={styles.gameContainer}>{renderBoard()}</View>
+          <View style={styles.containerJeu}>{rendrePlateau()}</View>
 
           {/* Boutons d'action */}
-          <View style={styles.actionsContainer}>
-            <TouchableOpacity style={styles.actionButton} onPress={newGame}>
+          <View style={styles.containerActions}>
+            <TouchableOpacity
+              style={styles.boutonAction}
+              onPress={nouvellePartie}>
               <Ionicons name='refresh' size={20} color='#fff' />
-              <Text style={styles.actionButtonText}>Nouvelle partie</Text>
+              <Text style={styles.texteBoutonAction}>Nouvelle partie</Text>
             </TouchableOpacity>
 
-            {gameOver && (
+            {partieTerminee && (
               <TouchableOpacity
-                style={[styles.actionButton, styles.primaryButton]}
-                onPress={resetGame}>
+                style={[styles.boutonAction, styles.boutonPrincipal]}
+                onPress={recommencerPartie}>
                 <Ionicons name='play' size={20} color='#fff' />
-                <Text style={styles.actionButtonText}>Rejouer</Text>
+                <Text style={styles.texteBoutonAction}>Rejouer</Text>
               </TouchableOpacity>
             )}
           </View>
 
           {/* Statistiques */}
-          {gameHistory.length > 0 && (
-            <View style={styles.statsSection}>
-              <Text style={styles.statsTitle}>Statistiques</Text>
-              {renderStats()}
+          {historiqueParties.length > 0 && (
+            <View style={styles.sectionStatistiques}>
+              <Text style={styles.titreStatistiques}>Statistiques</Text>
+              {rendreStatistiques()}
             </View>
           )}
         </>
@@ -314,49 +314,49 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#f8f9fa",
   },
-  loadingContainer: {
+  containerChargement: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "#f8f9fa",
   },
-  loadingText: {
+  texteChargement: {
     marginTop: 10,
     fontSize: 16,
     color: "#667eea",
   },
-  header: {
+  enTete: {
     paddingTop: 50,
     paddingBottom: 20,
     paddingHorizontal: 20,
   },
-  headerContent: {
+  contenuEnTete: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
   },
-  backButton: {
+  boutonRetour: {
     padding: 8,
   },
-  gameTitle: {
+  titreJeu: {
     fontSize: 24,
     fontWeight: "bold",
     color: "#fff",
   },
-  scoreContainer: {
+  containerScore: {
     alignItems: "center",
   },
-  scoreText: {
+  texteScore: {
     fontSize: 20,
     fontWeight: "bold",
     color: "#fff",
   },
-  scoreLabel: {
+  labelScore: {
     fontSize: 12,
     color: "#fff",
     opacity: 0.8,
   },
-  gameInfo: {
+  infoJeu: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
@@ -372,37 +372,37 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
-  playerInfo: {
+  infoJoueur: {
     flexDirection: "row",
     alignItems: "center",
   },
-  playerLabel: {
+  labelJoueur: {
     fontSize: 16,
     color: "#333",
     marginRight: 10,
   },
-  playerSymbol: {
+  symboleJoueur: {
     fontSize: 24,
     fontWeight: "bold",
     color: "#667eea",
   },
-  timerContainer: {
+  containerTimer: {
     flexDirection: "row",
     alignItems: "center",
   },
-  timerText: {
+  texteTimer: {
     fontSize: 16,
     fontWeight: "bold",
     color: "#667eea",
     marginLeft: 5,
   },
-  gameContainer: {
+  containerJeu: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: 20,
   },
-  board: {
+  plateau: {
     width: width - 80,
     height: width - 80,
     backgroundColor: "#fff",
@@ -414,11 +414,11 @@ const styles = StyleSheet.create({
     elevation: 5,
     padding: 10,
   },
-  boardRow: {
+  lignePlateau: {
     flex: 1,
     flexDirection: "row",
   },
-  square: {
+  case: {
     flex: 1,
     margin: 2,
     backgroundColor: "#f8f9fa",
@@ -426,29 +426,29 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderRadius: 8,
   },
-  squareText: {
+  texteCase: {
     fontSize: 36,
     fontWeight: "bold",
   },
-  xText: {
+  texteX: {
     color: "#667eea",
   },
-  oText: {
+  texteO: {
     color: "#e74c3c",
   },
-  winningSquare: {
+  caseGagnante: {
     backgroundColor: "#667eea",
   },
-  winningText: {
+  texteGagnant: {
     color: "#fff",
   },
-  actionsContainer: {
+  containerActions: {
     flexDirection: "row",
     justifyContent: "space-around",
     paddingHorizontal: 20,
     paddingVertical: 20,
   },
-  actionButton: {
+  boutonAction: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#6c757d",
@@ -456,25 +456,25 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 8,
   },
-  primaryButton: {
+  boutonPrincipal: {
     backgroundColor: "#667eea",
   },
-  actionButtonText: {
+  texteBoutonAction: {
     color: "#fff",
     fontWeight: "bold",
     marginLeft: 8,
   },
-  statsSection: {
+  sectionStatistiques: {
     paddingHorizontal: 20,
     paddingBottom: 20,
   },
-  statsTitle: {
+  titreStatistiques: {
     fontSize: 18,
     fontWeight: "bold",
     color: "#333",
     marginBottom: 15,
   },
-  statsContainer: {
+  containerStatistiques: {
     flexDirection: "row",
     justifyContent: "space-around",
     backgroundColor: "#fff",
@@ -486,19 +486,19 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
-  statItem: {
+  elementStat: {
     alignItems: "center",
   },
-  statValue: {
+  valeurStat: {
     fontSize: 20,
     fontWeight: "bold",
     color: "#667eea",
   },
-  statLabel: {
+  labelStat: {
     fontSize: 12,
     color: "#666",
     marginTop: 2,
   },
 });
 
-export default TicTacToe;
+export default Morpion;

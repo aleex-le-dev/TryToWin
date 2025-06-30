@@ -8,7 +8,7 @@ import HomeScreen from "../screens/HomeScreen";
 import ProfileScreen from "../screens/ProfileScreen";
 import GameDetailsScreen from "../screens/GameDetailsScreen";
 import SocialScreen from "../screens/SocialScreen";
-import TicTacToe from "../games/TicTacToe";
+import Morpion from "../games/TicTacToe";
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -19,7 +19,7 @@ const GamesStack = () => {
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name='GamesMain' component={HomeScreen} />
       <Stack.Screen name='GameDetails' component={GameDetailsScreen} />
-      <Stack.Screen name='TicTacToe' component={TicTacToe} />
+      <Stack.Screen name='TicTacToe' component={Morpion} />
     </Stack.Navigator>
   );
 };
