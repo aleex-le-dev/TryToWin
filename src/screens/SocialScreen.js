@@ -1,0 +1,257 @@
+// SocialScreen.js - Écran social pour ajouter des amis et chatter
+// Utilisé dans la barre de navigation principale (onglet Social)
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  TouchableOpacity,
+  TextInput,
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+
+// Données fictives pour la démonstration
+const allUsers = [
+  { id: "1", username: "MariePro" },
+  { id: "2", username: "PierreMaster" },
+  { id: "3", username: "SophieWin" },
+  { id: "4", username: "LucasChamp" },
+];
+
+export default function SocialScreen() {
+  // Liste d'amis simulée
+  const [friends, setFriends] = useState([
+    { id: "2", username: "PierreMaster" },
+  ]);
+  const [selectedFriend, setSelectedFriend] = useState(null);
+  const [messages, setMessages] = useState([]);
+  const [input, setInput] = useState("");
+  const [search, setSearch] = useState("");
+  const [longPressedFriendId, setLongPressedFriendId] = useState(null);
+
+  // Ajouter un ami
+  const addFriend = (user) => {
+    if (!friends.find((f) => f.id === user.id)) {
+      setFriends([...friends, user]);
+    }
+  };
+
+  // Envoyer un message (mock)
+  const sendMessage = () => {
+    if (input.trim() && selectedFriend) {
+      setMessages([...messages, { fromMe: true, text: input }]);
+      setInput("");
+    }
+  };
+
+  // Supprimer un ami
+  const removeFriend = (id) => {
+    setFriends(friends.filter((f) => f.id !== id));
+    setLongPressedFriendId(null);
+  };
+
+  // Filtrage des utilisateurs selon la recherche
+  const filteredUsers = allUsers.filter(
+    (u) =>
+      !friends.find((f) => f.id === u.id) &&
+      u.username.toLowerCase().includes(search.toLowerCase())
+  );
+
+  // Affichage du chat avec un ami
+  const renderChat = () => (
+    <View style={styles.chatContainer}>
+      <Text style={styles.chatTitle}>Chat avec {selectedFriend.username}</Text>
+      <FlatList
+        data={messages}
+        keyExtractor={(_, i) => i.toString()}
+        renderItem={({ item }) => (
+          <View
+            style={[
+              styles.messageBubble,
+              item.fromMe ? styles.myMessage : styles.theirMessage,
+            ]}>
+            <Text style={styles.messageText}>{item.text}</Text>
+          </View>
+        )}
+        style={{ flex: 1 }}
+      />
+      <View style={styles.inputRow}>
+        <TextInput
+          style={styles.input}
+          value={input}
+          onChangeText={setInput}
+          placeholder='Votre message...'
+        />
+        <TouchableOpacity onPress={sendMessage}>
+          <Ionicons name='send' size={24} color='#667eea' />
+        </TouchableOpacity>
+      </View>
+      <TouchableOpacity
+        style={styles.backButton}
+        onPress={() => setSelectedFriend(null)}>
+        <Ionicons name='arrow-back' size={20} color='#667eea' />
+        <Text style={styles.backText}>Retour</Text>
+      </TouchableOpacity>
+    </View>
+  );
+
+  // Affichage principal : recherche, liste d'amis et d'utilisateurs
+  return (
+    <View style={styles.container}>
+      {selectedFriend ? (
+        renderChat()
+      ) : (
+        <>
+          <Text style={styles.sectionTitle}>Rechercher une personne</Text>
+          <View style={styles.searchContainer}>
+            <Ionicons
+              name='search'
+              size={20}
+              color='#667eea'
+              style={{ marginRight: 8 }}
+            />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Nom d'utilisateur..."
+              value={search}
+              onChangeText={setSearch}
+            />
+          </View>
+          <Text style={styles.sectionTitle}>Amis</Text>
+          <FlatList
+            data={friends}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                style={styles.friendItem}
+                onPress={() => setSelectedFriend(item)}
+                onLongPress={() => setLongPressedFriendId(item.id)}
+                activeOpacity={0.7}>
+                <Ionicons name='person-circle' size={28} color='#667eea' />
+                <Text style={styles.friendName}>{item.username}</Text>
+                <Ionicons
+                  name='chatbubble-ellipses'
+                  size={20}
+                  color='#4ECDC4'
+                />
+                {longPressedFriendId === item.id && (
+                  <TouchableOpacity
+                    onPress={() => removeFriend(item.id)}
+                    style={styles.deleteIcon}>
+                    <Ionicons name='trash' size={22} color='#FF6B6B' />
+                  </TouchableOpacity>
+                )}
+              </TouchableOpacity>
+            )}
+            ListEmptyComponent={
+              <Text style={styles.emptyText}>Aucun ami pour l'instant.</Text>
+            }
+          />
+          <Text style={styles.sectionTitle}>Ajouter des personnes</Text>
+          <FlatList
+            data={filteredUsers}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => (
+              <View style={styles.userItem}>
+                <Ionicons name='person-add' size={24} color='#FFD700' />
+                <Text style={styles.userName}>{item.username}</Text>
+                <TouchableOpacity onPress={() => addFriend(item)}>
+                  <Ionicons name='add-circle' size={24} color='#4ECDC4' />
+                </TouchableOpacity>
+              </View>
+            )}
+            ListEmptyComponent={
+              <Text style={styles.emptyText}>Aucun utilisateur trouvé.</Text>
+            }
+          />
+        </>
+      )}
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: "#f8f9fa", padding: 20 },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#333",
+    marginVertical: 10,
+  },
+  friendItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 8,
+    elevation: 2,
+  },
+  friendName: { flex: 1, fontSize: 16, color: "#333", marginLeft: 10 },
+  userItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 8,
+    elevation: 1,
+  },
+  userName: { flex: 1, fontSize: 16, color: "#333", marginLeft: 10 },
+  emptyText: {
+    color: "#6c757d",
+    fontStyle: "italic",
+    textAlign: "center",
+    marginVertical: 10,
+  },
+  chatContainer: { flex: 1 },
+  chatTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#667eea",
+    marginBottom: 10,
+  },
+  messageBubble: {
+    padding: 10,
+    borderRadius: 10,
+    marginVertical: 4,
+    maxWidth: "80%",
+  },
+  myMessage: { backgroundColor: "#e1f5fe", alignSelf: "flex-end" },
+  theirMessage: { backgroundColor: "#f1f3f4", alignSelf: "flex-start" },
+  messageText: { fontSize: 15, color: "#333" },
+  inputRow: { flexDirection: "row", alignItems: "center", marginTop: 10 },
+  input: {
+    flex: 1,
+    backgroundColor: "#fff",
+    borderRadius: 20,
+    paddingHorizontal: 15,
+    paddingVertical: 8,
+    fontSize: 15,
+    borderWidth: 1,
+    borderColor: "#e9ecef",
+    marginRight: 10,
+  },
+  backButton: { flexDirection: "row", alignItems: "center", marginTop: 10 },
+  backText: { color: "#667eea", marginLeft: 5, fontSize: 15 },
+  searchContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#fff",
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: "#e9ecef",
+  },
+  searchInput: { flex: 1, fontSize: 15, color: "#333" },
+  deleteIcon: {
+    marginLeft: 10,
+    padding: 4,
+    borderRadius: 12,
+    backgroundColor: "#fff",
+    elevation: 2,
+  },
+});

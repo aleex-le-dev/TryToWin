@@ -7,6 +7,7 @@ import { Ionicons } from "@expo/vector-icons";
 import HomeScreen from "../screens/HomeScreen";
 import ProfileScreen from "../screens/ProfileScreen";
 import GameDetailsScreen from "../screens/GameDetailsScreen";
+import SocialScreen from "../screens/SocialScreen";
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -33,6 +34,7 @@ const MainTabNavigator = () => {
             iconName = focused ? "game-controller" : "game-controller-outline";
           } else if (route.name === "Profile") {
             iconName = focused ? "person" : "person-outline";
+          } else if (route.name === "Social") {
           }
 
           return <Ionicons name={iconName} size={size} color={color} />;
@@ -73,6 +75,13 @@ const MainTabNavigator = () => {
         component={ProfileScreen}
         options={{
           title: "Profil",
+        }}
+      />
+      <Tab.Screen
+        name='Social'
+        component={SocialScreen}
+        options={{
+          title: "Social",
         }}
       />
     </Tab.Navigator>

@@ -170,19 +170,6 @@ const HomeScreen = ({ navigation }) => {
           <Text style={styles.gameIcon}>{item.image}</Text>
           <Text style={styles.gameTitle}>{item.title}</Text>
           <Text style={styles.gameDescription}>{item.description}</Text>
-          <View style={styles.gameMeta}>
-            <View style={styles.gameMetaItem}>
-              <Ionicons name='people-outline' size={12} color='#fff' />
-              <Text style={styles.gameMetaText}>{item.players}</Text>
-            </View>
-            <View style={styles.gameMetaItem}>
-              <Ionicons name='star' size={12} color='#FFD700' />
-              <Text style={styles.gameMetaText}>{item.rating}</Text>
-            </View>
-            <View style={styles.difficultyBadge}>
-              <Text style={styles.difficultyText}>{item.difficulty}</Text>
-            </View>
-          </View>
         </View>
       </LinearGradient>
     </TouchableOpacity>
