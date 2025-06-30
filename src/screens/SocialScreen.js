@@ -10,6 +10,8 @@ import {
   TextInput,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import QRCode from "react-native-qrcode-svg";
+import Toast from "react-native-toast-message";
 
 // Données fictives pour la démonstration
 const allUsers = [
@@ -29,6 +31,21 @@ export default function SocialScreen() {
   const [input, setInput] = useState("");
   const [search, setSearch] = useState("");
   const [longPressedFriendId, setLongPressedFriendId] = useState(null);
+
+  // Lien unique de profil (à adapter selon la logique réelle)
+  const myProfileLink = `trytowin://addfriend/1234`;
+
+  // Fonction pour copier le lien
+  const copyToClipboard = async () => {
+    await navigator.clipboard.writeText(myProfileLink);
+    Toast.show({
+      type: "success",
+      text1: "Lien copié",
+      text2: "Le lien de votre profil a été copié !",
+      position: "top",
+      visibilityTime: 1500,
+    });
+  };
 
   // Ajouter un ami
   const addFriend = (user) => {
@@ -99,6 +116,24 @@ export default function SocialScreen() {
   // Affichage principal : recherche, liste d'amis et d'utilisateurs
   return (
     <View style={styles.container}>
+      {/* Section Partager mon profil avec QR code et lien */}
+      <View style={styles.shareProfileSection}>
+        <Text style={styles.shareTitle}>Partager mon profil</Text>
+        <View style={styles.qrAndLinkRow}>
+          <QRCode value={myProfileLink} size={90} />
+          <View style={styles.linkColumn}>
+            <Text style={styles.profileLink}>{myProfileLink}</Text>
+            <TouchableOpacity
+              style={styles.copyButton}
+              onPress={copyToClipboard}>
+              <Ionicons name='copy' size={18} color='#667eea' />
+              <Text style={styles.copyButtonText}>Copier le lien</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+      {/* Toast pour feedback */}
+      <Toast />
       {selectedFriend ? (
         renderChat()
       ) : (
@@ -253,5 +288,51 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     backgroundColor: "#fff",
     elevation: 2,
+  },
+  shareProfileSection: {
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    padding: 18,
+    marginBottom: 18,
+    alignItems: "center",
+    elevation: 3,
+    flexDirection: "column",
+  },
+  shareTitle: {
+    fontSize: 17,
+    fontWeight: "bold",
+    color: "#667eea",
+    marginBottom: 10,
+  },
+  qrAndLinkRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 18,
+  },
+  linkColumn: {
+    flexDirection: "column",
+    alignItems: "flex-start",
+    marginLeft: 10,
+    flex: 1,
+  },
+  profileLink: {
+    color: "#23272a",
+    fontSize: 13,
+    marginBottom: 6,
+    maxWidth: 170,
+  },
+  copyButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#f1f3f4",
+    borderRadius: 8,
+    paddingVertical: 5,
+    paddingHorizontal: 12,
+  },
+  copyButtonText: {
+    color: "#667eea",
+    fontWeight: "bold",
+    marginLeft: 6,
+    fontSize: 13,
   },
 });
