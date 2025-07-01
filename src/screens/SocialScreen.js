@@ -1,6 +1,6 @@
 // SocialScreen.js - Écran social pour ajouter des amis et chatter
 // Utilisé dans la barre de navigation principale (onglet Social)
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -8,6 +8,8 @@ import {
   FlatList,
   TouchableOpacity,
   TextInput,
+  Clipboard,
+  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import QRCode from "react-native-qrcode-svg";
@@ -35,63 +37,139 @@ export default function SocialScreen() {
   // Lien unique de profil (à adapter selon la logique réelle)
   const myProfileLink = `trytowin://addfriend/1234`;
 
-  // Fonction pour copier le lien
+  // Fonction pour copier le lien avec gestion d'erreur
   const copyToClipboard = async () => {
-    await navigator.clipboard.writeText(myProfileLink);
-    Toast.show({
-      type: "success",
-      text1: "Lien copié",
-      text2: "Le lien de votre profil a été copié !",
-      position: "top",
-      visibilityTime: 1500,
-    });
-  };
-
-  // Ajouter un ami
-  const addFriend = (user) => {
-    if (!friends.find((f) => f.id === user.id)) {
-      setFriends([...friends, user]);
+    try {
+      await Clipboard.setString(myProfileLink);
+      Toast.show({
+        type: "success",
+        text1: "Lien copié",
+        text2: "Le lien de votre profil a été copié !",
+        position: "top",
+        visibilityTime: 1500,
+      });
+    } catch (error) {
+      console.error("Erreur lors de la copie:", error);
+      Toast.show({
+        type: "error",
+        text1: "Erreur",
+        text2: "Impossible de copier le lien",
+        position: "top",
+        visibilityTime: 1500,
+      });
     }
   };
 
-  // Envoyer un message (mock)
-  const sendMessage = () => {
+  // Ajouter un ami avec vérification
+  const addFriend = useCallback(
+    (user) => {
+      if (user && user.id && !friends.find((f) => f.id === user.id)) {
+        setFriends((prev) => [...prev, user]);
+      }
+    },
+    [friends]
+  );
+
+  // Envoyer un message (mock) avec vérification
+  const sendMessage = useCallback(() => {
     if (input.trim() && selectedFriend) {
-      setMessages([...messages, { fromMe: true, text: input }]);
+      setMessages((prev) => [...prev, { fromMe: true, text: input.trim() }]);
       setInput("");
     }
-  };
+  }, [input, selectedFriend]);
 
-  // Supprimer un ami
-  const removeFriend = (id) => {
-    setFriends(friends.filter((f) => f.id !== id));
-    setLongPressedFriendId(null);
-  };
+  // Supprimer un ami avec confirmation
+  const removeFriend = useCallback((id) => {
+    Alert.alert(
+      "Supprimer l'ami",
+      "Êtes-vous sûr de vouloir supprimer cet ami ?",
+      [
+        { text: "Annuler", style: "cancel" },
+        {
+          text: "Supprimer",
+          style: "destructive",
+          onPress: () => {
+            setFriends((prev) => prev.filter((f) => f.id !== id));
+            setLongPressedFriendId(null);
+          },
+        },
+      ]
+    );
+  }, []);
 
   // Filtrage des utilisateurs selon la recherche
   const filteredUsers = allUsers.filter(
     (u) =>
+      u &&
+      u.id &&
+      u.username &&
       !friends.find((f) => f.id === u.id) &&
       u.username.toLowerCase().includes(search.toLowerCase())
+  );
+
+  // Rendu optimisé des messages
+  const renderMessage = useCallback(
+    ({ item }) => (
+      <View
+        style={[
+          styles.messageBubble,
+          item.fromMe ? styles.myMessage : styles.theirMessage,
+        ]}>
+        <Text style={styles.messageText}>{item.text}</Text>
+      </View>
+    ),
+    []
+  );
+
+  // Rendu optimisé des amis
+  const renderFriend = useCallback(
+    ({ item }) => (
+      <TouchableOpacity
+        style={styles.friendItem}
+        onPress={() => setSelectedFriend(item)}
+        onLongPress={() => setLongPressedFriendId(item.id)}
+        activeOpacity={0.7}>
+        <Ionicons name='person-circle' size={28} color='#667eea' />
+        <Text style={styles.friendName}>{item.username}</Text>
+        <Ionicons name='chatbubble-ellipses' size={20} color='#4ECDC4' />
+        {longPressedFriendId === item.id && (
+          <TouchableOpacity
+            onPress={() => removeFriend(item.id)}
+            style={styles.deleteIcon}>
+            <Ionicons name='trash' size={22} color='#FF6B6B' />
+          </TouchableOpacity>
+        )}
+      </TouchableOpacity>
+    ),
+    [longPressedFriendId, removeFriend]
+  );
+
+  // Rendu optimisé des utilisateurs
+  const renderUser = useCallback(
+    ({ item }) => (
+      <View style={styles.userItem}>
+        <Ionicons name='person-add' size={24} color='#FFD700' />
+        <Text style={styles.userName}>{item.username}</Text>
+        <TouchableOpacity onPress={() => addFriend(item)}>
+          <Ionicons name='add-circle' size={24} color='#4ECDC4' />
+        </TouchableOpacity>
+      </View>
+    ),
+    [addFriend]
   );
 
   // Affichage du chat avec un ami
   const renderChat = () => (
     <View style={styles.chatContainer}>
-      <Text style={styles.chatTitle}>Chat avec {selectedFriend.username}</Text>
+      <Text style={styles.chatTitle}>Chat avec {selectedFriend?.username}</Text>
       <FlatList
         data={messages}
         keyExtractor={(_, i) => i.toString()}
-        renderItem={({ item }) => (
-          <View
-            style={[
-              styles.messageBubble,
-              item.fromMe ? styles.myMessage : styles.theirMessage,
-            ]}>
-            <Text style={styles.messageText}>{item.text}</Text>
-          </View>
-        )}
+        renderItem={renderMessage}
         style={{ flex: 1 }}
+        removeClippedSubviews={true}
+        maxToRenderPerBatch={10}
+        windowSize={10}
       />
       <View style={styles.inputRow}>
         <TextInput
@@ -99,6 +177,7 @@ export default function SocialScreen() {
           value={input}
           onChangeText={setInput}
           placeholder='Votre message...'
+          multiline={false}
         />
         <TouchableOpacity onPress={sendMessage}>
           <Ionicons name='send' size={24} color='#667eea' />
@@ -151,54 +230,32 @@ export default function SocialScreen() {
               placeholder="Nom d'utilisateur..."
               value={search}
               onChangeText={setSearch}
+              multiline={false}
             />
           </View>
           <Text style={styles.sectionTitle}>Amis</Text>
           <FlatList
             data={friends}
             keyExtractor={(item) => item.id}
-            renderItem={({ item }) => (
-              <TouchableOpacity
-                style={styles.friendItem}
-                onPress={() => setSelectedFriend(item)}
-                onLongPress={() => setLongPressedFriendId(item.id)}
-                activeOpacity={0.7}>
-                <Ionicons name='person-circle' size={28} color='#667eea' />
-                <Text style={styles.friendName}>{item.username}</Text>
-                <Ionicons
-                  name='chatbubble-ellipses'
-                  size={20}
-                  color='#4ECDC4'
-                />
-                {longPressedFriendId === item.id && (
-                  <TouchableOpacity
-                    onPress={() => removeFriend(item.id)}
-                    style={styles.deleteIcon}>
-                    <Ionicons name='trash' size={22} color='#FF6B6B' />
-                  </TouchableOpacity>
-                )}
-              </TouchableOpacity>
-            )}
+            renderItem={renderFriend}
             ListEmptyComponent={
               <Text style={styles.emptyText}>Aucun ami pour l'instant.</Text>
             }
+            removeClippedSubviews={true}
+            maxToRenderPerBatch={10}
+            windowSize={10}
           />
           <Text style={styles.sectionTitle}>Ajouter des personnes</Text>
           <FlatList
             data={filteredUsers}
             keyExtractor={(item) => item.id}
-            renderItem={({ item }) => (
-              <View style={styles.userItem}>
-                <Ionicons name='person-add' size={24} color='#FFD700' />
-                <Text style={styles.userName}>{item.username}</Text>
-                <TouchableOpacity onPress={() => addFriend(item)}>
-                  <Ionicons name='add-circle' size={24} color='#4ECDC4' />
-                </TouchableOpacity>
-              </View>
-            )}
+            renderItem={renderUser}
             ListEmptyComponent={
               <Text style={styles.emptyText}>Aucun utilisateur trouvé.</Text>
             }
+            removeClippedSubviews={true}
+            maxToRenderPerBatch={10}
+            windowSize={10}
           />
         </>
       )}
