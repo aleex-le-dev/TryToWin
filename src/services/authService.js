@@ -14,6 +14,8 @@ import { auth } from "../utils/firebaseConfig";
 import { User } from "../models/User";
 import { getEmailUrls } from "../constants/emailConfig";
 import { handleAuthError, logSuccess, logInfo } from "../utils/errorHandler";
+import { doc, setDoc } from "firebase/firestore";
+import { db } from "../utils/firebaseConfig";
 
 class AuthService {
   // Connexion avec email/mot de passe
@@ -71,6 +73,14 @@ class AuthService {
 
       // Envoi de l'email de vérification (flow natif Firebase, pas d'option url)
       await sendEmailVerification(userCredential.user);
+
+      const tag = this.generateTag();
+
+      await setDoc(doc(db, "users", userCredential.user.uid), {
+        username: displayName,
+        email,
+        tag,
+      });
 
       logSuccess(
         `Compte créé avec succès pour: ${email}`,
@@ -184,6 +194,11 @@ class AuthService {
     } else {
       throw new Error("Utilisateur non connecté ou email non correspondant");
     }
+  }
+
+  // Génère un tag unique à 4 chiffres
+  generateTag() {
+    return Math.floor(1000 + Math.random() * 9000).toString();
   }
 }
 

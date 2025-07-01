@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -11,6 +11,7 @@ import {
   TextInput,
   Platform,
   Modal,
+  Button,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
@@ -19,6 +20,9 @@ import { Picker } from "@react-native-picker/picker";
 import { ColorPicker } from "react-native-color-picker";
 import { useAuth } from "../hooks/useAuth";
 import { messages } from "../constants/config";
+import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { db } from "../utils/firebaseConfig";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const { width } = Dimensions.get("window");
 
@@ -116,9 +120,73 @@ const countries = [
 const DEFAULT_BANNER =
   "https://placeholders.xyz/800x200/667eea/FFFFFF?text=Ma+Banni%C3%A8re";
 
+// Génère un tag unique à 4 chiffres
+function generateTag() {
+  return Math.floor(1000 + Math.random() * 9000).toString();
+}
+
+// Fonction utilitaire pour sauvegarder le profil localement
+const saveProfileLocally = async (userId, profileData) => {
+  try {
+    await AsyncStorage.setItem(
+      `profile_${userId}`,
+      JSON.stringify(profileData)
+    );
+    console.log("Profil sauvegardé localement");
+  } catch (e) {
+    console.log("Erreur lors de la sauvegarde locale du profil", e);
+  }
+};
+
+// Fonction utilitaire pour charger le profil local
+const loadProfileLocally = async (userId) => {
+  try {
+    const data = await AsyncStorage.getItem(`profile_${userId}`);
+    if (data) {
+      console.log("Profil chargé depuis le cache local");
+      return JSON.parse(data);
+    }
+  } catch (e) {
+    console.log("Erreur lors du chargement du profil local", e);
+  }
+  return null;
+};
+
+// --- GESTION DE LA QUEUE DE SYNCHRONISATION ---
+// Ajoute une modification à la queue locale
+const addToProfileQueue = async (userId, modif) => {
+  try {
+    const key = `profile_queue_${userId}`;
+    const queue = JSON.parse(await AsyncStorage.getItem(key)) || [];
+    queue.push(modif);
+    await AsyncStorage.setItem(key, JSON.stringify(queue));
+    console.log("Modification ajoutée à la queue de synchronisation");
+  } catch (e) {
+    console.log("Erreur lors de l'ajout à la queue", e);
+  }
+};
+
+// Vide la queue locale (après synchro réussie)
+const clearProfileQueue = async (userId) => {
+  try {
+    await AsyncStorage.removeItem(`profile_queue_${userId}`);
+    console.log("Queue de synchronisation vidée");
+  } catch (e) {}
+};
+
+// Charge la queue locale
+const loadProfileQueue = async (userId) => {
+  try {
+    const data = await AsyncStorage.getItem(`profile_queue_${userId}`);
+    return data ? JSON.parse(data) : [];
+  } catch (e) {
+    return [];
+  }
+};
+
 // Écran de profil avec classement et statistiques
 const ProfileScreen = ({ navigation }) => {
-  const { logout } = useAuth();
+  const { logout, user, loading } = useAuth();
   const [activeTab, setActiveTab] = useState("profile");
   const [profileBanner, setProfileBanner] = useState("");
   const [profileAvatar, setProfileAvatar] = useState("👑");
@@ -133,6 +201,15 @@ const ProfileScreen = ({ navigation }) => {
   const [bannerModalVisible, setBannerModalVisible] = useState(false);
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [leaderboardType, setLeaderboardType] = useState("global");
+  const [profile, setProfile] = useState(null);
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [editData, setEditData] = useState({
+    username: "",
+    avatar: "",
+    bio: "",
+    country: "",
+  });
+  const [syncPending, setSyncPending] = useState(false);
 
   const userStats = {
     totalScore: 2847,
@@ -153,6 +230,87 @@ const ProfileScreen = ({ navigation }) => {
   const top10Country = leaderboardDataWithCountry
     .filter((item) => item.country.code === selectedCountry.code)
     .slice(0, 10);
+
+  // Récupération du profil Firestore à l'ouverture
+  useEffect(() => {
+    console.log("ProfileScreen - Loading:", loading);
+    console.log("ProfileScreen - User state:", user);
+    console.log("ProfileScreen - User ID:", user?.id);
+    console.log("ProfileScreen - User email:", user?.email);
+
+    if (user?.id) {
+      const fetchProfile = async () => {
+        // 1. Charger d'abord le cache local
+        const localProfile = await loadProfileLocally(user.id);
+        if (localProfile) {
+          setProfile(localProfile);
+        }
+        // 2. Tenter de charger Firestore
+        try {
+          const docRef = doc(db, "users", user.id);
+          const docSnap = await getDoc(docRef);
+          if (docSnap.exists()) {
+            const data = docSnap.data();
+            if (!data.tag) {
+              // Génère un tag localement
+              const newTag = generateTag();
+              console.log("Tag généré localement :", newTag);
+              setProfile({ ...data, tag: newTag });
+              saveProfileLocally(user.id, { ...data, tag: newTag });
+              // Tente de le sauvegarder en BDD (en arrière-plan)
+              try {
+                await updateDoc(docRef, { tag: newTag });
+                console.log("Tag sauvegardé en BDD :", newTag);
+              } catch (e) {
+                console.log(
+                  "Impossible de sauvegarder le tag en BDD (mode hors-ligne ou erreur Firestore)"
+                );
+                // Ajoute à la queue
+                addToProfileQueue(user.id, { tag: newTag });
+                setSyncPending(true);
+              }
+            } else {
+              setProfile(data);
+              saveProfileLocally(user.id, data); // Ecrase le cache local avec la version serveur
+            }
+          } else {
+            // Si pas de doc, on génère un tag localement aussi
+            const newTag = generateTag();
+            setProfile({ tag: newTag });
+            saveProfileLocally(user.id, { tag: newTag });
+            addToProfileQueue(user.id, { tag: newTag });
+            setSyncPending(true);
+          }
+        } catch (e) {
+          console.log("Firestore inaccessible, profil local utilisé si dispo");
+        }
+        // 3. Tente de synchroniser la queue si Firestore est dispo
+        try {
+          const docRef = doc(db, "users", user.id);
+          const queue = await loadProfileQueue(user.id);
+          if (queue.length > 0) {
+            for (const modif of queue) {
+              await updateDoc(docRef, modif);
+            }
+            await clearProfileQueue(user.id);
+            setSyncPending(false);
+            Toast.show({
+              type: "success",
+              text1: "Profil synchronisé",
+              text2:
+                "Toutes vos modifications ont été enregistrées sur le cloud.",
+              position: "top",
+              visibilityTime: 2000,
+            });
+          }
+        } catch (e) {
+          if ((await loadProfileQueue(user.id)).length > 0)
+            setSyncPending(true);
+        }
+      };
+      fetchProfile();
+    }
+  }, [user, loading]);
 
   const handleLogout = async () => {
     const result = await logout();
@@ -178,6 +336,14 @@ const ProfileScreen = ({ navigation }) => {
         position: "top",
         visibilityTime: 3000,
       });
+    }
+  };
+
+  const handleCountryChange = async (countryCode) => {
+    if (user?.id) {
+      const userRef = doc(db, "users", user.id);
+      await updateDoc(userRef, { country: countryCode });
+      setProfile((prev) => ({ ...prev, country: countryCode }));
     }
   };
 
@@ -251,6 +417,126 @@ const ProfileScreen = ({ navigation }) => {
     </View>
   );
 
+  // Ouvre le modal avec les valeurs actuelles
+  const openEditModal = () => {
+    console.log("Ouverture modal - User:", user);
+    console.log("Ouverture modal - User ID:", user?.id);
+    console.log("Ouverture modal - Profile:", profile);
+
+    setEditData({
+      username: profile?.username || user?.displayName || "",
+      avatar: profile?.avatar || "👑",
+      bio: profile?.bio || "",
+      country: profile?.country || "",
+    });
+    setEditModalVisible(true);
+  };
+
+  // Sauvegarde les modifications
+  const handleSaveProfile = async () => {
+    try {
+      if (!editData.username.trim()) {
+        Toast.show({
+          type: "error",
+          text1: "Erreur",
+          text2: "Le nom d'utilisateur ne peut pas être vide",
+          position: "top",
+          visibilityTime: 3000,
+        });
+        return;
+      }
+
+      if (!user?.id) {
+        console.log("User ID manquant:", user);
+        Toast.show({
+          type: "error",
+          text1: "Erreur",
+          text2: "Impossible de récupérer l'identifiant utilisateur",
+          position: "top",
+          visibilityTime: 3000,
+        });
+        return;
+      }
+
+      console.log("Tentative de sauvegarde pour l'utilisateur:", user.id);
+      console.log("Données à sauvegarder:", editData);
+
+      // Mise à jour de l'état local immédiatement
+      setProfile((prev) => {
+        const newProfile = { ...prev, ...editData };
+        saveProfileLocally(user.id, newProfile);
+        return newProfile;
+      });
+
+      // Fermeture de la modal
+      setEditModalVisible(false);
+
+      // Message de sauvegarde en cours
+      Toast.show({
+        type: "info",
+        text1: "Sauvegarde en cours...",
+        text2: "Vos modifications sont en cours d'enregistrement",
+        position: "top",
+        visibilityTime: 2000,
+      });
+
+      // Tentative de sauvegarde Firestore en arrière-plan
+      const userRef = doc(db, "users", user.id);
+      try {
+        await updateDoc(userRef, {
+          username: editData.username.trim(),
+          avatar: editData.avatar,
+          bio: editData.bio,
+          country: editData.country,
+        });
+        setSyncPending(false);
+        Toast.show({
+          type: "success",
+          text1: "Profil mis à jour",
+          text2: "Vos modifications ont été enregistrées avec succès",
+          position: "top",
+          visibilityTime: 2000,
+        });
+      } catch (firestoreError) {
+        // Ajoute la modif à la queue si Firestore échoue
+        addToProfileQueue(user.id, {
+          username: editData.username.trim(),
+          avatar: editData.avatar,
+          bio: editData.bio,
+          country: editData.country,
+        });
+        setSyncPending(true);
+        Toast.show({
+          type: "info",
+          text1: "Profil mis à jour localement",
+          text2:
+            "Modifications en attente de synchronisation (connexion perdue)",
+          position: "top",
+          visibilityTime: 3000,
+        });
+      }
+    } catch (error) {
+      console.error("Erreur lors de la sauvegarde du profil:", error);
+
+      let errorMessage = "Impossible de sauvegarder les modifications";
+      if (error.code === "unavailable") {
+        errorMessage =
+          "Problème de connexion réseau. Vérifiez votre connexion internet.";
+      } else if (error.code === "permission-denied") {
+        errorMessage =
+          "Vous n'avez pas les permissions pour modifier ce profil.";
+      }
+
+      Toast.show({
+        type: "error",
+        text1: "Erreur de sauvegarde",
+        text2: errorMessage,
+        position: "top",
+        visibilityTime: 4000,
+      });
+    }
+  };
+
   return (
     <View style={styles.container}>
       {/* Header du profil */}
@@ -261,9 +547,20 @@ const ProfileScreen = ({ navigation }) => {
             <View style={styles.onlineIndicator} />
           </View>
           <View style={styles.userInfo}>
-            <Text style={styles.userName}>AlexGamer</Text>
+            <Text style={styles.userName}>
+              {/* Affiche le nom Firestore, sinon displayName, sinon fallback */}
+              {profile?.username || user?.displayName || "Utilisateur"}
+            </Text>
           </View>
         </View>
+        {syncPending && (
+          <View style={{ alignSelf: "center", marginTop: 6, marginBottom: -6 }}>
+            <Text
+              style={{ color: "#ffb300", fontWeight: "bold", fontSize: 13 }}>
+              Modifications en attente de synchronisation…
+            </Text>
+          </View>
+        )}
       </LinearGradient>
 
       {/* Onglets */}
@@ -316,21 +613,80 @@ const ProfileScreen = ({ navigation }) => {
             )}
             {/* Carte de joueur principale en overlay */}
             <View style={styles.playerCard}>
+              {/* Icône de modification en haut à droite de la carte */}
+              <TouchableOpacity
+                style={{
+                  position: "absolute",
+                  top: 16,
+                  right: 16,
+                  backgroundColor: "rgba(255,255,255,0.95)",
+                  borderRadius: 18,
+                  width: 36,
+                  height: 36,
+                  justifyContent: "center",
+                  alignItems: "center",
+                  elevation: 3,
+                  zIndex: 5,
+                }}
+                onPress={openEditModal}>
+                <Ionicons name='pencil' size={18} color='#667eea' />
+              </TouchableOpacity>
+
               {/* Avatar circulaire mis en avant, débordant */}
               <View style={styles.playerAvatarContainer}>
                 <Text style={styles.playerAvatar}>{profileAvatar}</Text>
               </View>
-              {/* Pseudo, tag et pays */}
+              {/* Pseudo, tag et pays dynamiques */}
               <View style={styles.playerIdentityRow}>
-                <Text style={styles.playerName}>{profileName}</Text>
-                <Text style={styles.playerTag}>#1234</Text>
+                {/* Nom d'utilisateur dynamique */}
+                <Text style={styles.playerName}>
+                  {profile?.username || user?.displayName || "Utilisateur"}
+                </Text>
+                {/* Tag affiché même s'il n'existe pas encore */}
+                <Text style={styles.playerTag}>#{profile?.tag || "----"}</Text>
+                {/* Badge de synchronisation si nécessaire */}
+                {syncPending && (
+                  <View
+                    style={{
+                      width: 14,
+                      height: 14,
+                      borderRadius: 7,
+                      backgroundColor: "#ffb300",
+                      marginLeft: 6,
+                      justifyContent: "center",
+                      alignItems: "center",
+                      borderWidth: 1,
+                      borderColor: "#fff",
+                    }}>
+                    <Ionicons name='cloud' size={10} color='#fff' />
+                  </View>
+                )}
+              </View>
+              {/* Tooltip/explication sous la ligne si badge affiché */}
+              {syncPending && (
+                <Text
+                  style={{
+                    color: "#ffb300",
+                    fontSize: 11,
+                    marginTop: -6,
+                    marginBottom: 4,
+                  }}>
+                  Modifications en attente de synchronisation
+                </Text>
+              )}
+              {/* Pays dynamique (drapeau + nom) */}
+              {
                 <View style={styles.playerCountry}>
-                  <Text style={styles.playerFlag}>{selectedCountry.flag}</Text>
+                  <Text style={styles.playerFlag}>
+                    {countries.find((c) => c.code === profile?.country)?.flag ||
+                      "🌍"}
+                  </Text>
                   <Text style={styles.playerCountryName}>
-                    {selectedCountry.name}
+                    {countries.find((c) => c.code === profile?.country)?.name ||
+                      "Pays inconnu"}
                   </Text>
                 </View>
-              </View>
+              }
               {/* Statistiques clés sous forme de mini-cartes */}
               <View style={styles.playerStatsRow}>
                 <View style={styles.playerStatCard}>
@@ -363,7 +719,9 @@ const ProfileScreen = ({ navigation }) => {
                 </View>
               </View>
               {/* Bio du joueur */}
-              <Text style={styles.playerBio}>{profileBio}</Text>
+              <Text style={styles.playerBio}>
+                {profile?.bio ? `« ${profile.bio} »` : ""}
+              </Text>
             </View>
           </View>
         ) : activeTab === "leaderboard" ? (
@@ -449,7 +807,7 @@ const ProfileScreen = ({ navigation }) => {
             </View>
           </View>
         ) : (
-          <View style={styles.profileContent}>
+          <View style={{ flex: 1, backgroundColor: "#18191c" }}>
             {/* Statistiques principales */}
             <View style={styles.statsGrid}>
               {renderStatCard(
@@ -527,8 +885,12 @@ const ProfileScreen = ({ navigation }) => {
             </View>
           </View>
         )}
+        {/* Fond noir sous la carte pour la transition */}
+        <View style={{ backgroundColor: "#18191c", height: 40 }} />
         {/* Bouton de déconnexion stylé en bas */}
-        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+        <TouchableOpacity
+          style={[styles.logoutButton, { marginTop: 30, alignSelf: "center" }]}
+          onPress={handleLogout}>
           <LinearGradient
             colors={["#ff6b6b", "#ee5a24"]}
             style={styles.logoutGradient}>
@@ -541,6 +903,103 @@ const ProfileScreen = ({ navigation }) => {
             <Text style={styles.logoutButtonText}>Se déconnecter</Text>
           </LinearGradient>
         </TouchableOpacity>
+        {/* Modal d'édition du profil */}
+        <Modal visible={editModalVisible} animationType='slide' transparent>
+          <View
+            style={{
+              flex: 1,
+              backgroundColor: "rgba(0,0,0,0.3)",
+              justifyContent: "center",
+              alignItems: "center",
+            }}>
+            <View
+              style={{
+                backgroundColor: "#fff",
+                borderRadius: 18,
+                padding: 24,
+                width: "85%",
+              }}>
+              <Text
+                style={{ fontWeight: "bold", fontSize: 18, marginBottom: 12 }}>
+                Modifier le profil
+              </Text>
+              <TextInput
+                placeholder="Nom d'utilisateur"
+                value={editData.username}
+                onChangeText={(v) =>
+                  setEditData((d) => ({ ...d, username: v }))
+                }
+                style={{
+                  borderBottomWidth: 1,
+                  borderColor: "#ccc",
+                  marginBottom: 12,
+                  fontSize: 16,
+                }}
+              />
+              <TextInput
+                placeholder='Avatar (emoji)'
+                value={editData.avatar}
+                onChangeText={(v) => setEditData((d) => ({ ...d, avatar: v }))}
+                style={{
+                  borderBottomWidth: 1,
+                  borderColor: "#ccc",
+                  marginBottom: 12,
+                  fontSize: 16,
+                }}
+                maxLength={2}
+              />
+              <TextInput
+                placeholder='Bio'
+                value={editData.bio}
+                onChangeText={(v) => setEditData((d) => ({ ...d, bio: v }))}
+                style={{
+                  borderBottomWidth: 1,
+                  borderColor: "#ccc",
+                  marginBottom: 12,
+                  fontSize: 16,
+                }}
+                multiline
+              />
+              <Text style={{ marginBottom: 4, fontWeight: "bold" }}>Pays</Text>
+              <Picker
+                selectedValue={editData.country}
+                onValueChange={(v) =>
+                  setEditData((d) => ({ ...d, country: v }))
+                }
+                style={{
+                  backgroundColor: "#f3f3f3",
+                  borderRadius: 12,
+                  marginBottom: 16,
+                }}>
+                <Picker.Item label='Choisir un pays...' value='' />
+                {countries.map((c) => (
+                  <Picker.Item
+                    key={c.code}
+                    label={`${c.flag} ${c.name}`}
+                    value={c.code}
+                  />
+                ))}
+              </Picker>
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  marginTop: 10,
+                }}>
+                <Button
+                  title='Annuler'
+                  color='#aaa'
+                  onPress={() => setEditModalVisible(false)}
+                />
+                <Button
+                  title='Enregistrer'
+                  color='#667eea'
+                  onPress={handleSaveProfile}
+                />
+              </View>
+            </View>
+          </View>
+        </Modal>
       </ScrollView>
     </View>
   );
@@ -1076,6 +1535,8 @@ const styles = StyleSheet.create({
     width: "92%",
     backgroundColor: "#fff",
     borderRadius: 24,
+    borderBottomLeftRadius: 32,
+    borderBottomRightRadius: 32,
     alignItems: "center",
     paddingVertical: 32,
     paddingHorizontal: 18,
