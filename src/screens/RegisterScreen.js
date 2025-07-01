@@ -13,8 +13,14 @@ import {
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import Toast from "react-native-toast-message";
-import { auth } from "../utils/firebaseConfig";
-import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
+import { authService } from "../services/authService";
+import {
+  authSchemas,
+  validateForm,
+  checkPasswordStrength,
+} from "../schemas/validationSchemas";
+import { useAuth } from "../hooks/useAuth";
+import { colors, messages } from "../constants";
 
 // Écran d'inscription avec validation des champs
 const RegisterScreen = ({ navigation }) => {
@@ -24,98 +30,96 @@ const RegisterScreen = ({ navigation }) => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState({});
+  const [touched, setTouched] = useState({});
+  const [passwordStrength, setPasswordStrength] = useState(null);
+
+  // Utilisation du hook d'authentification
+  const { register, loading } = useAuth();
+
+  // Validation en temps réel
+  const validateField = async (fieldName, value) => {
+    try {
+      await authSchemas.register.validateAt(fieldName, { [fieldName]: value });
+      setErrors((prev) => ({ ...prev, [fieldName]: "" }));
+    } catch (error) {
+      setErrors((prev) => ({ ...prev, [fieldName]: error.message }));
+    }
+  };
+
+  // Gestion des changements de champs
+  const handleFieldChange = (fieldName, value) => {
+    if (fieldName === "username") setUsername(value);
+    if (fieldName === "email") setEmail(value);
+    if (fieldName === "password") {
+      setPassword(value);
+      setPasswordStrength(checkPasswordStrength(value));
+    }
+    if (fieldName === "confirmPassword") setConfirmPassword(value);
+
+    // Effacer l'erreur si le champ est modifié
+    if (errors[fieldName]) {
+      setErrors((prev) => ({ ...prev, [fieldName]: "" }));
+    }
+  };
+
+  // Gestion du focus/blur
+  const handleFieldBlur = (fieldName) => {
+    setTouched((prev) => ({ ...prev, [fieldName]: true }));
+    validateField(
+      fieldName,
+      fieldName === "username"
+        ? username
+        : fieldName === "email"
+        ? email
+        : fieldName === "password"
+        ? password
+        : confirmPassword
+    );
+  };
 
   const handleRegister = async () => {
-    if (!username || !email || !password || !confirmPassword) {
+    // Validation complète du formulaire
+    const validation = await validateForm(authSchemas.register, {
+      username,
+      email,
+      password,
+      confirmPassword,
+      acceptTerms: true, // À implémenter avec une checkbox
+    });
+
+    if (!validation.isValid) {
+      setErrors(validation.errors);
       Toast.show({
         type: "error",
-        text1: "Erreur",
-        text2: "Veuillez remplir tous les champs",
+        text1: "Erreur de validation",
+        text2: "Veuillez corriger les erreurs dans le formulaire",
         position: "top",
         visibilityTime: 3000,
       });
       return;
     }
 
-    if (password !== confirmPassword) {
-      Toast.show({
-        type: "error",
-        text1: "Erreur",
-        text2: "Les mots de passe ne correspondent pas",
-        position: "top",
-        visibilityTime: 3000,
-      });
-      return;
-    }
+    // Utilisation du service d'authentification
+    const result = await register(email, password, username);
 
-    if (password.length < 6) {
-      Toast.show({
-        type: "error",
-        text1: "Erreur",
-        text2: "Le mot de passe doit contenir au moins 6 caractères",
-        position: "top",
-        visibilityTime: 3000,
-      });
-      return;
-    }
-
-    setLoading(true);
-    try {
-      // Créer l'utilisateur avec Firebase
-      const userCredential = await createUserWithEmailAndPassword(
-        auth,
-        email,
-        password
-      );
-
-      // Mettre à jour le profil avec le nom d'utilisateur
-      await updateProfile(userCredential.user, {
-        displayName: username,
-      });
-
-      console.warn(
-        "[DEBUG] User registration success:",
-        userCredential.user.email
-      );
+    if (result.success) {
       Toast.show({
         type: "success",
-        text1: "Compte créé !",
+        text1: messages.success.register,
         text2: "Bienvenue sur TryToWin !",
         position: "top",
         visibilityTime: 3000,
       });
       navigation.navigate("MainTabs");
-    } catch (error) {
-      console.warn("[DEBUG] User registration error:", error.message);
-      let errorMessage = "Erreur lors de la création du compte";
-
-      switch (error.code) {
-        case "auth/email-already-in-use":
-          errorMessage = "Un compte existe déjà avec cet email";
-          break;
-        case "auth/invalid-email":
-          errorMessage = "Format d'email invalide";
-          break;
-        case "auth/weak-password":
-          errorMessage = "Le mot de passe est trop faible";
-          break;
-        case "auth/operation-not-allowed":
-          errorMessage = "L'inscription par email est désactivée";
-          break;
-        default:
-          errorMessage = error.message;
-      }
-
+    } else {
       Toast.show({
         type: "error",
         text1: "Erreur d'inscription",
-        text2: errorMessage,
+        text2: result.error,
         position: "top",
         visibilityTime: 4000,
       });
-    } finally {
-      setLoading(false);
     }
   };
 

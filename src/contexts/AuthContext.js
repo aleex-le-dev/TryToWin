@@ -2,7 +2,7 @@
 // Utilisé dans toute l'application pour vérifier si l'utilisateur est connecté
 
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { auth } from "./firebaseConfig";
+import { auth } from "../utils/firebaseConfig";
 import { onAuthStateChanged } from "firebase/auth";
 
 // Création du contexte d'authentification

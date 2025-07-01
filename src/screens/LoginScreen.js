@@ -19,11 +19,11 @@ import * as Google from "expo-auth-session/providers/google";
 import * as WebBrowser from "expo-web-browser";
 import { ANDROID_CLIENT_ID, EXPO_CLIENT_ID } from "../utils/googleAuthConfig";
 import { auth } from "../utils/firebaseConfig";
-import {
-  GoogleAuthProvider,
-  signInWithCredential,
-  signInWithEmailAndPassword,
-} from "firebase/auth";
+import { GoogleAuthProvider, signInWithCredential } from "firebase/auth";
+import { authService } from "../services/authService";
+import { authSchemas, validateForm } from "../schemas/validationSchemas";
+import { useAuth } from "../hooks/useAuth";
+import { colors, messages } from "../constants";
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -32,7 +32,11 @@ const LoginScreen = ({ navigation }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState({});
+  const [touched, setTouched] = useState({});
+
+  // Utilisation du hook d'authentification
+  const { login, loading } = useAuth();
 
   // Google Auth avec logs de débogage
   const [request, response, promptAsync] = Google.useAuthRequest({
@@ -79,67 +83,72 @@ const LoginScreen = ({ navigation }) => {
     }
   }, [response]);
 
+  // Validation en temps réel
+  const validateField = async (fieldName, value) => {
+    try {
+      await authSchemas.login.validateAt(fieldName, { [fieldName]: value });
+      setErrors((prev) => ({ ...prev, [fieldName]: "" }));
+    } catch (error) {
+      setErrors((prev) => ({ ...prev, [fieldName]: error.message }));
+    }
+  };
+
+  // Gestion des changements de champs
+  const handleFieldChange = (fieldName, value) => {
+    if (fieldName === "email") setEmail(value);
+    if (fieldName === "password") setPassword(value);
+
+    // Effacer l'erreur si le champ est modifié
+    if (errors[fieldName]) {
+      setErrors((prev) => ({ ...prev, [fieldName]: "" }));
+    }
+  };
+
+  // Gestion du focus/blur
+  const handleFieldBlur = (fieldName) => {
+    setTouched((prev) => ({ ...prev, [fieldName]: true }));
+    validateField(fieldName, fieldName === "email" ? email : password);
+  };
+
   const handleLogin = async () => {
-    if (!email || !password) {
+    // Validation complète du formulaire
+    const validation = await validateForm(authSchemas.login, {
+      email,
+      password,
+    });
+
+    if (!validation.isValid) {
+      setErrors(validation.errors);
       Toast.show({
         type: "error",
-        text1: "Erreur",
-        text2: "Veuillez remplir tous les champs",
+        text1: "Erreur de validation",
+        text2: "Veuillez corriger les erreurs dans le formulaire",
         position: "top",
         visibilityTime: 3000,
       });
       return;
     }
 
-    setLoading(true);
-    try {
-      const userCredential = await signInWithEmailAndPassword(
-        auth,
-        email,
-        password
-      );
-      console.warn(
-        "[DEBUG] Email/Password login success:",
-        userCredential.user.email
-      );
+    // Utilisation du service d'authentification
+    const result = await login(email, password);
+
+    if (result.success) {
       Toast.show({
         type: "success",
-        text1: "Connexion réussie",
+        text1: messages.success.login,
         text2: "Bienvenue sur TryToWin !",
         position: "top",
         visibilityTime: 3000,
       });
       navigation.navigate("MainTabs");
-    } catch (error) {
-      console.warn("[DEBUG] Email/Password login error:", error.message);
-      let errorMessage = "Erreur lors de la connexion";
-
-      switch (error.code) {
-        case "auth/user-not-found":
-          errorMessage = "Aucun compte trouvé avec cet email";
-          break;
-        case "auth/wrong-password":
-          errorMessage = "Mot de passe incorrect";
-          break;
-        case "auth/invalid-email":
-          errorMessage = "Format d'email invalide";
-          break;
-        case "auth/too-many-requests":
-          errorMessage = "Trop de tentatives. Réessayez plus tard";
-          break;
-        default:
-          errorMessage = error.message;
-      }
-
+    } else {
       Toast.show({
         type: "error",
         text1: "Erreur de connexion",
-        text2: errorMessage,
+        text2: result.error,
         position: "top",
         visibilityTime: 4000,
       });
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -201,15 +210,22 @@ const LoginScreen = ({ navigation }) => {
                 style={styles.inputIcon}
               />
               <TextInput
-                style={styles.input}
+                style={[
+                  styles.input,
+                  errors.email && touched.email && styles.inputError,
+                ]}
                 placeholder='Email'
                 placeholderTextColor='rgba(255,255,255,0.7)'
                 value={email}
-                onChangeText={setEmail}
+                onChangeText={(value) => handleFieldChange("email", value)}
+                onBlur={() => handleFieldBlur("email")}
                 keyboardType='email-address'
                 autoCapitalize='none'
               />
             </View>
+            {errors.email && touched.email && (
+              <Text style={styles.errorText}>{errors.email}</Text>
+            )}
 
             <View style={styles.inputContainer}>
               <Ionicons
@@ -219,13 +235,18 @@ const LoginScreen = ({ navigation }) => {
                 style={styles.inputIcon}
               />
               <TextInput
-                style={styles.input}
+                style={[styles.input, errors.password && touched.password && styles.inputError]}
                 placeholder='Mot de passe'
                 placeholderTextColor='rgba(255,255,255,0.7)'
                 value={password}
-                onChangeText={setPassword}
+                onChangeText={(value) => handleFieldChange('password', value)}
+                onBlur={() => handleFieldBlur('password')}
                 secureTextEntry={!showPassword}
               />
+            </View>
+            {errors.password && touched.password && (
+              <Text style={styles.errorText}>{errors.password}</Text>
+            )}
               <TouchableOpacity
                 onPress={() => setShowPassword(!showPassword)}
                 style={styles.eyeIcon}>
@@ -425,6 +446,17 @@ const styles = StyleSheet.create({
   },
   disabledButton: {
     opacity: 0.6,
+  },
+  inputError: {
+    borderColor: colors.error,
+    borderWidth: 1,
+  },
+  errorText: {
+    color: colors.error,
+    fontSize: 12,
+    marginTop: -15,
+    marginBottom: 10,
+    marginLeft: 20,
   },
 });
 

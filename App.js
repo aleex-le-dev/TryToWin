@@ -3,7 +3,7 @@ import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 import AppNavigator from "./src/navigation/AppNavigator";
-import { AuthProvider } from "./src/utils/AuthContext";
+import { AuthProvider } from "./src/contexts/AuthContext";
 
 // Application principale TryToWin
 export default function App() {

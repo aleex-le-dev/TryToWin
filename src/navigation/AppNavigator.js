@@ -7,7 +7,7 @@ import { ActivityIndicator, View, StyleSheet } from "react-native";
 import LoginScreen from "../screens/LoginScreen";
 import RegisterScreen from "../screens/RegisterScreen";
 import MainTabNavigator from "./MainTabNavigator";
-import { useAuth } from "../utils/AuthContext";
+import { useAuth } from "../contexts/AuthContext";
 
 const Stack = createStackNavigator();
 
