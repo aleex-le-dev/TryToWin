@@ -1,22 +1,24 @@
-// src/utils/firebaseConfig.js
-// Configuration et initialisation Firebase pour TryToWin (Expo/React Native)
-// Utilise la config générée depuis la console Firebase (application Web)
-
 import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
+import { FIREBASE_API_KEY } from "@env";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyD5snXZaI326eZdNz95EPz-9fQWquw4OEw",
+  apiKey: FIREBASE_API_KEY,
   authDomain: "trytowin-c063c.firebaseapp.com",
   projectId: "trytowin-c063c",
-  storageBucket: "trytowin-c063c.appspot.com", // .appspot.com obligatoire
+  storageBucket: "trytowin-c063c.appspot.com",
   messagingSenderId: "690931106779",
   appId: "1:690931106779:web:1b6a027920a820be579dfe",
   measurementId: "G-ED7NTDD21F",
 };
 
 const app = initializeApp(firebaseConfig);
+
+console.warn(
+  "[DEBUG] FIREBASE_API_KEY:",
+  FIREBASE_API_KEY ? FIREBASE_API_KEY.slice(0, 8) + "..." : "NON DEFINIE"
+);
 
 export const db = getFirestore(app);
 export const auth = getAuth(app);

@@ -8,10 +8,13 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  ActivityIndicator,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import Toast from "react-native-toast-message";
+import { auth } from "../utils/firebaseConfig";
+import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 
 // Écran d'inscription avec validation des champs
 const RegisterScreen = ({ navigation }) => {
@@ -21,8 +24,9 @@ const RegisterScreen = ({ navigation }) => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const handleRegister = () => {
+  const handleRegister = async () => {
     if (!username || !email || !password || !confirmPassword) {
       Toast.show({
         type: "error",
@@ -56,8 +60,63 @@ const RegisterScreen = ({ navigation }) => {
       return;
     }
 
-    // Inscription directe pour les tests
-    navigation.navigate("MainTabs");
+    setLoading(true);
+    try {
+      // Créer l'utilisateur avec Firebase
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
+
+      // Mettre à jour le profil avec le nom d'utilisateur
+      await updateProfile(userCredential.user, {
+        displayName: username,
+      });
+
+      console.warn(
+        "[DEBUG] User registration success:",
+        userCredential.user.email
+      );
+      Toast.show({
+        type: "success",
+        text1: "Compte créé !",
+        text2: "Bienvenue sur TryToWin !",
+        position: "top",
+        visibilityTime: 3000,
+      });
+      navigation.navigate("MainTabs");
+    } catch (error) {
+      console.warn("[DEBUG] User registration error:", error.message);
+      let errorMessage = "Erreur lors de la création du compte";
+
+      switch (error.code) {
+        case "auth/email-already-in-use":
+          errorMessage = "Un compte existe déjà avec cet email";
+          break;
+        case "auth/invalid-email":
+          errorMessage = "Format d'email invalide";
+          break;
+        case "auth/weak-password":
+          errorMessage = "Le mot de passe est trop faible";
+          break;
+        case "auth/operation-not-allowed":
+          errorMessage = "L'inscription par email est désactivée";
+          break;
+        default:
+          errorMessage = error.message;
+      }
+
+      Toast.show({
+        type: "error",
+        text1: "Erreur d'inscription",
+        text2: errorMessage,
+        position: "top",
+        visibilityTime: 4000,
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -183,13 +242,22 @@ const RegisterScreen = ({ navigation }) => {
 
             {/* Bouton d'inscription */}
             <TouchableOpacity
-              style={styles.registerButton}
-              onPress={handleRegister}>
+              style={[styles.registerButton, loading && styles.disabledButton]}
+              onPress={handleRegister}
+              disabled={loading}>
               <LinearGradient
                 colors={["#ff6b6b", "#ee5a24"]}
                 style={styles.gradientButton}>
-                <Text style={styles.registerButtonText}>Créer mon compte</Text>
-                <Ionicons name='person-add' size={20} color='#fff' />
+                {loading ? (
+                  <ActivityIndicator size='small' color='#fff' />
+                ) : (
+                  <>
+                    <Text style={styles.registerButtonText}>
+                      Créer mon compte
+                    </Text>
+                    <Ionicons name='person-add' size={20} color='#fff' />
+                  </>
+                )}
               </LinearGradient>
             </TouchableOpacity>
 
@@ -313,6 +381,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "bold",
     textDecorationLine: "underline",
+  },
+  disabledButton: {
+    opacity: 0.6,
   },
 });
 

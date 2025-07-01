@@ -9,18 +9,77 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  Alert,
+  ActivityIndicator,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import Toast from "react-native-toast-message";
+import * as Google from "expo-auth-session/providers/google";
+import * as WebBrowser from "expo-web-browser";
+import { ANDROID_CLIENT_ID, EXPO_CLIENT_ID } from "../utils/googleAuthConfig";
+import { auth } from "../utils/firebaseConfig";
+import {
+  GoogleAuthProvider,
+  signInWithCredential,
+  signInWithEmailAndPassword,
+} from "firebase/auth";
+
+WebBrowser.maybeCompleteAuthSession();
 
 // Écran de connexion principal avec design moderne et interactif
 const LoginScreen = ({ navigation }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = () => {
+  // Google Auth avec logs de débogage
+  const [request, response, promptAsync] = Google.useAuthRequest({
+    expoClientId: EXPO_CLIENT_ID,
+    androidClientId: ANDROID_CLIENT_ID,
+  });
+
+  console.warn("[DEBUG] Google Auth - Request:", request ? "Prêt" : "Non prêt");
+  console.warn("[DEBUG] Google Auth - Response:", response);
+
+  React.useEffect(() => {
+    console.warn("[DEBUG] Google Auth - Response changed:", response);
+    if (response?.type === "success") {
+      console.warn("[DEBUG] Google Auth - Success response received");
+      const { id_token } = response.params;
+      console.warn(
+        "[DEBUG] Google Auth - ID Token:",
+        id_token ? "Présent" : "Manquant"
+      );
+
+      const credential = GoogleAuthProvider.credential(id_token);
+      setLoading(true);
+
+      signInWithCredential(auth, credential)
+        .then((result) => {
+          console.warn(
+            "[DEBUG] Google Auth - Firebase signin success:",
+            result.user.email
+          );
+          Alert.alert("Succès", "Connecté avec Google !");
+          navigation.navigate("MainTabs");
+        })
+        .catch((err) => {
+          console.warn(
+            "[DEBUG] Google Auth - Firebase signin error:",
+            err.message
+          );
+          Alert.alert("Erreur", err.message);
+        })
+        .finally(() => setLoading(false));
+    } else if (response?.type === "error") {
+      console.warn("[DEBUG] Google Auth - Error response:", response.error);
+      Alert.alert("Erreur", "Erreur lors de l'authentification Google");
+    }
+  }, [response]);
+
+  const handleLogin = async () => {
     if (!email || !password) {
       Toast.show({
         type: "error",
@@ -31,8 +90,86 @@ const LoginScreen = ({ navigation }) => {
       });
       return;
     }
-    // Connexion directe pour les tests
-    navigation.navigate("MainTabs");
+
+    setLoading(true);
+    try {
+      const userCredential = await signInWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
+      console.warn(
+        "[DEBUG] Email/Password login success:",
+        userCredential.user.email
+      );
+      Toast.show({
+        type: "success",
+        text1: "Connexion réussie",
+        text2: "Bienvenue sur TryToWin !",
+        position: "top",
+        visibilityTime: 3000,
+      });
+      navigation.navigate("MainTabs");
+    } catch (error) {
+      console.warn("[DEBUG] Email/Password login error:", error.message);
+      let errorMessage = "Erreur lors de la connexion";
+
+      switch (error.code) {
+        case "auth/user-not-found":
+          errorMessage = "Aucun compte trouvé avec cet email";
+          break;
+        case "auth/wrong-password":
+          errorMessage = "Mot de passe incorrect";
+          break;
+        case "auth/invalid-email":
+          errorMessage = "Format d'email invalide";
+          break;
+        case "auth/too-many-requests":
+          errorMessage = "Trop de tentatives. Réessayez plus tard";
+          break;
+        default:
+          errorMessage = error.message;
+      }
+
+      Toast.show({
+        type: "error",
+        text1: "Erreur de connexion",
+        text2: errorMessage,
+        position: "top",
+        visibilityTime: 4000,
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    console.warn("[DEBUG] Google Auth - Button pressed");
+    console.warn("[DEBUG] Google Auth - Request available:", !!request);
+    console.warn("[DEBUG] Google Auth - Loading state:", loading);
+
+    if (!request) {
+      console.warn("[DEBUG] Google Auth - Request not ready");
+      Alert.alert("Erreur", "Configuration Google non prête");
+      return;
+    }
+
+    if (loading) {
+      console.warn("[DEBUG] Google Auth - Already loading");
+      return;
+    }
+
+    try {
+      console.warn("[DEBUG] Google Auth - Starting prompt");
+      const result = await promptAsync();
+      console.warn("[DEBUG] Google Auth - Prompt result:", result);
+    } catch (error) {
+      console.warn("[DEBUG] Google Auth - Prompt error:", error);
+      Alert.alert(
+        "Erreur",
+        "Erreur lors du lancement de l'authentification Google"
+      );
+    }
   };
 
   const handleRegister = () => {
@@ -101,12 +238,21 @@ const LoginScreen = ({ navigation }) => {
             </View>
 
             {/* Bouton de connexion */}
-            <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
+            <TouchableOpacity
+              style={[styles.loginButton, loading && styles.disabledButton]}
+              onPress={handleLogin}
+              disabled={loading}>
               <LinearGradient
                 colors={["#ff6b6b", "#ee5a24"]}
                 style={styles.gradientButton}>
-                <Text style={styles.loginButtonText}>Se connecter</Text>
-                <Ionicons name='arrow-forward' size={20} color='#fff' />
+                {loading ? (
+                  <ActivityIndicator size='small' color='#fff' />
+                ) : (
+                  <>
+                    <Text style={styles.loginButtonText}>Se connecter</Text>
+                    <Ionicons name='arrow-forward' size={20} color='#fff' />
+                  </>
+                )}
               </LinearGradient>
             </TouchableOpacity>
 
@@ -128,8 +274,15 @@ const LoginScreen = ({ navigation }) => {
             <View style={styles.quickLogin}>
               <Text style={styles.quickLoginText}>Connexion rapide</Text>
               <View style={styles.socialButtons}>
-                <TouchableOpacity style={styles.socialButton}>
-                  <Ionicons name='logo-google' size={24} color='#fff' />
+                <TouchableOpacity
+                  style={styles.socialButton}
+                  onPress={handleGoogleLogin}
+                  disabled={loading}>
+                  {loading ? (
+                    <ActivityIndicator size='small' color='#fff' />
+                  ) : (
+                    <Ionicons name='logo-google' size={24} color='#fff' />
+                  )}
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.socialButton}>
                   <Ionicons name='logo-facebook' size={24} color='#fff' />
@@ -269,6 +422,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginHorizontal: 10,
+  },
+  disabledButton: {
+    opacity: 0.6,
   },
 });
 

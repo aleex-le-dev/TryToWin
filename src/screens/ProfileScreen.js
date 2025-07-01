@@ -17,6 +17,8 @@ import { Ionicons } from "@expo/vector-icons";
 import Toast from "react-native-toast-message";
 import { Picker } from "@react-native-picker/picker";
 import { ColorPicker } from "react-native-color-picker";
+import { auth } from "../utils/firebaseConfig";
+import { signOut } from "firebase/auth";
 
 const { width } = Dimensions.get("window");
 
@@ -151,19 +153,32 @@ const ProfileScreen = ({ navigation }) => {
     .filter((item) => item.country.code === selectedCountry.code)
     .slice(0, 10);
 
-  const handleLogout = () => {
-    Toast.show({
-      type: "info",
-      text1: "Déconnexion",
-      text2: "Vous avez été déconnecté avec succès",
-      position: "top",
-      visibilityTime: 2000,
-    });
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      console.warn("[DEBUG] User logged out successfully");
+      Toast.show({
+        type: "success",
+        text1: "Déconnexion réussie",
+        text2: "Vous avez été déconnecté avec succès",
+        position: "top",
+        visibilityTime: 2000,
+      });
 
-    // Navigation vers la page de connexion
-    setTimeout(() => {
-      navigation.navigate("Login");
-    }, 1000);
+      // Navigation vers la page de connexion
+      setTimeout(() => {
+        navigation.navigate("Login");
+      }, 1000);
+    } catch (error) {
+      console.warn("[DEBUG] Logout error:", error.message);
+      Toast.show({
+        type: "error",
+        text1: "Erreur de déconnexion",
+        text2: "Impossible de se déconnecter",
+        position: "top",
+        visibilityTime: 3000,
+      });
+    }
   };
 
   const renderLeaderboardItem = ({ item, index }) => (
