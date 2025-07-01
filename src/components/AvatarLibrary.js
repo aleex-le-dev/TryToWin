@@ -45,7 +45,8 @@ const HorizontalGridCarousel = ({
       contentContainerStyle={{
         flexDirection: "row",
         paddingHorizontal: 16,
-        paddingVertical: 8,
+        paddingVertical: 0,
+        marginBottom: 0,
       }}>
       {columns.map((col, idx) => (
         <View
