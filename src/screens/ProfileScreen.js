@@ -23,6 +23,9 @@ import { messages } from "../constants/config";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { db } from "../utils/firebaseConfig";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import ProfileAvatar from "../components/ProfileAvatar";
+import * as ImagePicker from "expo-image-picker";
+import { uploadProfilePhoto } from "../services/storageService";
 
 const { width } = Dimensions.get("window");
 
@@ -210,6 +213,7 @@ const ProfileScreen = ({ navigation }) => {
     country: "",
   });
   const [syncPending, setSyncPending] = useState(false);
+  const [profilePhoto, setProfilePhoto] = useState(null);
 
   const userStats = {
     totalScore: 2847,
@@ -244,6 +248,7 @@ const ProfileScreen = ({ navigation }) => {
         const localProfile = await loadProfileLocally(user.id);
         if (localProfile) {
           setProfile(localProfile);
+          if (localProfile.photoURL) setProfilePhoto(localProfile.photoURL);
         }
         // 2. Tenter de charger Firestore
         try {
@@ -272,6 +277,7 @@ const ProfileScreen = ({ navigation }) => {
             } else {
               setProfile(data);
               saveProfileLocally(user.id, data); // Ecrase le cache local avec la version serveur
+              if (data.photoURL) setProfilePhoto(data.photoURL);
             }
           } else {
             // Si pas de doc, on génère un tag localement aussi
@@ -483,11 +489,17 @@ const ProfileScreen = ({ navigation }) => {
       // Tentative de sauvegarde Firestore en arrière-plan
       const userRef = doc(db, "users", user.id);
       try {
+        if (editData.photoURL && editData.photoURL.startsWith("file")) {
+          const url = await uploadProfilePhoto(user.id, editData.photoURL);
+          editData.photoURL = url;
+          setProfilePhoto(url);
+        }
         await updateDoc(userRef, {
           username: editData.username.trim(),
           avatar: editData.avatar,
           bio: editData.bio,
           country: editData.country,
+          photoURL: editData.photoURL || profilePhoto || "",
         });
         setSyncPending(false);
         Toast.show({
@@ -634,7 +646,11 @@ const ProfileScreen = ({ navigation }) => {
 
               {/* Avatar circulaire mis en avant, débordant */}
               <View style={styles.playerAvatarContainer}>
-                <Text style={styles.playerAvatar}>{profileAvatar}</Text>
+                <ProfileAvatar
+                  photoURL={profilePhoto}
+                  size={100}
+                  syncPending={syncPending}
+                />
               </View>
               {/* Pseudo, tag et pays dynamiques */}
               <View style={styles.playerIdentityRow}>
@@ -980,6 +996,41 @@ const ProfileScreen = ({ navigation }) => {
                   />
                 ))}
               </Picker>
+              <Button
+                title={
+                  editData.photoURL ? "Changer la photo" : "Choisir une photo"
+                }
+                onPress={async () => {
+                  const result = await ImagePicker.launchImageLibraryAsync({
+                    mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                    allowsEditing: true,
+                    aspect: [1, 1],
+                    quality: 0.7,
+                  });
+                  if (
+                    !result.canceled &&
+                    result.assets &&
+                    result.assets[0].uri
+                  ) {
+                    setEditData((d) => ({
+                      ...d,
+                      photoURL: result.assets[0].uri,
+                    }));
+                  }
+                }}
+              />
+              {editData.photoURL && (
+                <Image
+                  source={{ uri: editData.photoURL }}
+                  style={{
+                    width: 80,
+                    height: 80,
+                    borderRadius: 40,
+                    alignSelf: "center",
+                    marginVertical: 8,
+                  }}
+                />
+              )}
               <View
                 style={{
                   flexDirection: "row",
