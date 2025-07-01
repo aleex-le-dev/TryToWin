@@ -1,0 +1,151 @@
+// Collections d'avatars minimalistes : Drapeaux, Animaux, Personnages
+export const AVATAR_COLLECTIONS = [
+  // --- Drapeaux (flagcdn.com, HTTPS, 40px, uniquement ratio standard) ---
+  {
+    id: "flags",
+    name: "Drapeaux",
+    style: "flags",
+    avatars: [
+      { key: "flag-fr", url: "https://flagcdn.com/w40/fr.png" },
+      { key: "flag-us", url: "https://flagcdn.com/w40/us.png" },
+      { key: "flag-de", url: "https://flagcdn.com/w40/de.png" },
+      { key: "flag-es", url: "https://flagcdn.com/w40/es.png" },
+      { key: "flag-it", url: "https://flagcdn.com/w40/it.png" },
+      { key: "flag-gb", url: "https://flagcdn.com/w40/gb.png" },
+      { key: "flag-ma", url: "https://flagcdn.com/w40/ma.png" },
+      { key: "flag-ca", url: "https://flagcdn.com/w40/ca.png" },
+      { key: "flag-jp", url: "https://flagcdn.com/w40/jp.png" },
+      { key: "flag-br", url: "https://flagcdn.com/w40/br.png" },
+      { key: "flag-cn", url: "https://flagcdn.com/w40/cn.png" },
+      { key: "flag-in", url: "https://flagcdn.com/w40/in.png" },
+      { key: "flag-ru", url: "https://flagcdn.com/w40/ru.png" },
+      { key: "flag-au", url: "https://flagcdn.com/w40/au.png" },
+      { key: "flag-kr", url: "https://flagcdn.com/w40/kr.png" },
+      { key: "flag-tr", url: "https://flagcdn.com/w40/tr.png" },
+      { key: "flag-za", url: "https://flagcdn.com/w40/za.png" },
+      { key: "flag-ar", url: "https://flagcdn.com/w40/ar.png" },
+      { key: "flag-eg", url: "https://flagcdn.com/w40/eg.png" },
+      { key: "flag-se", url: "https://flagcdn.com/w40/se.png" },
+      { key: "flag-nl", url: "https://flagcdn.com/w40/nl.png" },
+      { key: "flag-be", url: "https://flagcdn.com/w40/be.png" },
+      { key: "flag-pt", url: "https://flagcdn.com/w40/pt.png" },
+      { key: "flag-pl", url: "https://flagcdn.com/w40/pl.png" },
+      { key: "flag-mx", url: "https://flagcdn.com/w40/mx.png" },
+      { key: "flag-sa", url: "https://flagcdn.com/w40/sa.png" },
+      { key: "flag-id", url: "https://flagcdn.com/w40/id.png" },
+      { key: "flag-ng", url: "https://flagcdn.com/w40/ng.png" },
+      { key: "flag-th", url: "https://flagcdn.com/w40/th.png" },
+      { key: "flag-gr", url: "https://flagcdn.com/w40/gr.png" },
+      { key: "flag-dk", url: "https://flagcdn.com/w40/dk.png" },
+      { key: "flag-no", url: "https://flagcdn.com/w40/no.png" },
+      { key: "flag-fi", url: "https://flagcdn.com/w40/fi.png" },
+      { key: "flag-ie", url: "https://flagcdn.com/w40/ie.png" },
+      { key: "flag-at", url: "https://flagcdn.com/w40/at.png" },
+      { key: "flag-hu", url: "https://flagcdn.com/w40/hu.png" },
+      { key: "flag-cz", url: "https://flagcdn.com/w40/cz.png" },
+      { key: "flag-ro", url: "https://flagcdn.com/w40/ro.png" },
+      { key: "flag-nz", url: "https://flagcdn.com/w40/nz.png" },
+      { key: "flag-sg", url: "https://flagcdn.com/w40/sg.png" },
+      { key: "flag-my", url: "https://flagcdn.com/w40/my.png" },
+      { key: "flag-ph", url: "https://flagcdn.com/w40/ph.png" },
+      { key: "flag-vn", url: "https://flagcdn.com/w40/vn.png" },
+      { key: "flag-cl", url: "https://flagcdn.com/w40/cl.png" },
+      { key: "flag-co", url: "https://flagcdn.com/w40/co.png" },
+      { key: "flag-pe", url: "https://flagcdn.com/w40/pe.png" },
+      { key: "flag-ua", url: "https://flagcdn.com/w40/ua.png" },
+      { key: "flag-il", url: "https://flagcdn.com/w40/il.png" },
+      { key: "flag-hk", url: "https://flagcdn.com/w40/hk.png" },
+      { key: "flag-tw", url: "https://flagcdn.com/w40/tw.png" },
+      { key: "flag-qa", url: "https://flagcdn.com/w40/qa.png" },
+      { key: "flag-ae", url: "https://flagcdn.com/w40/ae.png" },
+    ],
+  },
+  // --- Animaux (OpenMoji PNG, style emoji/cartoon) ---
+  {
+    id: "animals",
+    name: "Animaux",
+    style: "openmoji",
+    avatars: [
+      { key: "cat", url: "https://openmoji.org/data/color/png/72/1F408.png" },
+      { key: "dog", url: "https://openmoji.org/data/color/png/72/1F415.png" },
+      { key: "fox", url: "https://openmoji.org/data/color/png/72/1F98A.png" },
+      { key: "bear", url: "https://openmoji.org/data/color/png/72/1F43B.png" },
+      { key: "owl", url: "https://openmoji.org/data/color/png/72/1F989.png" },
+      { key: "lion", url: "https://openmoji.org/data/color/png/72/1F981.png" },
+      { key: "panda", url: "https://openmoji.org/data/color/png/72/1F43C.png" },
+      {
+        key: "monkey",
+        url: "https://openmoji.org/data/color/png/72/1F412.png",
+      },
+      {
+        key: "rabbit",
+        url: "https://openmoji.org/data/color/png/72/1F407.png",
+      },
+      { key: "tiger", url: "https://openmoji.org/data/color/png/72/1F42F.png" },
+    ],
+  },
+  // --- Personnages enrichis (DiceBear 'avataaars') ---
+  {
+    id: "characters",
+    name: "Personnages",
+    style: "avataaars",
+    avatars: [
+      {
+        key: "ava1",
+        url: "https://api.dicebear.com/7.x/avataaars/png?seed=alex",
+      },
+      {
+        key: "ava2",
+        url: "https://api.dicebear.com/7.x/avataaars/png?seed=lucas",
+      },
+      {
+        key: "ava3",
+        url: "https://api.dicebear.com/7.x/avataaars/png?seed=emma",
+      },
+      {
+        key: "ava4",
+        url: "https://api.dicebear.com/7.x/avataaars/png?seed=sofia",
+      },
+      {
+        key: "ava5",
+        url: "https://api.dicebear.com/7.x/avataaars/png?seed=leo",
+      },
+      {
+        key: "ava6",
+        url: "https://api.dicebear.com/7.x/avataaars/png?seed=maria",
+      },
+      {
+        key: "ava7",
+        url: "https://api.dicebear.com/7.x/avataaars/png?seed=thomas",
+      },
+      {
+        key: "ava8",
+        url: "https://api.dicebear.com/7.x/avataaars/png?seed=anna",
+      },
+      {
+        key: "ava9",
+        url: "https://api.dicebear.com/7.x/avataaars/png?seed=paul",
+      },
+      {
+        key: "ava10",
+        url: "https://api.dicebear.com/7.x/avataaars/png?seed=clara",
+      },
+    ],
+  },
+];
+
+// Liste d'avatars prédéfinis (cartoon, illustrations, etc.)
+// Tu peux remplacer les URLs par des images locales si tu veux
+export const AVATAR_LIBRARY = [
+  // Exemples d'avatars libres de droits (remplace par tes propres images si besoin)
+  { key: "cat", url: "https://api.dicebear.com/7.x/bottts/png?seed=cat" },
+  { key: "dog", url: "https://api.dicebear.com/7.x/bottts/png?seed=dog" },
+  { key: "fox", url: "https://api.dicebear.com/7.x/bottts/png?seed=fox" },
+  { key: "alien", url: "https://api.dicebear.com/7.x/bottts/png?seed=alien" },
+  { key: "robot", url: "https://api.dicebear.com/7.x/bottts/png?seed=robot" },
+  { key: "bear", url: "https://api.dicebear.com/7.x/bottts/png?seed=bear" },
+  { key: "owl", url: "https://api.dicebear.com/7.x/bottts/png?seed=owl" },
+  { key: "lion", url: "https://api.dicebear.com/7.x/bottts/png?seed=lion" },
+  { key: "panda", url: "https://api.dicebear.com/7.x/bottts/png?seed=panda" },
+  { key: "monkey", url: "https://api.dicebear.com/7.x/bottts/png?seed=monkey" },
+];

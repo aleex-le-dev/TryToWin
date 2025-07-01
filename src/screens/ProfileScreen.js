@@ -26,6 +26,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import ProfileAvatar from "../components/ProfileAvatar";
 import * as ImagePicker from "expo-image-picker";
 import { uploadProfilePhoto } from "../services/storageService";
+import AvatarLibrary from "../components/AvatarLibrary";
 
 const { width } = Dimensions.get("window");
 
@@ -214,6 +215,7 @@ const ProfileScreen = ({ navigation }) => {
   });
   const [syncPending, setSyncPending] = useState(false);
   const [profilePhoto, setProfilePhoto] = useState(null);
+  const [showAvatarLibrary, setShowAvatarLibrary] = useState(false);
 
   const userStats = {
     totalScore: 2847,
@@ -953,18 +955,6 @@ const ProfileScreen = ({ navigation }) => {
                 }}
               />
               <TextInput
-                placeholder='Avatar (emoji)'
-                value={editData.avatar}
-                onChangeText={(v) => setEditData((d) => ({ ...d, avatar: v }))}
-                style={{
-                  borderBottomWidth: 1,
-                  borderColor: "#ccc",
-                  marginBottom: 12,
-                  fontSize: 16,
-                }}
-                maxLength={2}
-              />
-              <TextInput
                 placeholder='Bio'
                 value={editData.bio}
                 onChangeText={(v) => setEditData((d) => ({ ...d, bio: v }))}
@@ -996,29 +986,52 @@ const ProfileScreen = ({ navigation }) => {
                   />
                 ))}
               </Picker>
-              <Button
-                title={
-                  editData.photoURL ? "Changer la photo" : "Choisir une photo"
-                }
-                onPress={async () => {
-                  const result = await ImagePicker.launchImageLibraryAsync({
-                    mediaTypes: ImagePicker.MediaTypeOptions.Images,
-                    allowsEditing: true,
-                    aspect: [1, 1],
-                    quality: 0.7,
-                  });
-                  if (
-                    !result.canceled &&
-                    result.assets &&
-                    result.assets[0].uri
-                  ) {
-                    setEditData((d) => ({
-                      ...d,
-                      photoURL: result.assets[0].uri,
-                    }));
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  marginBottom: 12,
+                }}>
+                <Button
+                  title={
+                    editData.photoURL && editData.photoURL.startsWith("http")
+                      ? "Changer la photo"
+                      : "Choisir une photo"
                   }
-                }}
-              />
+                  onPress={async () => {
+                    setShowAvatarLibrary(false);
+                    const result = await ImagePicker.launchImageLibraryAsync({
+                      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                      allowsEditing: true,
+                      aspect: [1, 1],
+                      quality: 0.7,
+                    });
+                    if (
+                      !result.canceled &&
+                      result.assets &&
+                      result.assets[0].uri
+                    ) {
+                      setEditData((d) => ({
+                        ...d,
+                        photoURL: result.assets[0].uri,
+                      }));
+                    }
+                  }}
+                />
+                <Button
+                  title='Choisir un avatar'
+                  onPress={() => setShowAvatarLibrary((v) => !v)}
+                  color='#667eea'
+                />
+              </View>
+              {showAvatarLibrary && (
+                <AvatarLibrary
+                  onSelect={(url) => {
+                    setEditData((d) => ({ ...d, photoURL: url }));
+                    setShowAvatarLibrary(false);
+                  }}
+                />
+              )}
               {editData.photoURL && (
                 <Image
                   source={{ uri: editData.photoURL }}
