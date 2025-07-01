@@ -23,6 +23,7 @@ import { useAuth } from "../hooks/useAuth";
 import { colors } from "../constants/colors";
 import { messages } from "../constants/config";
 import { logError, logSuccess, logInfo } from "../utils/errorHandler";
+import FormErrorMessage from "../components/FormErrorMessage";
 
 // Écran d'inscription avec validation des champs
 const RegisterScreen = ({ navigation }) => {
@@ -99,12 +100,12 @@ const RegisterScreen = ({ navigation }) => {
           "RegisterScreen.handleRegister"
         );
         setErrors(validation.errors);
-        Toast.show({
-          type: "error",
-          text1: "Erreur de validation",
-          text2: "Veuillez corriger les erreurs dans le formulaire",
-          position: "top",
-          visibilityTime: 3000,
+        setTouched({
+          username: true,
+          email: true,
+          password: true,
+          confirmPassword: true,
+          // acceptTerms: true, // si tu veux afficher l'erreur sur la checkbox
         });
         return;
       }
@@ -113,6 +114,7 @@ const RegisterScreen = ({ navigation }) => {
       const result = await register(email, password, username);
 
       if (result.success) {
+        await authService.logout();
         logSuccess(
           `Inscription réussie pour: ${email}`,
           "RegisterScreen.handleRegister"
@@ -124,7 +126,7 @@ const RegisterScreen = ({ navigation }) => {
           position: "top",
           visibilityTime: 3000,
         });
-        navigation.navigate("MainTabs");
+        navigation.navigate("EmailValidation", { email });
       } else {
         logError(
           new Error(`Registration failed: ${result.error}`),
@@ -170,13 +172,16 @@ const RegisterScreen = ({ navigation }) => {
           {/* Formulaire d'inscription */}
           <View style={styles.formContainer}>
             {/* Champ Nom d'utilisateur */}
-            {errors.username && touched.username && (
-              <View style={styles.errorContainer}>
-                <Ionicons name='alert-circle' size={16} color={colors.error} />
-                <Text style={styles.errorText}>{errors.username}</Text>
-              </View>
-            )}
-            <View style={styles.inputContainer}>
+            <FormErrorMessage
+              message={
+                touched.username && errors.username ? errors.username : ""
+              }
+            />
+            <View
+              style={[
+                styles.inputContainer,
+                touched.username && errors.username && styles.inputError,
+              ]}>
               <Ionicons
                 name='person-outline'
                 size={20}
@@ -184,10 +189,7 @@ const RegisterScreen = ({ navigation }) => {
                 style={styles.inputIcon}
               />
               <TextInput
-                style={[
-                  styles.input,
-                  errors.username && touched.username && styles.inputError,
-                ]}
+                style={styles.input}
                 placeholder="Nom d'utilisateur"
                 placeholderTextColor='rgba(255,255,255,0.7)'
                 value={username}
@@ -198,13 +200,14 @@ const RegisterScreen = ({ navigation }) => {
             </View>
 
             {/* Champ Email */}
-            {errors.email && touched.email && (
-              <View style={styles.errorContainer}>
-                <Ionicons name='alert-circle' size={16} color={colors.error} />
-                <Text style={styles.errorText}>{errors.email}</Text>
-              </View>
-            )}
-            <View style={styles.inputContainer}>
+            <FormErrorMessage
+              message={touched.email && errors.email ? errors.email : ""}
+            />
+            <View
+              style={[
+                styles.inputContainer,
+                touched.email && errors.email && styles.inputError,
+              ]}>
               <Ionicons
                 name='mail-outline'
                 size={20}
@@ -212,10 +215,7 @@ const RegisterScreen = ({ navigation }) => {
                 style={styles.inputIcon}
               />
               <TextInput
-                style={[
-                  styles.input,
-                  errors.email && touched.email && styles.inputError,
-                ]}
+                style={styles.input}
                 placeholder='Email'
                 placeholderTextColor='rgba(255,255,255,0.7)'
                 value={email}
@@ -227,13 +227,16 @@ const RegisterScreen = ({ navigation }) => {
             </View>
 
             {/* Champ Mot de passe */}
-            {errors.password && touched.password && (
-              <View style={styles.errorContainer}>
-                <Ionicons name='alert-circle' size={16} color={colors.error} />
-                <Text style={styles.errorText}>{errors.password}</Text>
-              </View>
-            )}
-            <View style={styles.inputContainer}>
+            <FormErrorMessage
+              message={
+                touched.password && errors.password ? errors.password : ""
+              }
+            />
+            <View
+              style={[
+                styles.inputContainer,
+                touched.password && errors.password && styles.inputError,
+              ]}>
               <Ionicons
                 name='lock-closed-outline'
                 size={20}
@@ -241,10 +244,7 @@ const RegisterScreen = ({ navigation }) => {
                 style={styles.inputIcon}
               />
               <TextInput
-                style={[
-                  styles.input,
-                  errors.password && touched.password && styles.inputError,
-                ]}
+                style={styles.input}
                 placeholder='Mot de passe'
                 placeholderTextColor='rgba(255,255,255,0.7)'
                 value={password}
@@ -264,13 +264,20 @@ const RegisterScreen = ({ navigation }) => {
             </View>
 
             {/* Champ Confirmation mot de passe */}
-            {errors.confirmPassword && touched.confirmPassword && (
-              <View style={styles.errorContainer}>
-                <Ionicons name='alert-circle' size={16} color={colors.error} />
-                <Text style={styles.errorText}>{errors.confirmPassword}</Text>
-              </View>
-            )}
-            <View style={styles.inputContainer}>
+            <FormErrorMessage
+              message={
+                touched.confirmPassword && errors.confirmPassword
+                  ? errors.confirmPassword
+                  : ""
+              }
+            />
+            <View
+              style={[
+                styles.inputContainer,
+                touched.confirmPassword &&
+                  errors.confirmPassword &&
+                  styles.inputError,
+              ]}>
               <Ionicons
                 name='lock-closed-outline'
                 size={20}
@@ -278,12 +285,7 @@ const RegisterScreen = ({ navigation }) => {
                 style={styles.inputIcon}
               />
               <TextInput
-                style={[
-                  styles.input,
-                  errors.confirmPassword &&
-                    touched.confirmPassword &&
-                    styles.inputError,
-                ]}
+                style={styles.input}
                 placeholder='Confirmer le mot de passe'
                 placeholderTextColor='rgba(255,255,255,0.7)'
                 value={confirmPassword}

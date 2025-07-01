@@ -8,6 +8,7 @@ import LoginScreen from "../screens/LoginScreen";
 import RegisterScreen from "../screens/RegisterScreen";
 import MainTabNavigator from "./MainTabNavigator";
 import { useAuth } from "../contexts/AuthContext";
+import EmailValidationScreen from "../screens/EmailValidationScreen";
 
 const Stack = createStackNavigator();
 
@@ -49,6 +50,13 @@ const AppNavigator = () => {
               component={RegisterScreen}
               options={{
                 title: "Inscription",
+              }}
+            />
+            <Stack.Screen
+              name='EmailValidation'
+              component={EmailValidationScreen}
+              options={{
+                title: "Validation email",
               }}
             />
           </>

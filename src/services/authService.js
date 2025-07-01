@@ -69,12 +69,8 @@ class AuthService {
         displayName: displayName,
       });
 
-      // Envoi de l'email de vérification avec configuration SMTP personnalisée
-      const emailUrls = getEmailUrls();
-      await sendEmailVerification(userCredential.user, {
-        url: emailUrls.emailVerification,
-        handleCodeInApp: true,
-      });
+      // Envoi de l'email de vérification (flow natif Firebase, pas d'option url)
+      await sendEmailVerification(userCredential.user);
 
       logSuccess(
         `Compte créé avec succès pour: ${email}`,
@@ -177,6 +173,17 @@ class AuthService {
     };
 
     return errorMessages[errorCode] || "Une erreur est survenue";
+  }
+
+  // Renvoyer l'email de validation
+  async resendEmailVerification(email) {
+    const user = auth.currentUser;
+    if (user && user.email === email) {
+      await sendEmailVerification(user);
+      return true;
+    } else {
+      throw new Error("Utilisateur non connecté ou email non correspondant");
+    }
   }
 }
 

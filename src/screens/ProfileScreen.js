@@ -118,6 +118,7 @@ const DEFAULT_BANNER =
 
 // Écran de profil avec classement et statistiques
 const ProfileScreen = ({ navigation }) => {
+  const { logout } = useAuth();
   const [activeTab, setActiveTab] = useState("profile");
   const [profileBanner, setProfileBanner] = useState("");
   const [profileAvatar, setProfileAvatar] = useState("👑");
@@ -262,11 +263,6 @@ const ProfileScreen = ({ navigation }) => {
           <View style={styles.userInfo}>
             <Text style={styles.userName}>AlexGamer</Text>
           </View>
-          <TouchableOpacity
-            style={styles.settingsButton}
-            onPress={handleLogout}>
-            <Ionicons name='log-out-outline' size={24} color='#fff' />
-          </TouchableOpacity>
         </View>
       </LinearGradient>
 
@@ -531,6 +527,20 @@ const ProfileScreen = ({ navigation }) => {
             </View>
           </View>
         )}
+        {/* Bouton de déconnexion stylé en bas */}
+        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+          <LinearGradient
+            colors={["#ff6b6b", "#ee5a24"]}
+            style={styles.logoutGradient}>
+            <Ionicons
+              name='log-out-outline'
+              size={20}
+              color='#fff'
+              style={{ marginRight: 8 }}
+            />
+            <Text style={styles.logoutButtonText}>Se déconnecter</Text>
+          </LinearGradient>
+        </TouchableOpacity>
       </ScrollView>
     </View>
   );
@@ -1208,6 +1218,15 @@ const styles = StyleSheet.create({
   leaderboardSwitchTextActive: {
     color: "#fff",
   },
+  logoutButton: { marginTop: 30, alignSelf: "center", width: "80%" },
+  logoutGradient: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 25,
+    paddingVertical: 12,
+  },
+  logoutButtonText: { color: "#fff", fontWeight: "bold", fontSize: 16 },
 });
 
 export default ProfileScreen;

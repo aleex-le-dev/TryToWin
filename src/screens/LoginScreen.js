@@ -26,6 +26,8 @@ import { useAuth } from "../hooks/useAuth";
 import { colors } from "../constants/colors";
 import { messages } from "../constants/config";
 import { logError, logSuccess, logInfo } from "../utils/errorHandler";
+import FormErrorMessage from "../components/FormErrorMessage";
+import { useToast } from "../contexts/ToastContext";
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -45,6 +47,8 @@ const LoginScreen = ({ navigation }) => {
     expoClientId: EXPO_CLIENT_ID,
     androidClientId: ANDROID_CLIENT_ID,
   });
+
+  const { showToast } = useToast();
 
   logInfo(
     `Google Auth - Request: ${request ? "Prêt" : "Non prêt"}`,
@@ -135,12 +139,9 @@ const LoginScreen = ({ navigation }) => {
           "LoginScreen.handleLogin"
         );
         setErrors(validation.errors);
-        Toast.show({
-          type: "error",
-          text1: "Erreur de validation",
-          text2: "Veuillez corriger les erreurs dans le formulaire",
-          position: "top",
-          visibilityTime: 3000,
+        setTouched({
+          email: true,
+          password: true,
         });
         return;
       }
@@ -149,39 +150,40 @@ const LoginScreen = ({ navigation }) => {
       const result = await login(email, password);
 
       if (result.success) {
+        // Vérification de l'email
+        if (!result.user?.emailVerified) {
+          Alert.alert(
+            "Validation requise",
+            "Merci de valider votre adresse e-mail avant de vous connecter. Vérifie ta boîte mail et clique sur le lien de validation."
+          );
+          return;
+        }
         logSuccess(
           `Connexion réussie pour: ${email}`,
           "LoginScreen.handleLogin"
         );
-        Toast.show({
+        showToast({
           type: "success",
-          text1: messages.success.login,
-          text2: "Bienvenue sur TryToWin !",
-          position: "top",
-          visibilityTime: 3000,
+          title: messages.success.login,
+          message: "Bienvenue sur TryToWin !",
         });
-        navigation.navigate("MainTabs");
       } else {
         logError(
           new Error(`Login failed: ${result.error}`),
           "LoginScreen.handleLogin"
         );
-        Toast.show({
+        showToast({
           type: "error",
-          text1: "Erreur de connexion",
-          text2: result.error,
-          position: "top",
-          visibilityTime: 4000,
+          title: "Erreur de connexion",
+          message: result.error,
         });
       }
     } catch (error) {
       logError(error, "LoginScreen.handleLogin");
-      Toast.show({
+      showToast({
         type: "error",
-        text1: "Erreur inattendue",
-        text2: "Une erreur est survenue lors de la connexion",
-        position: "top",
-        visibilityTime: 4000,
+        title: "Erreur inattendue",
+        message: "Une erreur est survenue lors de la connexion",
       });
     }
   };
@@ -240,7 +242,7 @@ const LoginScreen = ({ navigation }) => {
           {/* Logo et titre */}
           <View style={styles.header}>
             <View style={styles.logoContainer}>
-              <Ionicons name='game-controller' size={60} color='#fff' />
+              {/* Icône supprimée ici */}
             </View>
             <Text style={styles.title}>TryToWin</Text>
             <Text style={styles.subtitle}>Votre destination de jeux</Text>
@@ -249,13 +251,14 @@ const LoginScreen = ({ navigation }) => {
           {/* Formulaire de connexion */}
           <View style={styles.formContainer}>
             {/* Champ Email */}
-            {errors.email && touched.email && (
-              <View style={styles.errorContainer}>
-                <Ionicons name='alert-circle' size={16} color={colors.error} />
-                <Text style={styles.errorText}>{errors.email}</Text>
-              </View>
-            )}
-            <View style={styles.inputContainer}>
+            <FormErrorMessage
+              message={touched.email && errors.email ? errors.email : ""}
+            />
+            <View
+              style={[
+                styles.inputContainer,
+                touched.email && errors.email && styles.inputError,
+              ]}>
               <Ionicons
                 name='mail-outline'
                 size={20}
@@ -263,10 +266,7 @@ const LoginScreen = ({ navigation }) => {
                 style={styles.inputIcon}
               />
               <TextInput
-                style={[
-                  styles.input,
-                  errors.email && touched.email && styles.inputError,
-                ]}
+                style={styles.input}
                 placeholder='Email'
                 placeholderTextColor='rgba(255,255,255,0.7)'
                 value={email}
@@ -278,13 +278,16 @@ const LoginScreen = ({ navigation }) => {
             </View>
 
             {/* Champ Mot de passe */}
-            {errors.password && touched.password && (
-              <View style={styles.errorContainer}>
-                <Ionicons name='alert-circle' size={16} color={colors.error} />
-                <Text style={styles.errorText}>{errors.password}</Text>
-              </View>
-            )}
-            <View style={styles.inputContainer}>
+            <FormErrorMessage
+              message={
+                touched.password && errors.password ? errors.password : ""
+              }
+            />
+            <View
+              style={[
+                styles.inputContainer,
+                touched.password && errors.password && styles.inputError,
+              ]}>
               <Ionicons
                 name='lock-closed-outline'
                 size={20}
@@ -292,10 +295,7 @@ const LoginScreen = ({ navigation }) => {
                 style={styles.inputIcon}
               />
               <TextInput
-                style={[
-                  styles.input,
-                  errors.password && touched.password && styles.inputError,
-                ]}
+                style={styles.input}
                 placeholder='Mot de passe'
                 placeholderTextColor='rgba(255,255,255,0.7)'
                 value={password}
@@ -326,8 +326,13 @@ const LoginScreen = ({ navigation }) => {
                   <ActivityIndicator size='small' color='#fff' />
                 ) : (
                   <>
+                    <Ionicons
+                      name='log-in-outline'
+                      size={20}
+                      color='#fff'
+                      style={{ marginRight: 8 }}
+                    />
                     <Text style={styles.loginButtonText}>Se connecter</Text>
-                    <Ionicons name='arrow-forward' size={20} color='#fff' />
                   </>
                 )}
               </LinearGradient>

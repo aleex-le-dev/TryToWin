@@ -29,7 +29,11 @@ export const AuthProvider = ({ children }) => {
         "[DEBUG] Auth state changed:",
         user ? user.email : "No user"
       );
-      setUser(user);
+      if (user && !user.emailVerified) {
+        setUser(null);
+      } else {
+        setUser(user);
+      }
       setLoading(false);
     });
 
@@ -41,6 +45,7 @@ export const AuthProvider = ({ children }) => {
     user,
     loading,
     isAuthenticated: !!user,
+    emailNotVerified: auth.currentUser && auth.currentUser.email && !auth.currentUser.emailVerified,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

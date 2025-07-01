@@ -1,7 +1,7 @@
 // Gestionnaire d'erreurs global pour React Native
 // Capture toutes les erreurs non gérées et les log avec le système centralisé
 
-import { logError, logWarning, logInfo } from "./errorHandler";
+import { logError, logWarning, logInfo, logSuccess } from "./errorHandler";
 
 // Gestionnaire d'erreurs global pour JavaScript
 const globalErrorHandler = (error, isFatal = false) => {

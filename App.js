@@ -9,6 +9,7 @@ import {
   testErrorHandling,
 } from "./src/utils/globalErrorHandler";
 import { logInfo, logSuccess } from "./src/utils/errorHandler";
+import { ToastProvider } from "./src/contexts/ToastContext";
 
 // Application principale TryToWin
 export default function App() {
@@ -28,12 +29,14 @@ export default function App() {
   }, []);
 
   return (
-    <SafeAreaProvider>
-      <AuthProvider>
-        <AppNavigator />
-        <Toast />
-        <StatusBar style='light' />
-      </AuthProvider>
-    </SafeAreaProvider>
+    <ToastProvider>
+      <SafeAreaProvider>
+        <AuthProvider>
+          <AppNavigator />
+          <Toast />
+          <StatusBar style='light' />
+        </AuthProvider>
+      </SafeAreaProvider>
+    </ToastProvider>
   );
 }
