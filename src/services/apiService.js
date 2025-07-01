@@ -3,6 +3,12 @@
 
 import axios from "axios";
 import { auth } from "../utils/firebaseConfig";
+import {
+  handleApiError,
+  handleNetworkError,
+  logInfo,
+  logSuccess,
+} from "../utils/errorHandler";
 
 // Configuration de base d'Axios
 const apiClient = axios.create({
@@ -36,16 +42,16 @@ apiClient.interceptors.response.use(
     return response;
   },
   (error) => {
-    // Gestion des erreurs HTTP
+    // Gestion des erreurs HTTP avec le nouveau système
     if (error.response) {
       // Erreur de réponse du serveur
-      console.warn("[API Error]", error.response.status, error.response.data);
+      handleApiError(error, "ApiService.interceptor");
     } else if (error.request) {
       // Erreur de requête (pas de réponse)
-      console.warn("[API Error]", "Pas de réponse du serveur");
+      handleNetworkError(error, "ApiService.interceptor");
     } else {
       // Erreur de configuration
-      console.warn("[API Error]", error.message);
+      handleApiError(error, "ApiService.interceptor");
     }
     return Promise.reject(error);
   }
@@ -55,44 +61,68 @@ class ApiService {
   // Méthodes GET
   async get(endpoint, params = {}) {
     try {
+      logInfo(`GET ${endpoint}`, "ApiService.get");
+
       const response = await apiClient.get(endpoint, { params });
+
+      logSuccess(`GET ${endpoint} - Succès`, "ApiService.get");
+
       return { success: true, data: response.data, error: null };
     } catch (error) {
-      return { success: false, data: null, error: this.handleError(error) };
+      const apiError = handleApiError(error, `ApiService.get - ${endpoint}`);
+      return { success: false, data: null, error: apiError.error };
     }
   }
 
   // Méthodes POST
   async post(endpoint, data = {}) {
     try {
+      logInfo(`POST ${endpoint}`, "ApiService.post");
+
       const response = await apiClient.post(endpoint, data);
+
+      logSuccess(`POST ${endpoint} - Succès`, "ApiService.post");
+
       return { success: true, data: response.data, error: null };
     } catch (error) {
-      return { success: false, data: null, error: this.handleError(error) };
+      const apiError = handleApiError(error, `ApiService.post - ${endpoint}`);
+      return { success: false, data: null, error: apiError.error };
     }
   }
 
   // Méthodes PUT
   async put(endpoint, data = {}) {
     try {
+      logInfo(`PUT ${endpoint}`, "ApiService.put");
+
       const response = await apiClient.put(endpoint, data);
+
+      logSuccess(`PUT ${endpoint} - Succès`, "ApiService.put");
+
       return { success: true, data: response.data, error: null };
     } catch (error) {
-      return { success: false, data: null, error: this.handleError(error) };
+      const apiError = handleApiError(error, `ApiService.put - ${endpoint}`);
+      return { success: false, data: null, error: apiError.error };
     }
   }
 
   // Méthodes DELETE
   async delete(endpoint) {
     try {
+      logInfo(`DELETE ${endpoint}`, "ApiService.delete");
+
       const response = await apiClient.delete(endpoint);
+
+      logSuccess(`DELETE ${endpoint} - Succès`, "ApiService.delete");
+
       return { success: true, data: response.data, error: null };
     } catch (error) {
-      return { success: false, data: null, error: this.handleError(error) };
+      const apiError = handleApiError(error, `ApiService.delete - ${endpoint}`);
+      return { success: false, data: null, error: apiError.error };
     }
   }
 
-  // Gestion des erreurs
+  // Gestion des erreurs (maintenu pour compatibilité)
   handleError(error) {
     if (error.response) {
       const { status, data } = error.response;

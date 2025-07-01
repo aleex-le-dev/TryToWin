@@ -23,7 +23,9 @@ import { GoogleAuthProvider, signInWithCredential } from "firebase/auth";
 import { authService } from "../services/authService";
 import { authSchemas, validateForm } from "../schemas/validationSchemas";
 import { useAuth } from "../hooks/useAuth";
-import { colors, messages } from "../constants";
+import { colors } from "../constants/colors";
+import { messages } from "../constants/config";
+import { logError, logSuccess, logInfo } from "../utils/errorHandler";
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -44,17 +46,24 @@ const LoginScreen = ({ navigation }) => {
     androidClientId: ANDROID_CLIENT_ID,
   });
 
-  console.warn("[DEBUG] Google Auth - Request:", request ? "Prêt" : "Non prêt");
-  console.warn("[DEBUG] Google Auth - Response:", response);
+  logInfo(
+    `Google Auth - Request: ${request ? "Prêt" : "Non prêt"}`,
+    "LoginScreen"
+  );
+  logInfo(`Google Auth - Response: ${JSON.stringify(response)}`, "LoginScreen");
 
   React.useEffect(() => {
-    console.warn("[DEBUG] Google Auth - Response changed:", response);
+    logInfo(
+      `Google Auth - Response changed: ${JSON.stringify(response)}`,
+      "LoginScreen"
+    );
+
     if (response?.type === "success") {
-      console.warn("[DEBUG] Google Auth - Success response received");
+      logInfo("Google Auth - Success response received", "LoginScreen");
       const { id_token } = response.params;
-      console.warn(
-        "[DEBUG] Google Auth - ID Token:",
-        id_token ? "Présent" : "Manquant"
+      logInfo(
+        `Google Auth - ID Token: ${id_token ? "Présent" : "Manquant"}`,
+        "LoginScreen"
       );
 
       const credential = GoogleAuthProvider.credential(id_token);
@@ -62,23 +71,23 @@ const LoginScreen = ({ navigation }) => {
 
       signInWithCredential(auth, credential)
         .then((result) => {
-          console.warn(
-            "[DEBUG] Google Auth - Firebase signin success:",
-            result.user.email
+          logSuccess(
+            `Google Auth - Firebase signin success: ${result.user.email}`,
+            "LoginScreen"
           );
           Alert.alert("Succès", "Connecté avec Google !");
           navigation.navigate("MainTabs");
         })
         .catch((err) => {
-          console.warn(
-            "[DEBUG] Google Auth - Firebase signin error:",
-            err.message
-          );
+          logError(err, "LoginScreen.GoogleAuth");
           Alert.alert("Erreur", err.message);
         })
         .finally(() => setLoading(false));
     } else if (response?.type === "error") {
-      console.warn("[DEBUG] Google Auth - Error response:", response.error);
+      logError(
+        new Error(`Google Auth Error: ${response.error}`),
+        "LoginScreen.GoogleAuth"
+      );
       Alert.alert("Erreur", "Erreur lors de l'authentification Google");
     }
   }, [response]);
@@ -111,41 +120,66 @@ const LoginScreen = ({ navigation }) => {
   };
 
   const handleLogin = async () => {
-    // Validation complète du formulaire
-    const validation = await validateForm(authSchemas.login, {
-      email,
-      password,
-    });
+    try {
+      logInfo("Tentative de connexion", "LoginScreen.handleLogin");
 
-    if (!validation.isValid) {
-      setErrors(validation.errors);
+      // Validation complète du formulaire
+      const validation = await validateForm(authSchemas.login, {
+        email,
+        password,
+      });
+
+      if (!validation.isValid) {
+        logError(
+          new Error(`Validation errors: ${JSON.stringify(validation.errors)}`),
+          "LoginScreen.handleLogin"
+        );
+        setErrors(validation.errors);
+        Toast.show({
+          type: "error",
+          text1: "Erreur de validation",
+          text2: "Veuillez corriger les erreurs dans le formulaire",
+          position: "top",
+          visibilityTime: 3000,
+        });
+        return;
+      }
+
+      // Utilisation du service d'authentification
+      const result = await login(email, password);
+
+      if (result.success) {
+        logSuccess(
+          `Connexion réussie pour: ${email}`,
+          "LoginScreen.handleLogin"
+        );
+        Toast.show({
+          type: "success",
+          text1: messages.success.login,
+          text2: "Bienvenue sur TryToWin !",
+          position: "top",
+          visibilityTime: 3000,
+        });
+        navigation.navigate("MainTabs");
+      } else {
+        logError(
+          new Error(`Login failed: ${result.error}`),
+          "LoginScreen.handleLogin"
+        );
+        Toast.show({
+          type: "error",
+          text1: "Erreur de connexion",
+          text2: result.error,
+          position: "top",
+          visibilityTime: 4000,
+        });
+      }
+    } catch (error) {
+      logError(error, "LoginScreen.handleLogin");
       Toast.show({
         type: "error",
-        text1: "Erreur de validation",
-        text2: "Veuillez corriger les erreurs dans le formulaire",
-        position: "top",
-        visibilityTime: 3000,
-      });
-      return;
-    }
-
-    // Utilisation du service d'authentification
-    const result = await login(email, password);
-
-    if (result.success) {
-      Toast.show({
-        type: "success",
-        text1: messages.success.login,
-        text2: "Bienvenue sur TryToWin !",
-        position: "top",
-        visibilityTime: 3000,
-      });
-      navigation.navigate("MainTabs");
-    } else {
-      Toast.show({
-        type: "error",
-        text1: "Erreur de connexion",
-        text2: result.error,
+        text1: "Erreur inattendue",
+        text2: "Une erreur est survenue lors de la connexion",
         position: "top",
         visibilityTime: 4000,
       });
@@ -153,27 +187,39 @@ const LoginScreen = ({ navigation }) => {
   };
 
   const handleGoogleLogin = async () => {
-    console.warn("[DEBUG] Google Auth - Button pressed");
-    console.warn("[DEBUG] Google Auth - Request available:", !!request);
-    console.warn("[DEBUG] Google Auth - Loading state:", loading);
+    logInfo("Google Auth - Button pressed", "LoginScreen.handleGoogleLogin");
+    logInfo(
+      `Google Auth - Request available: ${!!request}`,
+      "LoginScreen.handleGoogleLogin"
+    );
+    logInfo(
+      `Google Auth - Loading state: ${loading}`,
+      "LoginScreen.handleGoogleLogin"
+    );
 
     if (!request) {
-      console.warn("[DEBUG] Google Auth - Request not ready");
+      logError(
+        new Error("Configuration Google non prête"),
+        "LoginScreen.handleGoogleLogin"
+      );
       Alert.alert("Erreur", "Configuration Google non prête");
       return;
     }
 
     if (loading) {
-      console.warn("[DEBUG] Google Auth - Already loading");
+      logInfo("Google Auth - Already loading", "LoginScreen.handleGoogleLogin");
       return;
     }
 
     try {
-      console.warn("[DEBUG] Google Auth - Starting prompt");
+      logInfo("Google Auth - Starting prompt", "LoginScreen.handleGoogleLogin");
       const result = await promptAsync();
-      console.warn("[DEBUG] Google Auth - Prompt result:", result);
+      logInfo(
+        `Google Auth - Prompt result: ${JSON.stringify(result)}`,
+        "LoginScreen.handleGoogleLogin"
+      );
     } catch (error) {
-      console.warn("[DEBUG] Google Auth - Prompt error:", error);
+      logError(error, "LoginScreen.handleGoogleLogin");
       Alert.alert(
         "Erreur",
         "Erreur lors du lancement de l'authentification Google"
@@ -202,6 +248,13 @@ const LoginScreen = ({ navigation }) => {
 
           {/* Formulaire de connexion */}
           <View style={styles.formContainer}>
+            {/* Champ Email */}
+            {errors.email && touched.email && (
+              <View style={styles.errorContainer}>
+                <Ionicons name='alert-circle' size={16} color={colors.error} />
+                <Text style={styles.errorText}>{errors.email}</Text>
+              </View>
+            )}
             <View style={styles.inputContainer}>
               <Ionicons
                 name='mail-outline'
@@ -223,10 +276,14 @@ const LoginScreen = ({ navigation }) => {
                 autoCapitalize='none'
               />
             </View>
-            {errors.email && touched.email && (
-              <Text style={styles.errorText}>{errors.email}</Text>
-            )}
 
+            {/* Champ Mot de passe */}
+            {errors.password && touched.password && (
+              <View style={styles.errorContainer}>
+                <Ionicons name='alert-circle' size={16} color={colors.error} />
+                <Text style={styles.errorText}>{errors.password}</Text>
+              </View>
+            )}
             <View style={styles.inputContainer}>
               <Ionicons
                 name='lock-closed-outline'
@@ -235,18 +292,17 @@ const LoginScreen = ({ navigation }) => {
                 style={styles.inputIcon}
               />
               <TextInput
-                style={[styles.input, errors.password && touched.password && styles.inputError]}
+                style={[
+                  styles.input,
+                  errors.password && touched.password && styles.inputError,
+                ]}
                 placeholder='Mot de passe'
                 placeholderTextColor='rgba(255,255,255,0.7)'
                 value={password}
-                onChangeText={(value) => handleFieldChange('password', value)}
-                onBlur={() => handleFieldBlur('password')}
+                onChangeText={(value) => handleFieldChange("password", value)}
+                onBlur={() => handleFieldBlur("password")}
                 secureTextEntry={!showPassword}
               />
-            </View>
-            {errors.password && touched.password && (
-              <Text style={styles.errorText}>{errors.password}</Text>
-            )}
               <TouchableOpacity
                 onPress={() => setShowPassword(!showPassword)}
                 style={styles.eyeIcon}>
@@ -451,12 +507,24 @@ const styles = StyleSheet.create({
     borderColor: colors.error,
     borderWidth: 1,
   },
+  errorContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 10,
+    marginLeft: 20,
+    backgroundColor: "rgba(231, 76, 60, 0.1)",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    borderLeftWidth: 3,
+    borderLeftColor: colors.error,
+  },
   errorText: {
     color: colors.error,
     fontSize: 12,
-    marginTop: -15,
-    marginBottom: 10,
-    marginLeft: 20,
+    fontWeight: "500",
+    marginLeft: 6,
+    flex: 1,
   },
 });
 

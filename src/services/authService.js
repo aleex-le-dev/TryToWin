@@ -13,26 +13,39 @@ import {
 import { auth } from "../utils/firebaseConfig";
 import { User } from "../models/User";
 import { getEmailUrls } from "../constants/emailConfig";
+import { handleAuthError, logSuccess, logInfo } from "../utils/errorHandler";
 
 class AuthService {
   // Connexion avec email/mot de passe
   async loginWithEmail(email, password) {
     try {
+      logInfo(
+        `Tentative de connexion pour: ${email}`,
+        "AuthService.loginWithEmail"
+      );
+
       const userCredential = await signInWithEmailAndPassword(
         auth,
         email,
         password
       );
+
+      logSuccess(
+        `Connexion réussie pour: ${email}`,
+        "AuthService.loginWithEmail"
+      );
+
       return {
         success: true,
         user: User.fromFirebase(userCredential.user),
         error: null,
       };
     } catch (error) {
+      const authError = handleAuthError(error, "AuthService.loginWithEmail");
       return {
         success: false,
         user: null,
-        error: this.getErrorMessage(error.code),
+        error: authError.error,
       };
     }
   }
@@ -40,6 +53,11 @@ class AuthService {
   // Création de compte avec email/mot de passe
   async registerWithEmail(email, password, displayName) {
     try {
+      logInfo(
+        `Tentative de création de compte pour: ${email}`,
+        "AuthService.registerWithEmail"
+      );
+
       const userCredential = await createUserWithEmailAndPassword(
         auth,
         email,
@@ -58,16 +76,22 @@ class AuthService {
         handleCodeInApp: true,
       });
 
+      logSuccess(
+        `Compte créé avec succès pour: ${email}`,
+        "AuthService.registerWithEmail"
+      );
+
       return {
         success: true,
         user: User.fromFirebase(userCredential.user),
         error: null,
       };
     } catch (error) {
+      const authError = handleAuthError(error, "AuthService.registerWithEmail");
       return {
         success: false,
         user: null,
-        error: this.getErrorMessage(error.code),
+        error: authError.error,
       };
     }
   }
@@ -75,12 +99,18 @@ class AuthService {
   // Déconnexion
   async logout() {
     try {
+      logInfo("Tentative de déconnexion", "AuthService.logout");
+
       await signOut(auth);
+
+      logSuccess("Déconnexion réussie", "AuthService.logout");
+
       return { success: true, error: null };
     } catch (error) {
+      const authError = handleAuthError(error, "AuthService.logout");
       return {
         success: false,
-        error: this.getErrorMessage(error.code),
+        error: authError.error,
       };
     }
   }
@@ -88,16 +118,28 @@ class AuthService {
   // Réinitialisation du mot de passe
   async resetPassword(email) {
     try {
+      logInfo(
+        `Tentative de réinitialisation de mot de passe pour: ${email}`,
+        "AuthService.resetPassword"
+      );
+
       const emailUrls = getEmailUrls();
       await sendPasswordResetEmail(auth, email, {
         url: emailUrls.passwordReset,
         handleCodeInApp: true,
       });
+
+      logSuccess(
+        `Email de réinitialisation envoyé à: ${email}`,
+        "AuthService.resetPassword"
+      );
+
       return { success: true, error: null };
     } catch (error) {
+      const authError = handleAuthError(error, "AuthService.resetPassword");
       return {
         success: false,
-        error: this.getErrorMessage(error.code),
+        error: authError.error,
       };
     }
   }
@@ -119,7 +161,7 @@ class AuthService {
     return user ? User.fromFirebase(user) : null;
   }
 
-  // Messages d'erreur personnalisés
+  // Messages d'erreur personnalisés (maintenu pour compatibilité)
   getErrorMessage(errorCode) {
     const errorMessages = {
       "auth/user-not-found": "Aucun compte trouvé avec cet email",

@@ -20,7 +20,9 @@ import {
   checkPasswordStrength,
 } from "../schemas/validationSchemas";
 import { useAuth } from "../hooks/useAuth";
-import { colors, messages } from "../constants";
+import { colors } from "../constants/colors";
+import { messages } from "../constants/config";
+import { logError, logSuccess, logInfo } from "../utils/errorHandler";
 
 // Écran d'inscription avec validation des champs
 const RegisterScreen = ({ navigation }) => {
@@ -79,44 +81,69 @@ const RegisterScreen = ({ navigation }) => {
   };
 
   const handleRegister = async () => {
-    // Validation complète du formulaire
-    const validation = await validateForm(authSchemas.register, {
-      username,
-      email,
-      password,
-      confirmPassword,
-      acceptTerms: true, // À implémenter avec une checkbox
-    });
+    try {
+      logInfo("Tentative d'inscription", "RegisterScreen.handleRegister");
 
-    if (!validation.isValid) {
-      setErrors(validation.errors);
+      // Validation complète du formulaire
+      const validation = await validateForm(authSchemas.register, {
+        username,
+        email,
+        password,
+        confirmPassword,
+        acceptTerms: true, // À implémenter avec une checkbox
+      });
+
+      if (!validation.isValid) {
+        logError(
+          new Error(`Validation errors: ${JSON.stringify(validation.errors)}`),
+          "RegisterScreen.handleRegister"
+        );
+        setErrors(validation.errors);
+        Toast.show({
+          type: "error",
+          text1: "Erreur de validation",
+          text2: "Veuillez corriger les erreurs dans le formulaire",
+          position: "top",
+          visibilityTime: 3000,
+        });
+        return;
+      }
+
+      // Utilisation du service d'authentification
+      const result = await register(email, password, username);
+
+      if (result.success) {
+        logSuccess(
+          `Inscription réussie pour: ${email}`,
+          "RegisterScreen.handleRegister"
+        );
+        Toast.show({
+          type: "success",
+          text1: messages.success.register,
+          text2: "Bienvenue sur TryToWin !",
+          position: "top",
+          visibilityTime: 3000,
+        });
+        navigation.navigate("MainTabs");
+      } else {
+        logError(
+          new Error(`Registration failed: ${result.error}`),
+          "RegisterScreen.handleRegister"
+        );
+        Toast.show({
+          type: "error",
+          text1: "Erreur d'inscription",
+          text2: result.error,
+          position: "top",
+          visibilityTime: 4000,
+        });
+      }
+    } catch (error) {
+      logError(error, "RegisterScreen.handleRegister");
       Toast.show({
         type: "error",
-        text1: "Erreur de validation",
-        text2: "Veuillez corriger les erreurs dans le formulaire",
-        position: "top",
-        visibilityTime: 3000,
-      });
-      return;
-    }
-
-    // Utilisation du service d'authentification
-    const result = await register(email, password, username);
-
-    if (result.success) {
-      Toast.show({
-        type: "success",
-        text1: messages.success.register,
-        text2: "Bienvenue sur TryToWin !",
-        position: "top",
-        visibilityTime: 3000,
-      });
-      navigation.navigate("MainTabs");
-    } else {
-      Toast.show({
-        type: "error",
-        text1: "Erreur d'inscription",
-        text2: result.error,
+        text1: "Erreur inattendue",
+        text2: "Une erreur est survenue lors de l'inscription",
         position: "top",
         visibilityTime: 4000,
       });
@@ -142,6 +169,13 @@ const RegisterScreen = ({ navigation }) => {
 
           {/* Formulaire d'inscription */}
           <View style={styles.formContainer}>
+            {/* Champ Nom d'utilisateur */}
+            {errors.username && touched.username && (
+              <View style={styles.errorContainer}>
+                <Ionicons name='alert-circle' size={16} color={colors.error} />
+                <Text style={styles.errorText}>{errors.username}</Text>
+              </View>
+            )}
             <View style={styles.inputContainer}>
               <Ionicons
                 name='person-outline'
@@ -150,15 +184,26 @@ const RegisterScreen = ({ navigation }) => {
                 style={styles.inputIcon}
               />
               <TextInput
-                style={styles.input}
+                style={[
+                  styles.input,
+                  errors.username && touched.username && styles.inputError,
+                ]}
                 placeholder="Nom d'utilisateur"
                 placeholderTextColor='rgba(255,255,255,0.7)'
                 value={username}
-                onChangeText={setUsername}
+                onChangeText={(value) => handleFieldChange("username", value)}
+                onBlur={() => handleFieldBlur("username")}
                 autoCapitalize='none'
               />
             </View>
 
+            {/* Champ Email */}
+            {errors.email && touched.email && (
+              <View style={styles.errorContainer}>
+                <Ionicons name='alert-circle' size={16} color={colors.error} />
+                <Text style={styles.errorText}>{errors.email}</Text>
+              </View>
+            )}
             <View style={styles.inputContainer}>
               <Ionicons
                 name='mail-outline'
@@ -167,16 +212,27 @@ const RegisterScreen = ({ navigation }) => {
                 style={styles.inputIcon}
               />
               <TextInput
-                style={styles.input}
+                style={[
+                  styles.input,
+                  errors.email && touched.email && styles.inputError,
+                ]}
                 placeholder='Email'
                 placeholderTextColor='rgba(255,255,255,0.7)'
                 value={email}
-                onChangeText={setEmail}
+                onChangeText={(value) => handleFieldChange("email", value)}
+                onBlur={() => handleFieldBlur("email")}
                 keyboardType='email-address'
                 autoCapitalize='none'
               />
             </View>
 
+            {/* Champ Mot de passe */}
+            {errors.password && touched.password && (
+              <View style={styles.errorContainer}>
+                <Ionicons name='alert-circle' size={16} color={colors.error} />
+                <Text style={styles.errorText}>{errors.password}</Text>
+              </View>
+            )}
             <View style={styles.inputContainer}>
               <Ionicons
                 name='lock-closed-outline'
@@ -185,11 +241,15 @@ const RegisterScreen = ({ navigation }) => {
                 style={styles.inputIcon}
               />
               <TextInput
-                style={styles.input}
+                style={[
+                  styles.input,
+                  errors.password && touched.password && styles.inputError,
+                ]}
                 placeholder='Mot de passe'
                 placeholderTextColor='rgba(255,255,255,0.7)'
                 value={password}
-                onChangeText={setPassword}
+                onChangeText={(value) => handleFieldChange("password", value)}
+                onBlur={() => handleFieldBlur("password")}
                 secureTextEntry={!showPassword}
               />
               <TouchableOpacity
@@ -203,6 +263,13 @@ const RegisterScreen = ({ navigation }) => {
               </TouchableOpacity>
             </View>
 
+            {/* Champ Confirmation mot de passe */}
+            {errors.confirmPassword && touched.confirmPassword && (
+              <View style={styles.errorContainer}>
+                <Ionicons name='alert-circle' size={16} color={colors.error} />
+                <Text style={styles.errorText}>{errors.confirmPassword}</Text>
+              </View>
+            )}
             <View style={styles.inputContainer}>
               <Ionicons
                 name='lock-closed-outline'
@@ -211,11 +278,19 @@ const RegisterScreen = ({ navigation }) => {
                 style={styles.inputIcon}
               />
               <TextInput
-                style={styles.input}
+                style={[
+                  styles.input,
+                  errors.confirmPassword &&
+                    touched.confirmPassword &&
+                    styles.inputError,
+                ]}
                 placeholder='Confirmer le mot de passe'
                 placeholderTextColor='rgba(255,255,255,0.7)'
                 value={confirmPassword}
-                onChangeText={setConfirmPassword}
+                onChangeText={(value) =>
+                  handleFieldChange("confirmPassword", value)
+                }
+                onBlur={() => handleFieldBlur("confirmPassword")}
                 secureTextEntry={!showConfirmPassword}
               />
               <TouchableOpacity
@@ -388,6 +463,29 @@ const styles = StyleSheet.create({
   },
   disabledButton: {
     opacity: 0.6,
+  },
+  inputError: {
+    borderColor: colors.error,
+    borderWidth: 1,
+  },
+  errorContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 10,
+    marginLeft: 20,
+    backgroundColor: "rgba(231, 76, 60, 0.1)",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    borderLeftWidth: 3,
+    borderLeftColor: colors.error,
+  },
+  errorText: {
+    color: colors.error,
+    fontSize: 12,
+    fontWeight: "500",
+    marginLeft: 6,
+    flex: 1,
   },
 });
 

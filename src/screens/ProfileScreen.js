@@ -18,7 +18,7 @@ import Toast from "react-native-toast-message";
 import { Picker } from "@react-native-picker/picker";
 import { ColorPicker } from "react-native-color-picker";
 import { useAuth } from "../hooks/useAuth";
-import { messages } from "../constants";
+import { messages } from "../constants/config";
 
 const { width } = Dimensions.get("window");
 
