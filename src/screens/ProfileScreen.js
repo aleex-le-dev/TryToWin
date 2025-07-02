@@ -23,7 +23,7 @@ import Toast from "react-native-toast-message";
 import { Picker } from "@react-native-picker/picker";
 import { useAuth } from "../hooks/useAuth";
 import { messages } from "../constants/config";
-import { doc, getDoc, updateDoc, setDoc } from "firebase/firestore";
+import { doc, getDoc, updateDoc, setDoc, collection } from "firebase/firestore";
 import { db } from "../utils/firebaseConfig";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import ProfileAvatar from "../components/ProfileAvatar";
@@ -36,84 +36,14 @@ import StatsTab from "../components/StatsTab";
 import LeaderboardTab from "../components/LeaderboardTab";
 import WheelColorPicker from "react-native-wheel-color-picker";
 import SettingsScreen from "./SettingsScreen";
+import {
+  getUserGameScore,
+  getLeaderboard,
+  getGlobalLeaderboard,
+} from "../services/scoreService";
+import { GAME_POINTS } from "../constants/gamePoints";
 
 const { width } = Dimensions.get("window");
-
-// Données du classement
-const leaderboardData = [
-  {
-    id: "1",
-    username: "AlexGamer",
-    rank: 1,
-    score: 2847,
-    gamesPlayed: 45,
-    avatar: "👑",
-    isCurrentUser: true,
-  },
-  {
-    id: "2",
-    username: "MariePro",
-    rank: 2,
-    score: 2654,
-    gamesPlayed: 38,
-    avatar: "🎮",
-    isCurrentUser: false,
-  },
-  {
-    id: "3",
-    username: "PierreMaster",
-    rank: 3,
-    score: 2489,
-    gamesPlayed: 42,
-    avatar: "⚡",
-    isCurrentUser: false,
-  },
-  {
-    id: "4",
-    username: "SophieWin",
-    rank: 4,
-    score: 2312,
-    gamesPlayed: 35,
-    avatar: "🌟",
-    isCurrentUser: false,
-  },
-  {
-    id: "5",
-    username: "LucasChamp",
-    rank: 5,
-    score: 2156,
-    gamesPlayed: 29,
-    avatar: "🏆",
-    isCurrentUser: false,
-  },
-  {
-    id: "6",
-    username: "EmmaStar",
-    rank: 6,
-    score: 1987,
-    gamesPlayed: 33,
-    avatar: "💎",
-    isCurrentUser: false,
-  },
-  {
-    id: "7",
-    username: "ThomasElite",
-    rank: 7,
-    score: 1845,
-    gamesPlayed: 27,
-    avatar: "🔥",
-    isCurrentUser: false,
-  },
-  {
-    id: "8",
-    username: "JulieQueen",
-    rank: 8,
-    score: 1723,
-    gamesPlayed: 31,
-    avatar: "👸",
-    isCurrentUser: false,
-  },
-];
 
 // Liste de pays avec drapeau (emoji)
 const countries = [
@@ -327,6 +257,10 @@ const ProfileScreen = ({ navigation }) => {
   const [profileFromFirestoreLoaded, setProfileFromFirestoreLoaded] =
     useState(false);
   const [profileLocal, setProfileLocal] = useState(null);
+  const [userScores, setUserScores] = useState({});
+  const [top10Global, setTop10Global] = useState([]);
+  const [selectedGame, setSelectedGame] = useState("TicTacToe");
+  const [userRank, setUserRank] = useState(null);
 
   const userStats = {
     totalScore: 2847,
@@ -337,16 +271,6 @@ const ProfileScreen = ({ navigation }) => {
     currentStreak: 8,
     totalTime: "12h 34m",
   };
-
-  const leaderboardDataWithCountry = leaderboardData.map((item, idx) => ({
-    ...item,
-    country: countries[idx % countries.length],
-  }));
-
-  const top10Global = leaderboardDataWithCountry.slice(0, 10);
-  const top10Country = leaderboardDataWithCountry
-    .filter((item) => item.country.code === selectedCountry.code)
-    .slice(0, 10);
 
   // Récupération du profil Firestore à l'ouverture
   useEffect(() => {
@@ -437,8 +361,44 @@ const ProfileScreen = ({ navigation }) => {
         setProfileLoading(false);
       };
       fetchProfile();
+      // Récupération des scores Firestore réels pour chaque jeu
+      const fetchScores = async () => {
+        const scores = {};
+        for (const game of Object.keys(GAME_POINTS)) {
+          scores[game] = await getUserGameScore(user.id, game);
+        }
+        setUserScores(scores);
+      };
+      fetchScores();
+      // Récupération du vrai classement général (tous jeux)
+      const fetchLeaderboard = async () => {
+        const leaderboard = await getGlobalLeaderboard(100);
+        // Récupère les profils utilisateurs pour enrichir chaque entrée
+        const enriched = await Promise.all(
+          leaderboard.map(async (entry) => {
+            const userDoc = await getDoc(doc(db, "users", entry.userId));
+            const userData = userDoc.exists() ? userDoc.data() : {};
+            return {
+              ...entry,
+              username: userData.username || entry.userId,
+              avatar: userData.avatar || "👤",
+              country: userData.country || null,
+            };
+          })
+        );
+        // Filtrage pays si besoin
+        let filtered = enriched;
+        if (leaderboardType === "country") {
+          filtered = enriched.filter((e) => e.country === selectedCountry.code);
+        }
+        // Calcul du rang de l'utilisateur connecté
+        const userIndex = enriched.findIndex((e) => e.userId === user.id);
+        setUserRank(userIndex >= 0 ? userIndex + 1 : null);
+        setTop10Global(filtered.slice(0, 10));
+      };
+      fetchLeaderboard();
     }
-  }, [user, loading]);
+  }, [user, loading, leaderboardType, selectedCountry]);
 
   // Ajoute un useEffect pour synchroniser bannerHex avec profile?.bannerColor :
   useEffect(() => {
@@ -772,9 +732,16 @@ const ProfileScreen = ({ navigation }) => {
             profileBanner={profileBanner}
             bannerColor={profile?.bannerColor}
             countries={countries}
-            userStats={userStats}
+            userStats={
+              userScores["TicTacToe"] || {
+                win: 0,
+                draw: 0,
+                lose: 0,
+                totalPoints: 0,
+              }
+            }
             openEditModal={openEditModal}
-            onOpenSettings={undefined}
+            onLogout={handleLogout}
           />
         ) : activeTab === "leaderboard" ? (
           <LeaderboardTab
@@ -783,9 +750,10 @@ const ProfileScreen = ({ navigation }) => {
             selectedCountry={selectedCountry}
             setSelectedCountry={setSelectedCountry}
             top10Global={top10Global}
-            top10Country={top10Country}
-            renderLeaderboardItem={renderLeaderboardItem}
+            top10Country={[]}
             countries={countries}
+            userRank={userRank}
+            userId={user?.id}
           />
         ) : (
           <StatsTab
