@@ -21,31 +21,10 @@ const ProfileTab = ({
       alignItems: "center",
       justifyContent: "flex-start",
       paddingTop: 24,
+      backgroundColor: "#18191c",
     }}>
-    {/* Fond blanc sur la moitié haute */}
-    <View
-      style={{
-        position: "absolute",
-        top: 0,
-        left: 0,
-        width: "100%",
-        height: "55%",
-        backgroundColor: "#fff",
-        zIndex: 0,
-      }}
-    />
-    {/* Fond noir sur la moitié basse */}
-    <View
-      style={{
-        position: "absolute",
-        bottom: 0,
-        left: 0,
-        width: "100%",
-        height: "50%",
-        backgroundColor: "#18191c",
-        zIndex: 0,
-      }}
-    />
+    {/* Fond blanc sur la moitié haute - SUPPRIMÉ */}
+    {/* Fond noir sur la moitié basse - SUPPRIMÉ car tout le fond est noir */}
     {/* Bannière en arrière-plan, en haut */}
     {profileBanner ? (
       <Image
