@@ -785,9 +785,19 @@ const ProfileScreen = ({ navigation }) => {
             </View>
           </View>
         ) : (
-          <View style={{ flex: 1, backgroundColor: "#18191c" }}>
+          <View style={{ flex: 1, backgroundColor: "#f8f9fa", padding: 16 }}>
             {/* Statistiques principales */}
-            <View style={styles.statsGrid}>
+            <View
+              style={[
+                styles.statsGrid,
+                {
+                  backgroundColor: "transparent",
+                  shadowColor: "transparent",
+                  padding: 0,
+                  marginBottom: 18,
+                  maxWidth: "100%",
+                },
+              ]}>
               {renderStatCard(
                 "trophy",
                 userStats.totalScore,
@@ -813,17 +823,28 @@ const ProfileScreen = ({ navigation }) => {
                 "#96CEB4"
               )}
             </View>
-
             {/* Statistiques détaillées */}
-            <View style={styles.detailedStats}>
+            <View
+              style={[
+                styles.detailedStats,
+                {
+                  backgroundColor: "#fff",
+                  borderRadius: 18,
+                  padding: 18,
+                  marginBottom: 20,
+                  shadowColor: "#000",
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.08,
+                  shadowRadius: 4,
+                  elevation: 3,
+                },
+              ]}>
               <Text style={styles.sectionTitle}>Statistiques Détaillées</Text>
-
               <View style={styles.statRow}>
                 <Ionicons name='star' size={20} color='#FFD700' />
                 <Text style={styles.statRowLabel}>Meilleur jeu</Text>
                 <Text style={styles.statRowValue}>{userStats.bestGame}</Text>
               </View>
-
               <View style={styles.statRow}>
                 <Ionicons name='flame' size={20} color='#FF6B6B' />
                 <Text style={styles.statRowLabel}>Série actuelle</Text>
@@ -831,34 +852,10 @@ const ProfileScreen = ({ navigation }) => {
                   {userStats.currentStreak} victoires
                 </Text>
               </View>
-
               <View style={styles.statRow}>
                 <Ionicons name='time' size={20} color='#4ECDC4' />
                 <Text style={styles.statRowLabel}>Temps total</Text>
                 <Text style={styles.statRowValue}>{userStats.totalTime}</Text>
-              </View>
-            </View>
-
-            {/* Actions rapides */}
-            <View style={styles.quickActions}>
-              <Text style={styles.sectionTitle}>Actions Rapides</Text>
-              <View style={styles.actionButtons}>
-                <TouchableOpacity style={styles.actionButton}>
-                  <Ionicons name='share-outline' size={24} color='#667eea' />
-                  <Text style={styles.actionButtonText}>Partager</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.actionButton}>
-                  <Ionicons name='download-outline' size={24} color='#667eea' />
-                  <Text style={styles.actionButtonText}>Exporter</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.actionButton}>
-                  <Ionicons
-                    name='help-circle-outline'
-                    size={24}
-                    color='#667eea'
-                  />
-                  <Text style={styles.actionButtonText}>Aide</Text>
-                </TouchableOpacity>
               </View>
             </View>
           </View>
@@ -1115,8 +1112,15 @@ const styles = StyleSheet.create({
   statsGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    justifyContent: "space-between",
-    marginBottom: 30,
+    justifyContent: "space-evenly",
+    alignItems: "center",
+    alignSelf: "center",
+    width: "100%",
+    maxWidth: 500,
+    backgroundColor: "transparent",
+    shadowColor: "transparent",
+    padding: 0,
+    marginBottom: 18,
   },
   statCard: {
     width: (width - 60) / 2,
@@ -1632,8 +1636,11 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     alignItems: "center",
     paddingVertical: 12,
-    marginHorizontal: 2,
+    margin: 8,
     elevation: 2,
+    width: "47%",
+    minWidth: 140,
+    maxWidth: 220,
   },
   playerStatValue: {
     fontSize: 18,
