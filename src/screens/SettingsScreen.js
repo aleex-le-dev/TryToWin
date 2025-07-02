@@ -9,26 +9,32 @@ import {
   ScrollView,
 } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
+import { useAuth } from "../hooks/useAuth";
 
 const SettingsScreen = ({ navigation, route }) => {
-  // TODO: brancher la vraie fonction de déconnexion
-  const handleLogout = () => {
-    // navigation.goBack();
-    // Appeler la vraie déconnexion ici
+  const { logout } = useAuth();
+  const handleLogout = async () => {
+    await logout();
+    navigation.goBack();
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#23272a" }}>
-      <View style={styles.header}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
+      <View
+        style={[
+          styles.header,
+          { backgroundColor: "#fff", borderBottomColor: "#e9ecef" },
+        ]}>
         <TouchableOpacity
           onPress={() => navigation.goBack()}
           style={styles.backBtn}>
-          <Ionicons name='arrow-back' size={24} color='#fff' />
+          <Ionicons name='arrow-back' size={24} color='#23272a' />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Paramètres</Text>
+        <Text style={[styles.headerTitle, { color: "#23272a" }]}>
+          Paramètres
+        </Text>
       </View>
       <ScrollView contentContainerStyle={{ padding: 18 }}>
-
         {/* Section Compte */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Compte</Text>
@@ -107,16 +113,16 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   sectionTitle: {
-    color: "#b9bbbe",
+    color: "#6c757d",
     fontSize: 16,
     fontWeight: "bold",
     marginBottom: 12,
   },
   footer: {
     padding: 18,
-    backgroundColor: "#23272a",
+    backgroundColor: "#fff",
     borderTopWidth: 1,
-    borderTopColor: "#36393f",
+    borderTopColor: "#e9ecef",
   },
   logoutBtnSmall: {
     alignItems: "center",
@@ -129,7 +135,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   menuTitle: {
-    color: "#fff",
+    color: "#23272a",
     fontSize: 20,
     fontWeight: "bold",
     marginBottom: 18,
@@ -139,11 +145,11 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 10,
     borderRadius: 10,
-    backgroundColor: "#2f3136",
+    backgroundColor: "#f8f9fa",
     marginBottom: 8,
   },
   menuItemText: {
-    color: "#fff",
+    color: "#23272a",
     fontSize: 16,
   },
 });

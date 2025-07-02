@@ -162,11 +162,6 @@ const LoginScreen = ({ navigation }) => {
           `Connexion réussie pour: ${email}`,
           "LoginScreen.handleLogin"
         );
-        showToast({
-          type: "success",
-          title: messages.success.login,
-          message: "Bienvenue sur TryToWin !",
-        });
       } else {
         logError(
           new Error(`Login failed: ${result.error}`),
