@@ -8,19 +8,7 @@ import {
   StyleSheet,
   TouchableOpacity,
 } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
-
-const icons = {
-  success: "checkmark-circle-outline",
-  error: "close-circle-outline",
-  info: "information-circle-outline",
-};
-const gradients = {
-  success: ["#43e97b", "#38f9d7"],
-  error: ["#fa709a", "#fee140"],
-  info: ["#667eea", "#764ba2"],
-};
 
 const CustomToast = ({ visible, type = "info", title, message, onHide }) => {
   const translateY = useRef(new Animated.Value(-100)).current;
@@ -47,23 +35,44 @@ const CustomToast = ({ visible, type = "info", title, message, onHide }) => {
 
   return (
     <Animated.View style={[styles.container, { transform: [{ translateY }] }]}>
-      <LinearGradient
-        colors={gradients[type] || gradients.info}
-        style={styles.toast}>
-        <Ionicons
-          name={icons[type] || icons.info}
-          size={28}
-          color='#fff'
-          style={styles.icon}
-        />
+      <View
+        style={[
+          styles.toast,
+          {
+            borderLeftColor:
+              type === "success"
+                ? "#43e97b"
+                : type === "error"
+                ? "#ff6b6b"
+                : "#667eea",
+          },
+        ]}>
         <View style={styles.textContainer}>
+          <Ionicons
+            name={
+              type === "success"
+                ? "checkmark-circle-outline"
+                : type === "error"
+                ? "close-circle-outline"
+                : "information-circle-outline"
+            }
+            size={24}
+            color={
+              type === "success"
+                ? "#43e97b"
+                : type === "error"
+                ? "#ff6b6b"
+                : "#667eea"
+            }
+            style={styles.icon}
+          />
           {title ? <Text style={styles.title}>{title}</Text> : null}
           <Text style={styles.message}>{message}</Text>
         </View>
         <TouchableOpacity onPress={onHide} style={styles.closeBtn}>
           <Ionicons name='close' size={20} color='#fff' />
         </TouchableOpacity>
-      </LinearGradient>
+      </View>
     </Animated.View>
   );
 };
@@ -78,22 +87,31 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   toast: {
+    minWidth: 180,
+    maxWidth: 340,
+    alignSelf: "center",
+    marginTop: 40,
+    backgroundColor: "#fff",
+    borderRadius: 18,
     flexDirection: "row",
     alignItems: "center",
-    minWidth: "80%",
-    paddingVertical: 14,
+    paddingVertical: 12,
     paddingHorizontal: 18,
-    borderRadius: 18,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.18,
+    shadowOpacity: 0.1,
     shadowRadius: 8,
-    elevation: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 4,
   },
-  icon: { marginRight: 12 },
+  icon: { marginRight: 10 },
   textContainer: { flex: 1 },
-  title: { color: "#fff", fontWeight: "bold", fontSize: 16, marginBottom: 2 },
-  message: { color: "#fff", fontSize: 15 },
+  title: {
+    color: "#23272a",
+    fontWeight: "bold",
+    fontSize: 16,
+    marginBottom: 2,
+  },
+  message: { color: "#23272a", fontSize: 15 },
   closeBtn: { marginLeft: 10, padding: 4 },
 });
 

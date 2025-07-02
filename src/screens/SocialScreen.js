@@ -46,8 +46,8 @@ export default function SocialScreen() {
         text1: "Lien copié",
         text2: "Le lien de votre profil a été copié !",
         position: "top",
-        visibilityTime: 1500,
         topOffset: 40,
+        visibilityTime: 2000,
       });
     } catch (error) {
       console.error("Erreur lors de la copie:", error);
@@ -56,8 +56,8 @@ export default function SocialScreen() {
         text1: "Erreur",
         text2: "Impossible de copier le lien",
         position: "top",
-        visibilityTime: 1500,
         topOffset: 40,
+        visibilityTime: 2000,
       });
     }
   };

@@ -124,8 +124,8 @@ const RegisterScreen = ({ navigation }) => {
           text1: messages.success.register,
           text2: "Bienvenue sur TryToWin !",
           position: "top",
-          visibilityTime: 3000,
           topOffset: 40,
+          visibilityTime: 2000,
         });
         navigation.navigate("EmailValidation", { email });
       } else {
@@ -138,8 +138,8 @@ const RegisterScreen = ({ navigation }) => {
           text1: "Erreur d'inscription",
           text2: result.error,
           position: "top",
-          visibilityTime: 4000,
           topOffset: 40,
+          visibilityTime: 2000,
         });
       }
     } catch (error) {
@@ -149,8 +149,8 @@ const RegisterScreen = ({ navigation }) => {
         text1: "Erreur inattendue",
         text2: "Une erreur est survenue lors de l'inscription",
         position: "top",
-        visibilityTime: 4000,
         topOffset: 40,
+        visibilityTime: 2000,
       });
     }
   };

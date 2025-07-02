@@ -263,24 +263,6 @@ const ProfileTab = ({
         }}>
         {profile?.bio ? `« ${profile.bio} »` : ""}
       </Text>
-      {profileUpdateSuccess && (
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            marginBottom: 8,
-          }}>
-          <Ionicons
-            name='checkmark-circle'
-            size={20}
-            color='#43e97b'
-            style={{ marginRight: 6 }}
-          />
-          <Text style={{ color: "#43e97b", fontWeight: "bold", fontSize: 15 }}>
-            Profil mis à jour
-          </Text>
-        </View>
-      )}
     </View>
   </View>
 );

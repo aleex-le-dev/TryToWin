@@ -221,7 +221,6 @@ const ProfileScreen = ({ navigation }) => {
   const [syncPending, setSyncPending] = useState(false);
   const [profilePhoto, setProfilePhoto] = useState(null);
   const [showAvatarLibrary, setShowAvatarLibrary] = useState(false);
-  const [profileUpdateSuccess, setProfileUpdateSuccess] = useState(false);
   const [showColorWheel, setShowColorWheel] = useState(false);
   const [bannerHex, setBannerHex] = useState(editData.bannerColor || "#fff");
 
@@ -316,8 +315,8 @@ const ProfileScreen = ({ navigation }) => {
               text2:
                 "Toutes vos modifications ont été enregistrées sur le cloud.",
               position: "top",
-              visibilityTime: 2000,
               topOffset: 40,
+              visibilityTime: 2000,
             });
           }
         } catch (e) {
@@ -338,8 +337,8 @@ const ProfileScreen = ({ navigation }) => {
         text1: messages.success.logout,
         text2: "Vous avez été déconnecté avec succès",
         position: "top",
-        visibilityTime: 2000,
         topOffset: 40,
+        visibilityTime: 2000,
       });
 
       // Navigation vers la page de connexion
@@ -352,8 +351,8 @@ const ProfileScreen = ({ navigation }) => {
         text1: "Erreur de déconnexion",
         text2: result.error,
         position: "top",
-        visibilityTime: 3000,
         topOffset: 40,
+        visibilityTime: 2000,
       });
     }
   };
@@ -461,8 +460,8 @@ const ProfileScreen = ({ navigation }) => {
           text1: "Erreur",
           text2: "Le nom d'utilisateur ne peut pas être vide",
           position: "top",
-          visibilityTime: 3000,
           topOffset: 40,
+          visibilityTime: 2000,
         });
         return;
       }
@@ -473,8 +472,8 @@ const ProfileScreen = ({ navigation }) => {
           text1: "Erreur",
           text2: "Impossible de récupérer l'identifiant utilisateur",
           position: "top",
-          visibilityTime: 3000,
           topOffset: 40,
+          visibilityTime: 2000,
         });
         return;
       }
@@ -511,8 +510,13 @@ const ProfileScreen = ({ navigation }) => {
         setProfilePhoto(docSnap.data().photoURL || "");
       }
       setEditModalVisible(false);
-      setProfileUpdateSuccess(true);
-      setTimeout(() => setProfileUpdateSuccess(false), 2500);
+      Toast.show({
+        type: "success",
+        text1: "Profil mis à jour",
+        position: "top",
+        topOffset: 40,
+        visibilityTime: 2000,
+      });
     } catch (error) {
       console.error("Erreur lors de la sauvegarde du profil:", error);
       Toast.show({
@@ -520,8 +524,8 @@ const ProfileScreen = ({ navigation }) => {
         text1: "Erreur de sauvegarde",
         text2: "Impossible de sauvegarder les modifications",
         position: "top",
-        visibilityTime: 4000,
         topOffset: 40,
+        visibilityTime: 2000,
       });
     }
   };
@@ -596,7 +600,6 @@ const ProfileScreen = ({ navigation }) => {
             bannerColor={bannerColor}
             countries={countries}
             userStats={userStats}
-            profileUpdateSuccess={profileUpdateSuccess}
             openEditModal={openEditModal}
           />
         ) : activeTab === "leaderboard" ? (

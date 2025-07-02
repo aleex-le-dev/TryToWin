@@ -99,6 +99,7 @@ const Morpion = ({ navigation, route }) => {
         text2: `Score: ${nouveauScore} points`,
         position: "top",
         topOffset: 40,
+        visibilityTime: 2000,
       });
     } else if (resultat === "O") {
       Toast.show({
@@ -107,6 +108,7 @@ const Morpion = ({ navigation, route }) => {
         text2: "L'IA a gagné cette partie",
         position: "top",
         topOffset: 40,
+        visibilityTime: 2000,
       });
     } else {
       nouveauScore = 50; // Score pour match nul
@@ -116,6 +118,7 @@ const Morpion = ({ navigation, route }) => {
         text2: "Aucun gagnant cette fois",
         position: "top",
         topOffset: 40,
+        visibilityTime: 2000,
       });
     }
 
