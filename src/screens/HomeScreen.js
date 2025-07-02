@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -10,6 +10,10 @@ import {
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
+import { useAuth } from "../contexts/AuthContext";
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "../utils/firebaseConfig";
+import { useIsFocused } from "@react-navigation/native";
 
 const { width } = Dimensions.get("window");
 
@@ -144,8 +148,10 @@ function GameCard({ item, onPress }) {
 
 // Écran d'accueil fusionné avec liste des jeux
 const HomeScreen = ({ navigation }) => {
-  const [userName] = useState("Alex");
+  const { user, loading } = useAuth();
   const [selectedCategory, setSelectedCategory] = useState("Tous");
+  const [profile, setProfile] = useState(null);
+  const isFocused = useIsFocused();
 
   const categories = [
     "Tous",
@@ -159,6 +165,26 @@ const HomeScreen = ({ navigation }) => {
   const filteredGames = gamesData.filter((game) => {
     return selectedCategory === "Tous" || game.category === selectedCategory;
   });
+
+  // Récupération du profil utilisateur depuis Firestore
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (user?.uid) {
+        try {
+          const docRef = doc(db, "users", user.uid);
+          const docSnap = await getDoc(docRef);
+          if (docSnap.exists()) {
+            setProfile(docSnap.data());
+            console.log("Profil Firestore:", docSnap.data());
+          }
+        } catch (error) {
+          console.log("Erreur lors de la récupération du profil:", error);
+        }
+      }
+    };
+
+    fetchProfile();
+  }, [user, isFocused]);
 
   // Utilisation du composant GameCard dans renderGameCard
   const renderGameCard = ({ item }) => (
@@ -215,7 +241,16 @@ const HomeScreen = ({ navigation }) => {
         <LinearGradient colors={["#667eea", "#764ba2"]} style={styles.header}>
           <View style={styles.headerContent}>
             <View style={styles.greetingContainer}>
-              <Text style={styles.greeting}>Bonjour, {userName} ! 👋</Text>
+              <Text style={styles.greeting}>
+                Bonjour,{" "}
+                {loading
+                  ? "..."
+                  : profile?.username ||
+                    user?.displayName ||
+                    user?.email?.split("@")[0] ||
+                    "Joueur"}{" "}
+                ! 👋
+              </Text>
               <Text style={styles.subtitle}>Prêt à jouer ?</Text>
             </View>
             <View style={styles.headerStats}>

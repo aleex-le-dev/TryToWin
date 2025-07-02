@@ -20,13 +20,14 @@ import { Picker } from "@react-native-picker/picker";
 import { ColorPicker } from "react-native-color-picker";
 import { useAuth } from "../hooks/useAuth";
 import { messages } from "../constants/config";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { doc, getDoc, updateDoc, setDoc } from "firebase/firestore";
 import { db } from "../utils/firebaseConfig";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import ProfileAvatar from "../components/ProfileAvatar";
 import * as ImagePicker from "expo-image-picker";
 import { uploadProfilePhoto } from "../services/storageService";
 import AvatarLibrary from "../components/AvatarLibrary";
+import ProfileHeaderAvatar from "../components/ProfileHeaderAvatar";
 
 const { width } = Dimensions.get("window");
 
@@ -455,7 +456,6 @@ const ProfileScreen = ({ navigation }) => {
       }
 
       if (!user?.id) {
-        console.log("User ID manquant:", user);
         Toast.show({
           type: "error",
           text1: "Erreur",
@@ -466,85 +466,45 @@ const ProfileScreen = ({ navigation }) => {
         return;
       }
 
-      console.log("Tentative de sauvegarde pour l'utilisateur:", user.id);
-      console.log("Données à sauvegarder:", editData);
+      // Mise à jour Firestore directe (création si besoin)
+      const userRef = doc(db, "users", user.id);
+      let photoURL = editData.photoURL;
+      if (photoURL && photoURL.startsWith("file")) {
+        photoURL = await uploadProfilePhoto(user.id, photoURL);
+        setProfilePhoto(photoURL);
+      }
+      await setDoc(
+        userRef,
+        {
+          username: editData.username.trim(),
+          avatar: editData.avatar,
+          bio: editData.bio,
+          country: editData.country,
+          photoURL: photoURL || profilePhoto || "",
+        },
+        { merge: true }
+      );
 
-      // Mise à jour de l'état local immédiatement
-      setProfile((prev) => {
-        const newProfile = { ...prev, ...editData };
-        saveProfileLocally(user.id, newProfile);
-        return newProfile;
-      });
-
-      // Fermeture de la modal
-      setEditModalVisible(false);
-
-      // Message de sauvegarde en cours
       Toast.show({
-        type: "info",
-        text1: "Sauvegarde en cours...",
-        text2: "Vos modifications sont en cours d'enregistrement",
+        type: "success",
+        text1: "Profil mis à jour",
+        text2: "Vos modifications ont été enregistrées avec succès",
         position: "top",
         visibilityTime: 2000,
       });
 
-      // Tentative de sauvegarde Firestore en arrière-plan
-      const userRef = doc(db, "users", user.id);
-      try {
-        if (editData.photoURL && editData.photoURL.startsWith("file")) {
-          const url = await uploadProfilePhoto(user.id, editData.photoURL);
-          editData.photoURL = url;
-          setProfilePhoto(url);
-        }
-        await updateDoc(userRef, {
-          username: editData.username.trim(),
-          avatar: editData.avatar,
-          bio: editData.bio,
-          country: editData.country,
-          photoURL: editData.photoURL || profilePhoto || "",
-        });
-        setSyncPending(false);
-        Toast.show({
-          type: "success",
-          text1: "Profil mis à jour",
-          text2: "Vos modifications ont été enregistrées avec succès",
-          position: "top",
-          visibilityTime: 2000,
-        });
-      } catch (firestoreError) {
-        // Ajoute la modif à la queue si Firestore échoue
-        addToProfileQueue(user.id, {
-          username: editData.username.trim(),
-          avatar: editData.avatar,
-          bio: editData.bio,
-          country: editData.country,
-        });
-        setSyncPending(true);
-        Toast.show({
-          type: "info",
-          text1: "Profil mis à jour localement",
-          text2:
-            "Modifications en attente de synchronisation (connexion perdue)",
-          position: "top",
-          visibilityTime: 3000,
-        });
-      }
+      setEditModalVisible(false);
+      setProfile((prev) => ({
+        ...prev,
+        ...editData,
+        photoURL: photoURL || profilePhoto || "",
+      }));
     } catch (error) {
       console.error("Erreur lors de la sauvegarde du profil:", error);
-
-      let errorMessage = "Impossible de sauvegarder les modifications";
-      if (error.code === "unavailable") {
-        errorMessage =
-          "Problème de connexion réseau. Vérifiez votre connexion internet.";
-      } else if (error.code === "permission-denied") {
-        errorMessage =
-          "Vous n'avez pas les permissions pour modifier ce profil.";
-      }
-
       Toast.show({
         type: "error",
         text1: "Erreur de sauvegarde",
-        text2: errorMessage,
+        text2: "Impossible de sauvegarder les modifications",
         position: "top",
         visibilityTime: 4000,
       });
@@ -557,7 +517,12 @@ const ProfileScreen = ({ navigation }) => {
       <LinearGradient colors={["#667eea", "#764ba2"]} style={styles.header}>
         <View style={styles.profileHeader}>
           <View style={styles.avatarContainer}>
-            <Text style={styles.avatar}>👑</Text>
+            <ProfileHeaderAvatar
+              photoURL={profilePhoto}
+              size={48}
+              displayName={profile?.username || user?.displayName}
+              email={user?.email}
+            />
             <View style={styles.onlineIndicator} />
           </View>
           <View style={styles.userInfo}>
@@ -567,14 +532,6 @@ const ProfileScreen = ({ navigation }) => {
             </Text>
           </View>
         </View>
-        {syncPending && (
-          <View style={{ alignSelf: "center", marginTop: 6, marginBottom: -6 }}>
-            <Text
-              style={{ color: "#ffb300", fontWeight: "bold", fontSize: 13 }}>
-              Modifications en attente de synchronisation…
-            </Text>
-          </View>
-        )}
       </LinearGradient>
 
       {/* Onglets */}
@@ -648,10 +605,11 @@ const ProfileScreen = ({ navigation }) => {
 
               {/* Avatar circulaire mis en avant, débordant */}
               <View style={styles.playerAvatarContainer}>
-                <ProfileAvatar
+                <ProfileHeaderAvatar
                   photoURL={profilePhoto}
                   size={100}
-                  syncPending={syncPending}
+                  displayName={profile?.username || user?.displayName}
+                  email={user?.email}
                 />
               </View>
               {/* Pseudo, tag et pays dynamiques */}
@@ -662,36 +620,7 @@ const ProfileScreen = ({ navigation }) => {
                 </Text>
                 {/* Tag affiché même s'il n'existe pas encore */}
                 <Text style={styles.playerTag}>#{profile?.tag || "----"}</Text>
-                {/* Badge de synchronisation si nécessaire */}
-                {syncPending && (
-                  <View
-                    style={{
-                      width: 14,
-                      height: 14,
-                      borderRadius: 7,
-                      backgroundColor: "#ffb300",
-                      marginLeft: 6,
-                      justifyContent: "center",
-                      alignItems: "center",
-                      borderWidth: 1,
-                      borderColor: "#fff",
-                    }}>
-                    <Ionicons name='cloud' size={10} color='#fff' />
-                  </View>
-                )}
               </View>
-              {/* Tooltip/explication sous la ligne si badge affiché */}
-              {syncPending && (
-                <Text
-                  style={{
-                    color: "#ffb300",
-                    fontSize: 11,
-                    marginTop: -6,
-                    marginBottom: 4,
-                  }}>
-                  Modifications en attente de synchronisation
-                </Text>
-              )}
               {/* Pays dynamique (drapeau + nom) */}
               {
                 <View style={styles.playerCountry}>
@@ -1616,19 +1545,10 @@ const styles = StyleSheet.create({
   playerAvatarContainer: {
     marginTop: -60,
     marginBottom: 12,
-    backgroundColor: "#23272a",
-    borderRadius: 60,
     width: 100,
     height: 100,
     alignItems: "center",
     justifyContent: "center",
-    borderWidth: 5,
-    borderColor: "#fff",
-    elevation: 10,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
     zIndex: 3,
   },
   playerAvatar: {

@@ -1,4 +1,4 @@
-// Composant ProfileAvatar : affiche la photo de profil (ou fallback) + badge sync
+// Composant ProfileAvatar : affiche la photo de profil (ou fallback)
 import React from "react";
 import { View, Image, Text } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
@@ -6,13 +6,11 @@ import { Ionicons } from "@expo/vector-icons";
 /**
  * ProfileAvatar
  * Affiche la photo de profil de l'utilisateur (cercle), ou un avatar par défaut si aucune photo.
- * Affiche un badge de synchronisation cloud si syncPending=true.
  * Props :
  *   - photoURL : string | null (URL de la photo)
  *   - size : number (taille du cercle)
- *   - syncPending : bool (affiche le badge cloud si true)
  */
-const ProfileAvatar = ({ photoURL, size = 80, syncPending = false }) => {
+const ProfileAvatar = ({ photoURL, size = 80 }) => {
   return (
     <View
       style={{
@@ -32,24 +30,6 @@ const ProfileAvatar = ({ photoURL, size = 80, syncPending = false }) => {
         />
       ) : (
         <Ionicons name='person-circle' size={size} color='#bbb' />
-      )}
-      {syncPending && (
-        <View
-          style={{
-            position: "absolute",
-            bottom: 4,
-            right: 4,
-            backgroundColor: "#ffb300",
-            borderRadius: 8,
-            width: 18,
-            height: 18,
-            justifyContent: "center",
-            alignItems: "center",
-            borderWidth: 2,
-            borderColor: "#fff",
-          }}>
-          <Ionicons name='cloud' size={12} color='#fff' />
-        </View>
       )}
     </View>
   );
