@@ -217,6 +217,7 @@ const ProfileScreen = ({ navigation }) => {
   const [syncPending, setSyncPending] = useState(false);
   const [profilePhoto, setProfilePhoto] = useState(null);
   const [showAvatarLibrary, setShowAvatarLibrary] = useState(false);
+  const [profileUpdateSuccess, setProfileUpdateSuccess] = useState(false);
 
   const userStats = {
     totalScore: 2847,
@@ -310,6 +311,7 @@ const ProfileScreen = ({ navigation }) => {
                 "Toutes vos modifications ont été enregistrées sur le cloud.",
               position: "top",
               visibilityTime: 2000,
+              topOffset: 40,
             });
           }
         } catch (e) {
@@ -331,6 +333,7 @@ const ProfileScreen = ({ navigation }) => {
         text2: "Vous avez été déconnecté avec succès",
         position: "top",
         visibilityTime: 2000,
+        topOffset: 40,
       });
 
       // Navigation vers la page de connexion
@@ -344,6 +347,7 @@ const ProfileScreen = ({ navigation }) => {
         text2: result.error,
         position: "top",
         visibilityTime: 3000,
+        topOffset: 40,
       });
     }
   };
@@ -451,6 +455,7 @@ const ProfileScreen = ({ navigation }) => {
           text2: "Le nom d'utilisateur ne peut pas être vide",
           position: "top",
           visibilityTime: 3000,
+          topOffset: 40,
         });
         return;
       }
@@ -462,6 +467,7 @@ const ProfileScreen = ({ navigation }) => {
           text2: "Impossible de récupérer l'identifiant utilisateur",
           position: "top",
           visibilityTime: 3000,
+          topOffset: 40,
         });
         return;
       }
@@ -485,20 +491,21 @@ const ProfileScreen = ({ navigation }) => {
         { merge: true }
       );
 
-      Toast.show({
-        type: "success",
-        text1: "Profil mis à jour",
-        text2: "Vos modifications ont été enregistrées avec succès",
-        position: "top",
-        visibilityTime: 2000,
-      });
-
-      setEditModalVisible(false);
+      // Mise à jour immédiate de l'état local
       setProfile((prev) => ({
         ...prev,
         ...editData,
         photoURL: photoURL || profilePhoto || "",
       }));
+      setProfilePhoto(photoURL || profilePhoto || "");
+      const docSnap = await getDoc(userRef);
+      if (docSnap.exists()) {
+        setProfile(docSnap.data());
+        setProfilePhoto(docSnap.data().photoURL || "");
+      }
+      setEditModalVisible(false);
+      setProfileUpdateSuccess(true);
+      setTimeout(() => setProfileUpdateSuccess(false), 2500);
     } catch (error) {
       console.error("Erreur lors de la sauvegarde du profil:", error);
       Toast.show({
@@ -507,6 +514,7 @@ const ProfileScreen = ({ navigation }) => {
         text2: "Impossible de sauvegarder les modifications",
         position: "top",
         visibilityTime: 4000,
+        topOffset: 40,
       });
     }
   };
@@ -669,6 +677,29 @@ const ProfileScreen = ({ navigation }) => {
               <Text style={styles.playerBio}>
                 {profile?.bio ? `« ${profile.bio} »` : ""}
               </Text>
+              {profileUpdateSuccess && (
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    marginBottom: 8,
+                  }}>
+                  <Ionicons
+                    name='checkmark-circle'
+                    size={20}
+                    color='#43e97b'
+                    style={{ marginRight: 6 }}
+                  />
+                  <Text
+                    style={{
+                      color: "#43e97b",
+                      fontWeight: "bold",
+                      fontSize: 15,
+                    }}>
+                    Profil mis à jour
+                  </Text>
+                </View>
+              )}
             </View>
           </View>
         ) : activeTab === "leaderboard" ? (
