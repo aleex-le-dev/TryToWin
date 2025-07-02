@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -14,6 +14,8 @@ import {
   Button,
   TouchableWithoutFeedback,
   ActivityIndicator,
+  Animated,
+  Easing,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
@@ -33,7 +35,7 @@ import ProfileTab from "../components/ProfileTab";
 import StatsTab from "../components/StatsTab";
 import LeaderboardTab from "../components/LeaderboardTab";
 import WheelColorPicker from "react-native-wheel-color-picker";
-import SettingsScreen from './SettingsScreen';
+import SettingsScreen from "./SettingsScreen";
 
 const { width } = Dimensions.get("window");
 
@@ -195,6 +197,100 @@ const loadProfileQueue = async (userId) => {
   }
 };
 
+// SkeletonProfile custom Expo sans dépendance externe
+/**
+ * Composant SkeletonProfile : affiche un loader premium avec shimmer animé.
+ * Utilisé dans ProfileScreen lors du chargement du profil Firestore.
+ */
+const SkeletonProfile = () => {
+  const shimmerAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.timing(shimmerAnim, {
+        toValue: 1,
+        duration: 1200,
+        easing: Easing.linear,
+        useNativeDriver: true,
+      })
+    ).start();
+  }, [shimmerAnim]);
+
+  // Dégradé shimmer horizontal
+  const shimmerTranslate = shimmerAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [-150, 300],
+  });
+
+  // Utilitaire pour block skeleton
+  const Block = ({ style }) => (
+    <View style={[{ backgroundColor: "#e9ecef", overflow: "hidden" }, style]}>
+      <Animated.View
+        style={[
+          {
+            position: "absolute",
+            left: 0,
+            top: 0,
+            bottom: 0,
+            width: 150,
+            backgroundColor: "#f4f6fa",
+            opacity: 0.6,
+            transform: [{ translateX: shimmerTranslate }],
+          },
+        ]}
+      />
+    </View>
+  );
+
+  return (
+    <View style={{ alignItems: "center", width: "100%" }}>
+      {/* Bannière */}
+      <Block style={{ width: "100%", height: 140, borderRadius: 0 }} />
+      {/* Avatar */}
+      <Block
+        style={{
+          width: 100,
+          height: 100,
+          borderRadius: 50,
+          marginTop: -60,
+          marginBottom: 16,
+        }}
+      />
+      {/* Nom */}
+      <Block
+        style={{ width: 120, height: 22, borderRadius: 8, marginBottom: 10 }}
+      />
+      {/* Tag */}
+      <Block
+        style={{ width: 60, height: 16, borderRadius: 8, marginBottom: 18 }}
+      />
+      {/* Stats (4 blocs) */}
+      <View
+        style={{
+          flexDirection: "row",
+          justifyContent: "space-between",
+          width: "90%",
+        }}>
+        {[1, 2, 3, 4].map((_, i) => (
+          <Block
+            key={i}
+            style={{
+              width: 70,
+              height: 60,
+              borderRadius: 14,
+              marginHorizontal: 6,
+            }}
+          />
+        ))}
+      </View>
+      {/* Bio */}
+      <Block
+        style={{ width: "60%", height: 16, borderRadius: 8, marginTop: 18 }}
+      />
+    </View>
+  );
+};
+
 // Écran de profil avec classement et statistiques
 const ProfileScreen = ({ navigation }) => {
   const { logout, user, loading } = useAuth();
@@ -228,6 +324,9 @@ const ProfileScreen = ({ navigation }) => {
   const [showColorWheel, setShowColorWheel] = useState(false);
   const [bannerHex, setBannerHex] = useState(editData.bannerColor || "#fff");
   const [profileLoading, setProfileLoading] = useState(true);
+  const [profileFromFirestoreLoaded, setProfileFromFirestoreLoaded] =
+    useState(false);
+  const [profileLocal, setProfileLocal] = useState(null);
 
   const userStats = {
     totalScore: 2847,
@@ -259,9 +358,11 @@ const ProfileScreen = ({ navigation }) => {
     if (user?.id) {
       const fetchProfile = async () => {
         setProfileLoading(true);
+        setProfileFromFirestoreLoaded(false);
         // 1. Charger d'abord le cache local
         const localProfile = await loadProfileLocally(user.id);
         if (localProfile) {
+          setProfileLocal(localProfile);
           setProfile(localProfile);
           if (localProfile.photoURL) setProfilePhoto(localProfile.photoURL);
         }
@@ -289,10 +390,12 @@ const ProfileScreen = ({ navigation }) => {
                 addToProfileQueue(user.id, { tag: newTag });
                 setSyncPending(true);
               }
+              setProfileFromFirestoreLoaded(true);
             } else {
               setProfile(data);
               saveProfileLocally(user.id, data); // Ecrase le cache local avec la version serveur
               if (data.photoURL) setProfilePhoto(data.photoURL);
+              setProfileFromFirestoreLoaded(true);
             }
           } else {
             // Si pas de doc, on génère un tag localement aussi
@@ -301,9 +404,11 @@ const ProfileScreen = ({ navigation }) => {
             saveProfileLocally(user.id, { tag: newTag });
             addToProfileQueue(user.id, { tag: newTag });
             setSyncPending(true);
+            setProfileFromFirestoreLoaded(true);
           }
         } catch (e) {
           console.log("Firestore inaccessible, profil local utilisé si dispo");
+          setProfileFromFirestoreLoaded(true);
         }
         // 3. Tente de synchroniser la queue si Firestore est dispo
         try {
@@ -551,13 +656,23 @@ const ProfileScreen = ({ navigation }) => {
   };
 
   const handleOpenSettings = () => {
-    navigation.navigate('Settings');
+    navigation.navigate("Settings");
   };
 
-  if (profileLoading) {
+  if (
+    !profileFromFirestoreLoaded ||
+    !profile?.username ||
+    (profileLocal?.username && profile?.username === profileLocal?.username)
+  ) {
     return (
-      <View style={{ flex: 1, backgroundColor: '#fff', justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size='large' color='#667eea' />
+      <View
+        style={{
+          flex: 1,
+          backgroundColor: "#fff",
+          justifyContent: "center",
+          alignItems: "center",
+        }}>
+        <SkeletonProfile />
       </View>
     );
   }
@@ -577,13 +692,11 @@ const ProfileScreen = ({ navigation }) => {
             <ProfileHeaderAvatar
               photoURL={profilePhoto}
               size={48}
-              displayName={profile?.username || user?.displayName}
+              displayName={profile?.username}
               email={user?.email}
             />
             <View style={styles.onlineIndicator} />
-            <Text style={styles.userName}>
-              {profile?.username || user?.displayName || "Utilisateur"}
-            </Text>
+            <Text style={styles.userName}>{profile?.username}</Text>
           </View>
           <TouchableOpacity
             onPress={handleOpenSettings}
