@@ -659,11 +659,7 @@ const ProfileScreen = ({ navigation }) => {
     navigation.navigate("Settings");
   };
 
-  if (
-    !profileFromFirestoreLoaded ||
-    !profile?.username ||
-    (profileLocal?.username && profile?.username === profileLocal?.username)
-  ) {
+  if (!profileFromFirestoreLoaded || !profile?.username) {
     return (
       <View
         style={{
@@ -689,14 +685,35 @@ const ProfileScreen = ({ navigation }) => {
             width: "100%",
           }}>
           <View style={{ flexDirection: "row", alignItems: "center" }}>
-            <ProfileHeaderAvatar
-              photoURL={profilePhoto}
-              size={48}
-              displayName={profile?.username}
-              email={user?.email}
-            />
-            <View style={styles.onlineIndicator} />
-            <Text style={styles.userName}>{profile?.username}</Text>
+            <View style={{ position: "relative", width: 48, height: 48 }}>
+              <ProfileHeaderAvatar
+                photoURL={profilePhoto}
+                size={48}
+                displayName={profile?.username}
+                email={user?.email}
+              />
+              <View
+                style={{
+                  position: "absolute",
+                  bottom: 2,
+                  right: 2,
+                  width: 14,
+                  height: 14,
+                  borderRadius: 7,
+                  backgroundColor: "#4cd137", // ou rouge si offline
+                  borderWidth: 2,
+                  borderColor: "#fff",
+                }}
+              />
+            </View>
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <Text style={styles.userName}>{profile?.username}</Text>
+              <TouchableOpacity
+                onPress={openEditModal}
+                style={{ marginLeft: 8 }}>
+                <Ionicons name='create-outline' size={20} color='#667eea' />
+              </TouchableOpacity>
+            </View>
           </View>
           <TouchableOpacity
             onPress={handleOpenSettings}

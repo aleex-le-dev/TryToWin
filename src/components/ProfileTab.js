@@ -4,6 +4,7 @@ import { View, Text, Image, TouchableOpacity, StyleSheet } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import ProfileHeaderAvatar from "./ProfileHeaderAvatar";
 import { Button } from "react-native";
+import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
 
 const ProfileTab = ({
   user,
@@ -87,6 +88,28 @@ const ProfileTab = ({
           zIndex: 2,
           alignSelf: "center",
         }}>
+        {/* Bouton modifier le profil en haut à droite */}
+        <TouchableOpacity
+          onPress={openEditModal}
+          style={{
+            position: "absolute",
+            top: 14,
+            right: 14,
+            backgroundColor: "#667eea",
+            borderRadius: 20,
+            width: 36,
+            height: 36,
+            justifyContent: "center",
+            alignItems: "center",
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.14,
+            shadowRadius: 4,
+            elevation: 5,
+            zIndex: 10,
+          }}>
+          <MaterialCommunityIcons name='pencil' size={18} color='#fff' />
+        </TouchableOpacity>
         {/* Avatar circulaire mis en avant, débordant */}
         <View
           style={{

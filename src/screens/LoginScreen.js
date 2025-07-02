@@ -40,7 +40,9 @@ const LoginScreen = ({ navigation }) => {
   const [touched, setTouched] = useState({});
 
   // Utilisation du hook d'authentification
-  const { login, loading } = useAuth();
+  const { login } = useAuth();
+  const [loadingEmail, setLoadingEmail] = useState(false);
+  const [loadingGoogle, setLoadingGoogle] = useState(false);
 
   // Google Auth avec logs de débogage
   const [request, response, promptAsync] = Google.useAuthRequest({
@@ -71,7 +73,7 @@ const LoginScreen = ({ navigation }) => {
       );
 
       const credential = GoogleAuthProvider.credential(id_token);
-      setLoading(true);
+      setLoadingEmail(true);
 
       signInWithCredential(auth, credential)
         .then((result) => {
@@ -86,7 +88,7 @@ const LoginScreen = ({ navigation }) => {
           logError(err, "LoginScreen.GoogleAuth");
           Alert.alert("Erreur", err.message);
         })
-        .finally(() => setLoading(false));
+        .finally(() => setLoadingEmail(false));
     } else if (response?.type === "error") {
       logError(
         new Error(`Google Auth Error: ${response.error}`),
@@ -124,6 +126,7 @@ const LoginScreen = ({ navigation }) => {
   };
 
   const handleLogin = async () => {
+    setLoadingEmail(true);
     try {
       logInfo("Tentative de connexion", "LoginScreen.handleLogin");
 
@@ -180,47 +183,52 @@ const LoginScreen = ({ navigation }) => {
         title: "Erreur inattendue",
         message: "Une erreur est survenue lors de la connexion",
       });
+    } finally {
+      setLoadingEmail(false);
     }
   };
 
   const handleGoogleLogin = async () => {
-    logInfo("Google Auth - Button pressed", "LoginScreen.handleGoogleLogin");
-    logInfo(
-      `Google Auth - Request available: ${!!request}`,
-      "LoginScreen.handleGoogleLogin"
-    );
-    logInfo(
-      `Google Auth - Loading state: ${loading}`,
-      "LoginScreen.handleGoogleLogin"
-    );
-
-    if (!request) {
-      logError(
-        new Error("Configuration Google non prête"),
-        "LoginScreen.handleGoogleLogin"
-      );
-      Alert.alert("Erreur", "Configuration Google non prête");
-      return;
-    }
-
-    if (loading) {
-      logInfo("Google Auth - Already loading", "LoginScreen.handleGoogleLogin");
-      return;
-    }
-
+    setLoadingGoogle(true);
     try {
-      logInfo("Google Auth - Starting prompt", "LoginScreen.handleGoogleLogin");
-      const result = await promptAsync();
+      logInfo("Google Auth - Button pressed", "LoginScreen.handleGoogleLogin");
       logInfo(
-        `Google Auth - Prompt result: ${JSON.stringify(result)}`,
+        `Google Auth - Request available: ${!!request}`,
         "LoginScreen.handleGoogleLogin"
       );
+      logInfo(
+        `Google Auth - Loading state: ${loadingGoogle}`,
+        "LoginScreen.handleGoogleLogin"
+      );
+
+      if (!request) {
+        logError(
+          new Error("Configuration Google non prête"),
+          "LoginScreen.handleGoogleLogin"
+        );
+        setLoadingGoogle(false);
+        return;
+      }
+
+      if (loadingGoogle) {
+        logInfo(
+          "Google Auth - Already loading",
+          "LoginScreen.handleGoogleLogin"
+        );
+        setLoadingGoogle(false);
+        return;
+      }
+
+      logInfo("Google Auth - Starting prompt", "LoginScreen.handleGoogleLogin");
+      await promptAsync();
     } catch (error) {
       logError(error, "LoginScreen.handleGoogleLogin");
       Alert.alert(
         "Erreur",
         "Erreur lors du lancement de l'authentification Google"
       );
+    } finally {
+      setLoadingGoogle(false);
     }
   };
 
@@ -311,13 +319,16 @@ const LoginScreen = ({ navigation }) => {
 
             {/* Bouton de connexion */}
             <TouchableOpacity
-              style={[styles.loginButton, loading && styles.disabledButton]}
+              style={[
+                styles.loginButton,
+                loadingEmail && styles.disabledButton,
+              ]}
               onPress={handleLogin}
-              disabled={loading}>
+              disabled={loadingEmail}>
               <LinearGradient
                 colors={["#ff6b6b", "#ee5a24"]}
                 style={styles.gradientButton}>
-                {loading ? (
+                {loadingEmail ? (
                   <ActivityIndicator size='small' color='#fff' />
                 ) : (
                   <>
@@ -354,18 +365,12 @@ const LoginScreen = ({ navigation }) => {
                 <TouchableOpacity
                   style={styles.socialButton}
                   onPress={handleGoogleLogin}
-                  disabled={loading}>
-                  {loading ? (
+                  disabled={loadingGoogle}>
+                  {loadingGoogle ? (
                     <ActivityIndicator size='small' color='#fff' />
                   ) : (
                     <Ionicons name='logo-google' size={24} color='#fff' />
                   )}
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.socialButton}>
-                  <Ionicons name='logo-facebook' size={24} color='#fff' />
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.socialButton}>
-                  <Ionicons name='logo-apple' size={24} color='#fff' />
                 </TouchableOpacity>
               </View>
             </View>
