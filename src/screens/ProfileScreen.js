@@ -12,12 +12,12 @@ import {
   Platform,
   Modal,
   Button,
+  TouchableWithoutFeedback,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import Toast from "react-native-toast-message";
 import { Picker } from "@react-native-picker/picker";
-import { ColorPicker } from "react-native-color-picker";
 import { useAuth } from "../hooks/useAuth";
 import { messages } from "../constants/config";
 import { doc, getDoc, updateDoc, setDoc } from "firebase/firestore";
@@ -31,6 +31,7 @@ import ProfileHeaderAvatar from "../components/ProfileHeaderAvatar";
 import ProfileTab from "../components/ProfileTab";
 import StatsTab from "../components/StatsTab";
 import LeaderboardTab from "../components/LeaderboardTab";
+import WheelColorPicker from "react-native-wheel-color-picker";
 
 const { width } = Dimensions.get("window");
 
@@ -221,6 +222,8 @@ const ProfileScreen = ({ navigation }) => {
   const [profilePhoto, setProfilePhoto] = useState(null);
   const [showAvatarLibrary, setShowAvatarLibrary] = useState(false);
   const [profileUpdateSuccess, setProfileUpdateSuccess] = useState(false);
+  const [showColorWheel, setShowColorWheel] = useState(false);
+  const [bannerHex, setBannerHex] = useState(editData.bannerColor || "#fff");
 
   const userStats = {
     totalScore: 2847,
@@ -435,6 +438,7 @@ const ProfileScreen = ({ navigation }) => {
 
   // Ouvre le modal avec les valeurs actuelles
   const openEditModal = () => {
+    setShowAvatarLibrary(false);
     console.log("Ouverture modal - User:", user);
     console.log("Ouverture modal - User ID:", user?.id);
     console.log("Ouverture modal - Profile:", profile);
@@ -633,6 +637,202 @@ const ProfileScreen = ({ navigation }) => {
                 style={{ fontWeight: "bold", fontSize: 18, marginBottom: 12 }}>
                 Modifier le profil
               </Text>
+              <View
+                style={{
+                  alignItems: "center",
+                  marginBottom: 18,
+                  width: "100%",
+                }}>
+                {/* Titre bannière */}
+                <Text
+                  style={{
+                    fontWeight: "bold",
+                    fontSize: 16,
+                    marginBottom: 8,
+                    alignSelf: "flex-start",
+                  }}>
+                  Bannière
+                </Text>
+                {/* Aperçu de la bannière */}
+                <View
+                  style={{
+                    width: "100%",
+                    height: 80,
+                    borderRadius: 12,
+                    marginBottom: 12,
+                    backgroundColor: editData.bannerColor || "#fff",
+                    overflow: "hidden",
+                    justifyContent: "center",
+                    alignItems: "center",
+                  }}>
+                  {editData.bannerImage && (
+                    <Image
+                      source={{ uri: editData.bannerImage }}
+                      style={{ width: "100%", height: 80, resizeMode: "cover" }}
+                    />
+                  )}
+                </View>
+                {/* Bouton upload image */}
+                <Button
+                  title='Télécharger une image'
+                  onPress={async () => {
+                    const result = await ImagePicker.launchImageLibraryAsync({
+                      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                      allowsEditing: true,
+                      aspect: [3, 1],
+                      quality: 0.7,
+                    });
+                    if (
+                      !result.canceled &&
+                      result.assets &&
+                      result.assets[0].uri
+                    ) {
+                      setEditData((d) => ({
+                        ...d,
+                        bannerImage: result.assets[0].uri,
+                        bannerColor: null,
+                      }));
+                    }
+                  }}
+                  color='#667eea'
+                />
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    marginTop: 12,
+                    marginBottom: 8,
+                  }}>
+                  <TextInput
+                    value={bannerHex}
+                    onChangeText={(v) => {
+                      setBannerHex(v);
+                      if (/^#([0-9A-Fa-f]{6})$/.test(v))
+                        setEditData((d) => ({
+                          ...d,
+                          bannerColor: v,
+                          bannerImage: null,
+                        }));
+                    }}
+                    maxLength={7}
+                    style={{
+                      borderWidth: 1,
+                      borderColor: /^#([0-9A-Fa-f]{6})$/.test(bannerHex)
+                        ? "#667eea"
+                        : "#ccc",
+                      borderRadius: 8,
+                      padding: 6,
+                      width: 100,
+                      textAlign: "center",
+                      fontSize: 15,
+                      marginRight: 8,
+                      backgroundColor: "#fff",
+                    }}
+                    autoCapitalize='none'
+                    autoCorrect={false}
+                    placeholder='#RRGGBB'
+                  />
+                  <TouchableOpacity
+                    onPress={() => setShowColorWheel((v) => !v)}>
+                    <Ionicons name='color-palette' size={24} color='#667eea' />
+                  </TouchableOpacity>
+                </View>
+                {showColorWheel && (
+                  <Modal visible transparent animationType='fade'>
+                    <TouchableWithoutFeedback
+                      onPress={() => setShowColorWheel(false)}>
+                      <View
+                        style={{
+                          flex: 1,
+                          backgroundColor: "rgba(0,0,0,0.25)",
+                          justifyContent: "center",
+                          alignItems: "center",
+                        }}>
+                        <TouchableWithoutFeedback>
+                          <View
+                            style={{
+                              backgroundColor: "#fff",
+                              borderRadius: 22,
+                              padding: 16,
+                              alignItems: "center",
+                              elevation: 10,
+                              maxWidth: 260,
+                              width: "92%",
+                              aspectRatio: 1,
+                              minHeight: 260,
+                              shadowColor: "#000",
+                              shadowOpacity: 0.15,
+                              shadowRadius: 16,
+                              shadowOffset: { width: 0, height: 4 },
+                            }}>
+                            <View
+                              style={{
+                                width: "100%",
+                                flexDirection: "row",
+                                justifyContent: "flex-end",
+                              }}>
+                              <TouchableOpacity
+                                onPress={() => setShowColorWheel(false)}>
+                                <Ionicons
+                                  name='close'
+                                  size={26}
+                                  color='#667eea'
+                                />
+                              </TouchableOpacity>
+                            </View>
+                            <View
+                              style={{
+                                flex: 1,
+                                justifyContent: "center",
+                                alignItems: "center",
+                                width: "100%",
+                              }}>
+                              <WheelColorPicker
+                                color={editData.bannerColor || "#fff"}
+                                onColorChangeComplete={(color) => {
+                                  setEditData((d) => ({
+                                    ...d,
+                                    bannerColor: color,
+                                    bannerImage: null,
+                                  }));
+                                  setBannerHex(color);
+                                }}
+                                thumbStyle={{
+                                  borderWidth: 2,
+                                  borderColor: "#667eea",
+                                }}
+                                sliderHidden={false}
+                                style={{
+                                  width: 180,
+                                  height: 180,
+                                  marginTop: 8,
+                                  marginBottom: 8,
+                                }}
+                              />
+                            </View>
+                          </View>
+                        </TouchableWithoutFeedback>
+                      </View>
+                    </TouchableWithoutFeedback>
+                  </Modal>
+                )}
+                {/* Bouton supprimer la bannière */}
+                {(editData.bannerImage || editData.bannerColor) && (
+                  <TouchableOpacity
+                    onPress={() =>
+                      setEditData((d) => ({
+                        ...d,
+                        bannerImage: null,
+                        bannerColor: null,
+                      }))
+                    }
+                    style={{ marginTop: 8, marginBottom: 12 }}>
+                    <Text style={{ color: "#FF6B6B", fontSize: 13 }}>
+                      Supprimer la bannière
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </View>
               <TextInput
                 placeholder="Nom d'utilisateur"
                 value={editData.username}
@@ -745,7 +945,10 @@ const ProfileScreen = ({ navigation }) => {
                 <Button
                   title='Annuler'
                   color='#aaa'
-                  onPress={() => setEditModalVisible(false)}
+                  onPress={() => {
+                    setEditModalVisible(false);
+                    setShowAvatarLibrary(false);
+                  }}
                 />
                 <Button
                   title='Enregistrer'
