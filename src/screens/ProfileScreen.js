@@ -261,6 +261,16 @@ const ProfileScreen = ({ navigation }) => {
   const [top10Global, setTop10Global] = useState([]);
   const [selectedGame, setSelectedGame] = useState("TicTacToe");
   const [userRank, setUserRank] = useState(null);
+  const [userStatsGlobal, setUserStatsGlobal] = useState({
+    totalGames: 0,
+    wins: 0,
+    draws: 0,
+    loses: 0,
+    points: 0,
+    winrate: 0,
+    streak: 0,
+  });
+  const [userStatsByGame, setUserStatsByGame] = useState({});
 
   const userStats = {
     totalScore: 2847,
@@ -397,6 +407,51 @@ const ProfileScreen = ({ navigation }) => {
         setTop10Global(filtered.slice(0, 10));
       };
       fetchLeaderboard();
+      // Calcul des stats globales et par jeu
+      const fetchStats = async () => {
+        const scores = {};
+        let totalGames = 0,
+          wins = 0,
+          draws = 0,
+          loses = 0,
+          points = 0,
+          streak = 0;
+        for (const game of Object.keys(GAME_POINTS)) {
+          const s = await getUserGameScore(user.id, game);
+          scores[game] = {
+            totalGames: (s.win || 0) + (s.draw || 0) + (s.lose || 0),
+            wins: s.win || 0,
+            draws: s.draw || 0,
+            loses: s.lose || 0,
+            points: s.totalPoints || 0,
+            winrate: s.win
+              ? Math.round(
+                  100 *
+                    (s.win /
+                      ((s.win || 0) + (s.draw || 0) + (s.lose || 0) || 1))
+                )
+              : 0,
+          };
+          totalGames += scores[game].totalGames;
+          wins += scores[game].wins;
+          draws += scores[game].draws;
+          loses += scores[game].loses;
+          points += scores[game].points;
+        }
+        // Calcul du streak (série de victoires, simple : max win d'un jeu)
+        streak = Math.max(...Object.values(scores).map((s) => s.wins));
+        setUserStatsByGame(scores);
+        setUserStatsGlobal({
+          totalGames,
+          wins,
+          draws,
+          loses,
+          points,
+          winrate: totalGames ? Math.round(100 * (wins / totalGames)) : 0,
+          streak,
+        });
+      };
+      fetchStats();
     }
   }, [user, loading, leaderboardType, selectedCountry]);
 
@@ -507,10 +562,8 @@ const ProfileScreen = ({ navigation }) => {
   );
 
   const renderStatCard = (icon, value, label, color) => (
-    <View style={styles.statCard}>
-      <View style={[styles.statIcon, { backgroundColor: color }]}>
-        <Ionicons name={icon} size={24} color='#fff' />
-      </View>
+    <View style={[styles.statCard, { backgroundColor: color + "22" }]}>
+      <Ionicons name={icon} size={32} color={color} style={styles.statIcon} />
       <Text style={styles.statValue}>{value}</Text>
       <Text style={styles.statLabel}>{label}</Text>
     </View>
@@ -756,11 +809,8 @@ const ProfileScreen = ({ navigation }) => {
             userId={user?.id}
           />
         ) : (
-          <StatsTab
-            userStats={userStats}
-            styles={styles}
-            renderStatCard={renderStatCard}
-          />
+          // Utilisation du composant StatsTab universel (statistiques globales et par jeu)
+          <StatsTab userStats={userStats} statsByGame={userStatsByGame} />
         )}
         {/* Modal d'édition du profil */}
         <Modal visible={editModalVisible} animationType='slide' transparent>
