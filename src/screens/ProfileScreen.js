@@ -28,6 +28,9 @@ import * as ImagePicker from "expo-image-picker";
 import { uploadProfilePhoto } from "../services/storageService";
 import AvatarLibrary from "../components/AvatarLibrary";
 import ProfileHeaderAvatar from "../components/ProfileHeaderAvatar";
+import ProfileTab from "../components/ProfileTab";
+import StatsTab from "../components/StatsTab";
+import LeaderboardTab from "../components/LeaderboardTab";
 
 const { width } = Dimensions.get("window");
 
@@ -581,303 +584,35 @@ const ProfileScreen = ({ navigation }) => {
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {activeTab === "profile" ? (
-          <View style={styles.playerCardWrapper}>
-            {/* Bannière en arrière-plan, en haut */}
-            {profileBanner ? (
-              <Image source={{ uri: profileBanner }} style={styles.bannerBg} />
-            ) : (
-              <View
-                style={[styles.bannerBg, { backgroundColor: bannerColor }]}
-              />
-            )}
-            {/* Carte de joueur principale en overlay */}
-            <View style={styles.playerCard}>
-              {/* Icône de modification en haut à droite de la carte */}
-              <TouchableOpacity
-                style={{
-                  position: "absolute",
-                  top: 16,
-                  right: 16,
-                  backgroundColor: "rgba(255,255,255,0.95)",
-                  borderRadius: 18,
-                  width: 36,
-                  height: 36,
-                  justifyContent: "center",
-                  alignItems: "center",
-                  elevation: 3,
-                  zIndex: 5,
-                }}
-                onPress={openEditModal}>
-                <Ionicons name='pencil' size={18} color='#667eea' />
-              </TouchableOpacity>
-
-              {/* Avatar circulaire mis en avant, débordant */}
-              <View style={styles.playerAvatarContainer}>
-                <ProfileHeaderAvatar
-                  photoURL={profilePhoto}
-                  size={100}
-                  displayName={profile?.username || user?.displayName}
-                  email={user?.email}
-                />
-              </View>
-              {/* Pseudo, tag et pays dynamiques */}
-              <View style={styles.playerIdentityRow}>
-                {/* Nom d'utilisateur dynamique */}
-                <Text style={styles.playerName}>
-                  {profile?.username || user?.displayName || "Utilisateur"}
-                </Text>
-                {/* Tag affiché même s'il n'existe pas encore */}
-                <Text style={styles.playerTag}>#{profile?.tag || "----"}</Text>
-              </View>
-              {/* Pays dynamique (drapeau + nom) */}
-              {
-                <View style={styles.playerCountry}>
-                  <Text style={styles.playerFlag}>
-                    {countries.find((c) => c.code === profile?.country)?.flag ||
-                      "🌍"}
-                  </Text>
-                  <Text style={styles.playerCountryName}>
-                    {countries.find((c) => c.code === profile?.country)?.name ||
-                      "Pays inconnu"}
-                  </Text>
-                </View>
-              }
-              {/* Statistiques clés sous forme de mini-cartes */}
-              <View style={styles.playerStatsRow}>
-                <View style={styles.playerStatCard}>
-                  <Ionicons name='trophy' size={20} color='#FFD700' />
-                  <Text style={styles.playerStatValue}>
-                    {userStats.totalScore}
-                  </Text>
-                  <Text style={styles.playerStatLabel}>Score</Text>
-                </View>
-                <View style={styles.playerStatCard}>
-                  <Ionicons name='game-controller' size={20} color='#4ECDC4' />
-                  <Text style={styles.playerStatValue}>
-                    {userStats.gamesPlayed}
-                  </Text>
-                  <Text style={styles.playerStatLabel}>Parties</Text>
-                </View>
-                <View style={styles.playerStatCard}>
-                  <Ionicons name='checkmark-circle' size={20} color='#45B7D1' />
-                  <Text style={styles.playerStatValue}>
-                    {userStats.gamesWon}
-                  </Text>
-                  <Text style={styles.playerStatLabel}>Victoires</Text>
-                </View>
-                <View style={styles.playerStatCard}>
-                  <Ionicons name='trending-up' size={20} color='#96CEB4' />
-                  <Text style={styles.playerStatValue}>
-                    {userStats.winRate}%
-                  </Text>
-                  <Text style={styles.playerStatLabel}>Winrate</Text>
-                </View>
-              </View>
-              {/* Bio du joueur */}
-              <Text style={styles.playerBio}>
-                {profile?.bio ? `« ${profile.bio} »` : ""}
-              </Text>
-              {profileUpdateSuccess && (
-                <View
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    marginBottom: 8,
-                  }}>
-                  <Ionicons
-                    name='checkmark-circle'
-                    size={20}
-                    color='#43e97b'
-                    style={{ marginRight: 6 }}
-                  />
-                  <Text
-                    style={{
-                      color: "#43e97b",
-                      fontWeight: "bold",
-                      fontSize: 15,
-                    }}>
-                    Profil mis à jour
-                  </Text>
-                </View>
-              )}
-            </View>
-          </View>
+          <ProfileTab
+            user={user}
+            profile={profile}
+            profilePhoto={profilePhoto}
+            profileBanner={profileBanner}
+            bannerColor={bannerColor}
+            countries={countries}
+            userStats={userStats}
+            profileUpdateSuccess={profileUpdateSuccess}
+            openEditModal={openEditModal}
+          />
         ) : activeTab === "leaderboard" ? (
-          <View style={styles.leaderboardContent}>
-            {/* Switch Mondial / Par pays */}
-            <View style={styles.leaderboardSwitchRow}>
-              <TouchableOpacity
-                style={[
-                  styles.leaderboardSwitchBtn,
-                  leaderboardType === "global" &&
-                    styles.leaderboardSwitchActive,
-                ]}
-                onPress={() => setLeaderboardType("global")}>
-                <Text
-                  style={[
-                    styles.leaderboardSwitchText,
-                    leaderboardType === "global" &&
-                      styles.leaderboardSwitchTextActive,
-                  ]}>
-                  Mondial
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.leaderboardSwitchBtn,
-                  leaderboardType === "country" &&
-                    styles.leaderboardSwitchActive,
-                ]}
-                onPress={() => setLeaderboardType("country")}>
-                <Text
-                  style={[
-                    styles.leaderboardSwitchText,
-                    leaderboardType === "country" &&
-                      styles.leaderboardSwitchTextActive,
-                  ]}>
-                  {selectedCountry.flag} {selectedCountry.name}
-                </Text>
-              </TouchableOpacity>
-            </View>
-            {/* En-tête du classement */}
-            <View style={styles.leaderboardHeader}>
-              <Text style={styles.leaderboardTitle}>
-                {leaderboardType === "global"
-                  ? "Classement Mondial"
-                  : `Top 10 - ${selectedCountry.name}`}
-              </Text>
-              <Text style={styles.leaderboardSubtitle}>
-                {leaderboardType === "global"
-                  ? "Top 10 des meilleurs joueurs tous pays"
-                  : `Joueurs du pays : ${selectedCountry.flag} ${selectedCountry.name}`}
-              </Text>
-            </View>
-            {/* Liste du classement */}
-            <FlatList
-              data={leaderboardType === "global" ? top10Global : top10Country}
-              renderItem={renderLeaderboardItem}
-              keyExtractor={(item) => item.id}
-              scrollEnabled={false}
-              style={styles.leaderboardList}
-              ListEmptyComponent={
-                <Text
-                  style={{
-                    color: "#6c757d",
-                    textAlign: "center",
-                    marginTop: 20,
-                  }}>
-                  Aucun joueur trouvé pour ce pays.
-                </Text>
-              }
-            />
-            {/* Informations supplémentaires */}
-            <View style={styles.leaderboardInfo}>
-              <View style={styles.infoItem}>
-                <Ionicons
-                  name='information-circle-outline'
-                  size={20}
-                  color='#667eea'
-                />
-                <Text style={styles.infoText}>
-                  Le classement est mis à jour toutes les heures
-                </Text>
-              </View>
-            </View>
-          </View>
+          <LeaderboardTab
+            leaderboardType={leaderboardType}
+            setLeaderboardType={setLeaderboardType}
+            selectedCountry={selectedCountry}
+            setSelectedCountry={setSelectedCountry}
+            top10Global={top10Global}
+            top10Country={top10Country}
+            renderLeaderboardItem={renderLeaderboardItem}
+            countries={countries}
+          />
         ) : (
-          <View style={{ flex: 1, backgroundColor: "#f8f9fa", padding: 16 }}>
-            {/* Statistiques principales */}
-            <View
-              style={[
-                styles.statsGrid,
-                {
-                  backgroundColor: "transparent",
-                  shadowColor: "transparent",
-                  padding: 0,
-                  marginBottom: 18,
-                  maxWidth: "100%",
-                },
-              ]}>
-              {renderStatCard(
-                "trophy",
-                userStats.totalScore,
-                "Score Total",
-                "#FF6B6B"
-              )}
-              {renderStatCard(
-                "game-controller",
-                userStats.gamesPlayed,
-                "Parties Jouées",
-                "#4ECDC4"
-              )}
-              {renderStatCard(
-                "checkmark-circle",
-                userStats.gamesWon,
-                "Victoires",
-                "#45B7D1"
-              )}
-              {renderStatCard(
-                "trending-up",
-                `${userStats.winRate}%`,
-                "Taux de Victoire",
-                "#96CEB4"
-              )}
-            </View>
-            {/* Statistiques détaillées */}
-            <View
-              style={[
-                styles.detailedStats,
-                {
-                  backgroundColor: "#fff",
-                  borderRadius: 18,
-                  padding: 18,
-                  marginBottom: 20,
-                  shadowColor: "#000",
-                  shadowOffset: { width: 0, height: 2 },
-                  shadowOpacity: 0.08,
-                  shadowRadius: 4,
-                  elevation: 3,
-                },
-              ]}>
-              <Text style={styles.sectionTitle}>Statistiques Détaillées</Text>
-              <View style={styles.statRow}>
-                <Ionicons name='star' size={20} color='#FFD700' />
-                <Text style={styles.statRowLabel}>Meilleur jeu</Text>
-                <Text style={styles.statRowValue}>{userStats.bestGame}</Text>
-              </View>
-              <View style={styles.statRow}>
-                <Ionicons name='flame' size={20} color='#FF6B6B' />
-                <Text style={styles.statRowLabel}>Série actuelle</Text>
-                <Text style={styles.statRowValue}>
-                  {userStats.currentStreak} victoires
-                </Text>
-              </View>
-              <View style={styles.statRow}>
-                <Ionicons name='time' size={20} color='#4ECDC4' />
-                <Text style={styles.statRowLabel}>Temps total</Text>
-                <Text style={styles.statRowValue}>{userStats.totalTime}</Text>
-              </View>
-            </View>
-          </View>
+          <StatsTab
+            userStats={userStats}
+            styles={styles}
+            renderStatCard={renderStatCard}
+          />
         )}
-        {/* Fond noir sous la carte pour la transition */}
-        <View style={{ backgroundColor: "#18191c", height: 40 }} />
-        {/* Bouton de déconnexion stylé en bas */}
-        <TouchableOpacity
-          style={[styles.logoutButton, { marginTop: 30, alignSelf: "center" }]}
-          onPress={handleLogout}>
-          <LinearGradient
-            colors={["#ff6b6b", "#ee5a24"]}
-            style={styles.logoutGradient}>
-            <Ionicons
-              name='log-out-outline'
-              size={20}
-              color='#fff'
-              style={{ marginRight: 8 }}
-            />
-            <Text style={styles.logoutButtonText}>Se déconnecter</Text>
-          </LinearGradient>
-        </TouchableOpacity>
         {/* Modal d'édition du profil */}
         <Modal visible={editModalVisible} animationType='slide' transparent>
           <View
@@ -1116,11 +851,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     alignSelf: "center",
     width: "100%",
-    maxWidth: 500,
+    marginBottom: 18,
     backgroundColor: "transparent",
     shadowColor: "transparent",
     padding: 0,
-    marginBottom: 18,
   },
   statCard: {
     width: (width - 60) / 2,
@@ -1631,16 +1365,16 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   playerStatCard: {
-    flex: 1,
+    flexBasis: "48%",
+    maxWidth: "48%",
+    minWidth: 140,
+    marginVertical: 8,
+    marginHorizontal: 0,
     backgroundColor: "#f8f9fa",
     borderRadius: 14,
     alignItems: "center",
     paddingVertical: 12,
-    margin: 8,
     elevation: 2,
-    width: "47%",
-    minWidth: 140,
-    maxWidth: 220,
   },
   playerStatValue: {
     fontSize: 18,
