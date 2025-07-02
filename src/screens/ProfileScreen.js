@@ -706,14 +706,9 @@ const ProfileScreen = ({ navigation }) => {
                 }}
               />
             </View>
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <Text style={styles.userName}>{profile?.username}</Text>
-              <TouchableOpacity
-                onPress={openEditModal}
-                style={{ marginLeft: 8 }}>
-                <Ionicons name='create-outline' size={20} color='#667eea' />
-              </TouchableOpacity>
-            </View>
+            <Text style={[styles.userName, { marginLeft: 14 }]}>
+              {profile?.username}
+            </Text>
           </View>
           <TouchableOpacity
             onPress={handleOpenSettings}
