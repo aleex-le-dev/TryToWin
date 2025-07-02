@@ -13,6 +13,7 @@ import {
   Modal,
   Button,
   TouchableWithoutFeedback,
+  ActivityIndicator,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
@@ -226,6 +227,7 @@ const ProfileScreen = ({ navigation }) => {
   const [showAvatarLibrary, setShowAvatarLibrary] = useState(false);
   const [showColorWheel, setShowColorWheel] = useState(false);
   const [bannerHex, setBannerHex] = useState(editData.bannerColor || "#fff");
+  const [profileLoading, setProfileLoading] = useState(true);
 
   const userStats = {
     totalScore: 2847,
@@ -256,6 +258,7 @@ const ProfileScreen = ({ navigation }) => {
 
     if (user?.id) {
       const fetchProfile = async () => {
+        setProfileLoading(true);
         // 1. Charger d'abord le cache local
         const localProfile = await loadProfileLocally(user.id);
         if (localProfile) {
@@ -326,6 +329,7 @@ const ProfileScreen = ({ navigation }) => {
           if ((await loadProfileQueue(user.id)).length > 0)
             setSyncPending(true);
         }
+        setProfileLoading(false);
       };
       fetchProfile();
     }
@@ -549,6 +553,14 @@ const ProfileScreen = ({ navigation }) => {
   const handleOpenSettings = () => {
     navigation.navigate('Settings');
   };
+
+  if (profileLoading) {
+    return (
+      <View style={{ flex: 1, backgroundColor: '#fff', justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size='large' color='#667eea' />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
