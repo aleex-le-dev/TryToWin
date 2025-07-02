@@ -9,6 +9,7 @@ import RegisterScreen from "../screens/RegisterScreen";
 import MainTabNavigator from "./MainTabNavigator";
 import { useAuth } from "../contexts/AuthContext";
 import EmailValidationScreen from "../screens/EmailValidationScreen";
+import SettingsScreen from "../screens/SettingsScreen";
 
 const Stack = createStackNavigator();
 
@@ -63,13 +64,20 @@ const AppNavigator = () => {
         )}
         {/* Écrans principaux après authentification - affichés seulement si l'utilisateur est connecté */}
         {user && (
-          <Stack.Screen
-            name='MainTabs'
-            component={MainTabNavigator}
-            options={{
-              title: "TryToWin",
-            }}
-          />
+          <>
+            <Stack.Screen
+              name='MainTabs'
+              component={MainTabNavigator}
+              options={{
+                title: "TryToWin",
+              }}
+            />
+            <Stack.Screen
+              name='Settings'
+              component={SettingsScreen}
+              options={{ headerShown: false }}
+            />
+          </>
         )}
       </Stack.Navigator>
     </NavigationContainer>

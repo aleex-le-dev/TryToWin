@@ -32,6 +32,7 @@ import ProfileTab from "../components/ProfileTab";
 import StatsTab from "../components/StatsTab";
 import LeaderboardTab from "../components/LeaderboardTab";
 import WheelColorPicker from "react-native-wheel-color-picker";
+import SettingsScreen from './SettingsScreen';
 
 const { width } = Dimensions.get("window");
 
@@ -545,12 +546,22 @@ const ProfileScreen = ({ navigation }) => {
     }
   };
 
+  const handleOpenSettings = () => {
+    navigation.navigate('Settings');
+  };
+
   return (
     <View style={styles.container}>
       {/* Header du profil */}
       <LinearGradient colors={["#667eea", "#764ba2"]} style={styles.header}>
-        <View style={styles.profileHeader}>
-          <View style={styles.avatarContainer}>
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+            width: "100%",
+          }}>
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
             <ProfileHeaderAvatar
               photoURL={profilePhoto}
               size={48}
@@ -558,13 +569,23 @@ const ProfileScreen = ({ navigation }) => {
               email={user?.email}
             />
             <View style={styles.onlineIndicator} />
-          </View>
-          <View style={styles.userInfo}>
             <Text style={styles.userName}>
-              {/* Affiche le nom Firestore, sinon displayName, sinon fallback */}
               {profile?.username || user?.displayName || "Utilisateur"}
             </Text>
           </View>
+          <TouchableOpacity
+            onPress={handleOpenSettings}
+            style={{
+              marginLeft: 12,
+              backgroundColor: "rgba(255,255,255,0.15)",
+              borderRadius: 20,
+              width: 40,
+              height: 40,
+              justifyContent: "center",
+              alignItems: "center",
+            }}>
+            <Ionicons name='settings-outline' size={24} color='#fff' />
+          </TouchableOpacity>
         </View>
       </LinearGradient>
 
@@ -616,6 +637,7 @@ const ProfileScreen = ({ navigation }) => {
             countries={countries}
             userStats={userStats}
             openEditModal={openEditModal}
+            onOpenSettings={undefined}
           />
         ) : activeTab === "leaderboard" ? (
           <LeaderboardTab

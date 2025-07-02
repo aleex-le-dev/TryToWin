@@ -3,6 +3,7 @@ import React from "react";
 import { View, Text, Image, TouchableOpacity, StyleSheet } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import ProfileHeaderAvatar from "./ProfileHeaderAvatar";
+import { Button } from "react-native";
 
 const ProfileTab = ({
   user,
@@ -14,6 +15,7 @@ const ProfileTab = ({
   userStats,
   profileUpdateSuccess,
   openEditModal,
+  onLogout,
 }) => {
   const fondBanniere = profileBanner
     ? { flex: 1, width: "100%", height: "100%" }
@@ -85,24 +87,6 @@ const ProfileTab = ({
           zIndex: 2,
           alignSelf: "center",
         }}>
-        {/* Icône de modification en haut à droite de la carte */}
-        <TouchableOpacity
-          style={{
-            position: "absolute",
-            top: 16,
-            right: 16,
-            backgroundColor: "rgba(255,255,255,0.95)",
-            borderRadius: 18,
-            width: 36,
-            height: 36,
-            justifyContent: "center",
-            alignItems: "center",
-            elevation: 3,
-            zIndex: 5,
-          }}
-          onPress={openEditModal}>
-          <Ionicons name='pencil' size={18} color='#667eea' />
-        </TouchableOpacity>
         {/* Avatar circulaire mis en avant, débordant */}
         <View
           style={{
