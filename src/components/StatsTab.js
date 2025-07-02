@@ -46,25 +46,25 @@ const StatsTab = ({ userStats, statsByGame }) => (
     <View style={styles.statsGrid}>
       <StatCard
         icon='trophy'
-        value={userStats.totalScore}
+        value={String(userStats?.totalScore ?? "")}
         label='Score Total'
         color='#FF6B6B'
       />
       <StatCard
         icon='game-controller'
-        value={userStats.gamesPlayed}
+        value={String(userStats?.gamesPlayed ?? "")}
         label='Parties Jouées'
         color='#4ECDC4'
       />
       <StatCard
         icon='checkmark-circle'
-        value={userStats.gamesWon}
+        value={String(userStats?.gamesWon ?? "")}
         label='Victoires'
         color='#45B7D1'
       />
       <StatCard
         icon='trending-up'
-        value={`${userStats.winRate}%`}
+        value={String(userStats?.winRate ?? "") + "%"}
         label='Taux de Victoire'
         color='#96CEB4'
       />
@@ -72,7 +72,7 @@ const StatsTab = ({ userStats, statsByGame }) => (
     {/* Statistiques détaillées avec mise en forme améliorée */}
     <View style={styles.detailedStats}>
       <Text style={styles.sectionTitle}>Statistiques Détaillées</Text>
-      {detailedStatsData.map((item, idx) => (
+      {detailedStatsData.map((item) => (
         <View
           key={item.label}
           style={[styles.statRowEnhanced, { borderLeftColor: item.color }]}>
@@ -83,10 +83,9 @@ const StatsTab = ({ userStats, statsByGame }) => (
             ]}>
             <Ionicons name={item.icon} size={20} color={item.color} />
           </View>
-          <Text style={styles.statRowLabel}>{item.label}</Text>
+          <Text style={styles.statRowLabel}>{String(item.label ?? "")}</Text>
           <Text style={styles.statRowValue}>
-            {userStats[item.valueKey]}
-            {item.suffix || ""}
+            {String(userStats?.[item.valueKey] ?? "") + (item.suffix ?? "")}
           </Text>
         </View>
       ))}
@@ -96,15 +95,21 @@ const StatsTab = ({ userStats, statsByGame }) => (
       <View style={styles.detailedStats}>
         <Text style={styles.sectionTitle}>Par jeu</Text>
         {Object.entries(statsByGame).map(([jeu, stats]) => (
-          <View key={jeu} style={styles.gameBlock}>
-            <Text style={styles.gameTitle}>{jeu}</Text>
+          <View key={String(jeu)} style={styles.gameBlock}>
+            <Text style={styles.gameTitle}>{String(jeu ?? "")}</Text>
             <View style={styles.statsRow}>
-              <MiniStat label='Parties' value={stats.totalGames} />
-              <MiniStat label='Victoires' value={stats.wins} />
-              <MiniStat label='Nuls' value={stats.draws} />
-              <MiniStat label='Défaites' value={stats.loses} />
-              <MiniStat label='Points' value={stats.points} />
-              <MiniStat label='Winrate' value={stats.winrate + "%"} />
+              <MiniStat
+                label='Parties'
+                value={String(stats?.totalGames ?? "")}
+              />
+              <MiniStat label='Victoires' value={String(stats?.wins ?? "")} />
+              <MiniStat label='Nuls' value={String(stats?.draws ?? "")} />
+              <MiniStat label='Défaites' value={String(stats?.loses ?? "")} />
+              <MiniStat label='Points' value={String(stats?.points ?? "")} />
+              <MiniStat
+                label='Winrate'
+                value={String(stats?.winrate ?? "") + "%"}
+              />
             </View>
           </View>
         ))}
@@ -141,16 +146,16 @@ const StatCard = ({ icon, value, label, color }) => (
       {/* Cercle coloré */}
       <Ionicons name={icon} size={28} color={color} />
     </View>
-    <Text style={styles.statValue}>{String(value)}</Text>
-    <Text style={styles.statLabel}>{label}</Text>
+    <Text style={styles.statValue}>{String(value ?? "")}</Text>
+    <Text style={styles.statLabel}>{String(label ?? "")}</Text>
   </View>
 );
 
 // Mini carte pour stats par jeu
 const MiniStat = ({ label, value }) => (
   <View style={styles.miniStatCard}>
-    <Text style={styles.miniStatValue}>{value}</Text>
-    <Text style={styles.miniStatLabel}>{label}</Text>
+    <Text style={styles.miniStatValue}>{String(value ?? "")}</Text>
+    <Text style={styles.miniStatLabel}>{String(label ?? "")}</Text>
   </View>
 );
 
