@@ -272,14 +272,38 @@ const ProfileScreen = ({ navigation }) => {
   });
   const [userStatsByGame, setUserStatsByGame] = useState({});
 
+  // Calcul des vraies statistiques utilisateur basées sur les données Firestore
   const userStats = {
-    totalScore: 2847,
-    gamesPlayed: 45,
-    gamesWon: 32,
-    winRate: 71,
-    bestGame: "Memory Game",
-    currentStreak: 8,
-    totalTime: "12h 34m",
+    totalScore: userStatsGlobal.points || 0,
+    gamesPlayed: userStatsGlobal.totalGames || 0,
+    gamesWon: userStatsGlobal.wins || 0,
+    winRate: userStatsGlobal.winrate || 0,
+    bestGame:
+      userStatsByGame && Object.keys(userStatsByGame).length > 0
+        ? Object.entries(userStatsByGame).reduce(
+            (best, [game, stats]) =>
+              stats.points > (best ? userStatsByGame[best].points : 0)
+                ? game
+                : best,
+            null
+          )
+        : "Aucun jeu",
+    currentStreak: userStatsGlobal.streak || 0,
+    totalTime: (() => {
+      // Estimation : 5 minutes par partie en moyenne
+      const totalMinutes = (userStatsGlobal.totalGames || 0) * 5;
+      const hours = Math.floor(totalMinutes / 60);
+      const minutes = totalMinutes % 60;
+      const seconds = Math.floor((totalMinutes % 1) * 60);
+
+      if (hours > 0) {
+        return `${hours}h ${minutes}m ${seconds}s`;
+      } else if (minutes > 0) {
+        return `${minutes}m ${seconds}s`;
+      } else {
+        return `${seconds}s`;
+      }
+    })(),
   };
 
   // Récupération du profil Firestore à l'ouverture

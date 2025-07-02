@@ -40,124 +40,148 @@ const detailedStatsData = [
   },
 ];
 
-const StatsTab = ({ userStats, statsByGame }) => (
-  <View style={styles.container}>
-    {/* Statistiques principales */}
-    <View style={styles.statsGrid}>
-      <StatCard
-        icon='trophy'
-        value={String(userStats?.totalScore ?? "")}
-        label='Score Total'
-        color='#FF6B6B'
-      />
-      <StatCard
-        icon='game-controller'
-        value={String(userStats?.gamesPlayed ?? "")}
-        label='Parties Jouées'
-        color='#4ECDC4'
-      />
-      <StatCard
-        icon='checkmark-circle'
-        value={String(userStats?.gamesWon ?? "")}
-        label='Victoires'
-        color='#45B7D1'
-      />
-      <StatCard
-        icon='trending-up'
-        value={String(userStats?.winRate ?? "") + "%"}
-        label='Taux de Victoire'
-        color='#96CEB4'
-      />
-    </View>
-    {/* Statistiques détaillées avec mise en forme améliorée */}
-    <View style={styles.detailedStats}>
-      <Text style={styles.sectionTitle}>Statistiques Détaillées</Text>
-      {detailedStatsData.map((item) => (
-        <View
-          key={item.label}
-          style={[styles.statRowEnhanced, { borderLeftColor: item.color }]}>
-          <View
-            style={[
-              styles.statRowIconCircle,
-              { backgroundColor: item.color + "22" },
-            ]}>
-            <Ionicons name={item.icon} size={20} color={item.color} />
-          </View>
-          <Text style={styles.statRowLabel}>{String(item.label ?? "")}</Text>
-          <Text style={styles.statRowValue}>
-            {String(userStats?.[item.valueKey] ?? "") + (item.suffix ?? "")}
-          </Text>
-        </View>
-      ))}
-    </View>
-    {/* Statistiques par jeu si fourni */}
-    {statsByGame && (
+const StatsTab = ({ userStats, statsByGame }) => {
+  // Vérifier si userStats est un objet valide
+  if (!userStats || typeof userStats !== "object") {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.sectionTitle}>Chargement des statistiques...</Text>
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.container}>
+      {/* Statistiques principales */}
+      <View style={styles.statsGrid}>
+        <StatCard
+          icon='trophy'
+          value={String(userStats?.totalScore ?? 0)}
+          label='Score Total'
+          color='#FF6B6B'
+        />
+        <StatCard
+          icon='game-controller'
+          value={String(userStats?.gamesPlayed ?? 0)}
+          label='Parties Jouées'
+          color='#4ECDC4'
+        />
+        <StatCard
+          icon='checkmark-circle'
+          value={String(userStats?.gamesWon ?? 0)}
+          label='Victoires'
+          color='#45B7D1'
+        />
+        <StatCard
+          icon='trending-up'
+          value={String(userStats?.winRate ?? 0) + "%"}
+          label='Taux de Victoire'
+          color='#96CEB4'
+        />
+      </View>
+      {/* Statistiques détaillées avec mise en forme améliorée */}
       <View style={styles.detailedStats}>
-        <Text style={styles.sectionTitle}>Par jeu</Text>
-        {Object.entries(statsByGame).map(([jeu, stats]) => (
-          <View key={String(jeu)} style={styles.gameBlock}>
-            <Text style={styles.gameTitle}>{String(jeu ?? "")}</Text>
-            <View style={styles.statsRow}>
-              <MiniStat
-                label='Parties'
-                value={String(stats?.totalGames ?? "")}
-              />
-              <MiniStat label='Victoires' value={String(stats?.wins ?? "")} />
-              <MiniStat label='Nuls' value={String(stats?.draws ?? "")} />
-              <MiniStat label='Défaites' value={String(stats?.loses ?? "")} />
-              <MiniStat label='Points' value={String(stats?.points ?? "")} />
-              <MiniStat
-                label='Winrate'
-                value={String(stats?.winrate ?? "") + "%"}
-              />
+        <Text style={styles.sectionTitle}>Statistiques Détaillées</Text>
+        {detailedStatsData.map((item) => {
+          const value = userStats?.[item.valueKey];
+          return (
+            <View
+              key={item.label}
+              style={[styles.statRowEnhanced, { borderLeftColor: item.color }]}>
+              <View
+                style={[
+                  styles.statRowIconCircle,
+                  { backgroundColor: item.color + "22" },
+                ]}>
+                <Ionicons name={item.icon} size={20} color={item.color} />
+              </View>
+              <Text style={styles.statRowLabel}>
+                {String(item.label ?? "")}
+              </Text>
+              <Text style={styles.statRowValue}>
+                {String(value ?? "0") + (item.suffix ?? "")}
+              </Text>
             </View>
-          </View>
-        ))}
+          );
+        })}
       </View>
-    )}
-    {/* Actions rapides */}
-    <View style={styles.quickActions}>
-      <Text style={styles.sectionTitle}>Actions Rapides</Text>
-      <View style={styles.actionButtons}>
-        <TouchableOpacity style={styles.actionButton}>
-          <Ionicons name='share-outline' size={24} color='#667eea' />
-          <Text style={styles.actionButtonText}>Partager</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.actionButton}>
-          <Ionicons name='download-outline' size={24} color='#667eea' />
-          <Text style={styles.actionButtonText}>Exporter</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.actionButton}>
-          <Ionicons name='help-circle-outline' size={24} color='#667eea' />
-          <Text style={styles.actionButtonText}>Aide</Text>
-        </TouchableOpacity>
+      {/* Statistiques par jeu si fourni */}
+      {statsByGame && Object.keys(statsByGame).length > 0 && (
+        <View style={styles.detailedStats}>
+          <Text style={styles.sectionTitle}>Par jeu</Text>
+          {Object.entries(statsByGame).map(([jeu, stats]) => {
+            return (
+              <View key={String(jeu)} style={styles.gameBlock}>
+                <Text style={styles.gameTitle}>{String(jeu ?? "")}</Text>
+                <View style={styles.statsRow}>
+                  <MiniStat
+                    label='Parties'
+                    value={String(stats?.totalGames ?? 0)}
+                  />
+                  <MiniStat
+                    label='Victoires'
+                    value={String(stats?.wins ?? 0)}
+                  />
+                  <MiniStat label='Nuls' value={String(stats?.draws ?? 0)} />
+                  <MiniStat
+                    label='Défaites'
+                    value={String(stats?.loses ?? 0)}
+                  />
+                  <MiniStat label='Points' value={String(stats?.points ?? 0)} />
+                  <MiniStat
+                    label='Winrate'
+                    value={String(stats?.winrate ?? 0) + "%"}
+                  />
+                </View>
+              </View>
+            );
+          })}
+        </View>
+      )}
+      {/* Actions rapides */}
+      <View style={styles.quickActions}>
+        <Text style={styles.sectionTitle}>Actions Rapides</Text>
+        <View style={styles.actionButtons}>
+          <TouchableOpacity style={styles.actionButton}>
+            <Ionicons name='share-outline' size={24} color='#667eea' />
+            <Text style={styles.actionButtonText}>Partager</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.actionButton}>
+            <Ionicons name='download-outline' size={24} color='#667eea' />
+            <Text style={styles.actionButtonText}>Exporter</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.actionButton}>
+            <Ionicons name='help-circle-outline' size={24} color='#667eea' />
+            <Text style={styles.actionButtonText}>Aide</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </View>
-  </View>
-);
+  );
+};
 
 // Carte de statistique principale
-const StatCard = ({ icon, value, label, color }) => (
-  <View style={[styles.statCard, { borderColor: color }]}>
-    {" "}
-    {/* Style d'origine : bordure colorée */}
-    <View style={[styles.statIcon, { backgroundColor: color + "22" }]}>
-      {" "}
-      {/* Cercle coloré */}
-      <Ionicons name={icon} size={28} color={color} />
+const StatCard = ({ icon, value, label, color }) => {
+  return (
+    <View style={[styles.statCard, { borderColor: color }]}>
+      <View style={[styles.statIcon, { backgroundColor: color + "22" }]}>
+        <Ionicons name={icon} size={28} color={color} />
+      </View>
+      <Text style={styles.statValue}>{String(value ?? "0")}</Text>
+      <Text style={styles.statLabel}>{String(label ?? "")}</Text>
     </View>
-    <Text style={styles.statValue}>{String(value ?? "")}</Text>
-    <Text style={styles.statLabel}>{String(label ?? "")}</Text>
-  </View>
-);
+  );
+};
 
 // Mini carte pour stats par jeu
-const MiniStat = ({ label, value }) => (
-  <View style={styles.miniStatCard}>
-    <Text style={styles.miniStatValue}>{String(value ?? "")}</Text>
-    <Text style={styles.miniStatLabel}>{String(label ?? "")}</Text>
-  </View>
-);
+const MiniStat = ({ label, value }) => {
+  return (
+    <View style={styles.miniStatCard}>
+      <Text style={styles.miniStatValue}>{String(value ?? "0")}</Text>
+      <Text style={styles.miniStatLabel}>{String(label ?? "")}</Text>
+    </View>
+  );
+};
 
 const styles = StyleSheet.create({
   container: {
