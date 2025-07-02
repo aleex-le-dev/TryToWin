@@ -76,15 +76,15 @@ const ProfileTab = ({
           borderBottomLeftRadius: 32,
           borderBottomRightRadius: 32,
           alignItems: "center",
-          paddingVertical: 32,
-          paddingHorizontal: 18,
+          paddingVertical: 16,
+          paddingHorizontal: 10,
           shadowColor: "#000",
           shadowOffset: { width: 0, height: 4 },
           shadowOpacity: 0.18,
           shadowRadius: 12,
           elevation: 8,
-          marginTop: 80,
-          marginBottom: 18,
+          marginTop: 60,
+          marginBottom: 10,
           zIndex: 2,
           alignSelf: "center",
         }}>
@@ -113,8 +113,8 @@ const ProfileTab = ({
         {/* Avatar circulaire mis en avant, débordant */}
         <View
           style={{
-            marginTop: -60,
-            marginBottom: 12,
+            marginTop: -50,
+            marginBottom: 6,
             width: 100,
             height: 100,
             alignItems: "center",
@@ -133,8 +133,8 @@ const ProfileTab = ({
           style={{
             flexDirection: "row",
             alignItems: "center",
-            marginBottom: 10,
-            gap: 8,
+            marginBottom: 4,
+            gap: 6,
           }}>
           <Text style={{ fontSize: 22, fontWeight: "bold", color: "#23272a" }}>
             {profile?.username || user?.displayName || "Utilisateur"}
@@ -158,7 +158,7 @@ const ProfileTab = ({
           style={{
             flexDirection: "row",
             alignItems: "center",
-            marginLeft: 10,
+            marginLeft: 6,
           }}>
           <Text style={{ fontSize: 22, marginRight: 4 }}>
             {countries.find((c) => c.code === profile?.country)?.flag || "🌍"}
@@ -174,8 +174,8 @@ const ProfileTab = ({
             flexDirection: "row",
             justifyContent: "space-between",
             width: "100%",
-            marginVertical: 18,
-            gap: 8,
+            marginVertical: 8,
+            gap: 4,
           }}>
           <View
             style={{
@@ -281,7 +281,7 @@ const ProfileTab = ({
             color: "#667eea",
             fontStyle: "italic",
             textAlign: "center",
-            marginTop: 10,
+            marginTop: 6,
             marginBottom: 0,
           }}>
           {profile?.bio ? `« ${profile.bio} »` : ""}
