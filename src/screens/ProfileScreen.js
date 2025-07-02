@@ -217,6 +217,8 @@ const ProfileScreen = ({ navigation }) => {
     avatar: "",
     bio: "",
     country: "",
+    bannerColor: null,
+    bannerImage: null,
   });
   const [syncPending, setSyncPending] = useState(false);
   const [profilePhoto, setProfilePhoto] = useState(null);
@@ -327,6 +329,15 @@ const ProfileScreen = ({ navigation }) => {
       fetchProfile();
     }
   }, [user, loading]);
+
+  // Ajoute un useEffect pour synchroniser bannerHex avec profile?.bannerColor :
+  useEffect(() => {
+    if (profile?.bannerColor) {
+      setBannerHex(profile.bannerColor);
+    } else {
+      setBannerHex("#fff");
+    }
+  }, [profile?.bannerColor]);
 
   const handleLogout = async () => {
     const result = await logout();
@@ -447,6 +458,8 @@ const ProfileScreen = ({ navigation }) => {
       avatar: profile?.avatar || "👑",
       bio: profile?.bio || "",
       country: profile?.country || "",
+      bannerColor: profile?.bannerColor || null,
+      bannerImage: profile?.bannerImage || null,
     });
     setEditModalVisible(true);
   };
@@ -493,6 +506,8 @@ const ProfileScreen = ({ navigation }) => {
           bio: editData.bio,
           country: editData.country,
           photoURL: photoURL || profilePhoto || "",
+          bannerColor: editData.bannerColor || null,
+          bannerImage: editData.bannerImage || null,
         },
         { merge: true }
       );
@@ -597,7 +612,7 @@ const ProfileScreen = ({ navigation }) => {
             profile={profile}
             profilePhoto={profilePhoto}
             profileBanner={profileBanner}
-            bannerColor={bannerColor}
+            bannerColor={profile?.bannerColor}
             countries={countries}
             userStats={userStats}
             openEditModal={openEditModal}
@@ -710,12 +725,13 @@ const ProfileScreen = ({ navigation }) => {
                     value={bannerHex}
                     onChangeText={(v) => {
                       setBannerHex(v);
-                      if (/^#([0-9A-Fa-f]{6})$/.test(v))
+                      if (/^#([0-9A-Fa-f]{6})$/.test(v)) {
                         setEditData((d) => ({
                           ...d,
                           bannerColor: v,
                           bannerImage: null,
                         }));
+                      }
                     }}
                     maxLength={7}
                     style={{
