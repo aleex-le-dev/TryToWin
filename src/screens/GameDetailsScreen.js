@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -12,6 +12,12 @@ import {
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import Toast from "react-native-toast-message";
+import { useAuth } from "../hooks/useAuth";
+import {
+  getUserGameScore,
+  getUserRankInLeaderboard,
+  recordGameResult,
+} from "../services/scoreService";
 
 const { width } = Dimensions.get("window");
 
@@ -69,8 +75,30 @@ const countries = [
 // Écran de détails d'un jeu avec focus sur classement et statistiques
 const GameDetailsScreen = ({ route, navigation }) => {
   const { game, selectedCountry = countries[0] } = route.params;
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("leaderboard");
   const [loading, setLoading] = useState(false);
+  const [userStats, setUserStats] = useState({
+    win: 0,
+    draw: 0,
+    lose: 0,
+    totalPoints: 0,
+    totalGames: 0,
+    totalScore: 0,
+    totalDuration: 0,
+    bestScore: 0,
+    averageScore: 0,
+    winRate: 0,
+    currentStreak: 0,
+    bestTime: null,
+  });
+  const [userRank, setUserRank] = useState(null);
+  const [totalPlayers, setTotalPlayers] = useState(null);
+  const [statsLoading, setStatsLoading] = useState(true);
+
+  // Utiliser l'identifiant technique Firestore du jeu
+  const gameId = game.id || game.title;
+
   // Switch classement mondial/pays
   const [leaderboardType, setLeaderboardType] = useState("global");
   // Attribution d'un pays à chaque joueur (pour la démo)
@@ -84,6 +112,32 @@ const GameDetailsScreen = ({ route, navigation }) => {
   const top10Country = gameLeaderboardWithCountry
     .filter((item) => item.country.code === selectedCountry.code)
     .slice(0, 10);
+
+  // Charger les statistiques de l'utilisateur pour ce jeu (uniquement Firestore)
+  useEffect(() => {
+    const loadUserStats = async () => {
+      if (user?.id && gameId) {
+        try {
+          setStatsLoading(true);
+          // Récupérer les statistiques du jeu depuis Firestore avec l'id technique
+          const stats = await getUserGameScore(user.id, gameId);
+          setUserStats(stats);
+          // Récupérer le rang de l'utilisateur
+          const { rank, total } = await getUserRankInLeaderboard(
+            user.id,
+            gameId
+          );
+          setUserRank(rank);
+          setTotalPlayers(total);
+        } catch (error) {
+          console.log("Erreur lors du chargement des stats:", error);
+        } finally {
+          setStatsLoading(false);
+        }
+      }
+    };
+    loadUserStats();
+  }, [user?.id, gameId]);
 
   const handlePlayGame = () => {
     setLoading(true);
@@ -272,44 +326,100 @@ const GameDetailsScreen = ({ route, navigation }) => {
               {/* Statistiques personnelles */}
               <View style={styles.section}>
                 <Text style={styles.sectionTitle}>Statistiques</Text>
-                <View style={styles.personalStats}>
-                  <View style={styles.personalStatRow}>
-                    <Ionicons name='trophy' size={20} color='#FFD700' />
-                    <Text style={styles.personalStatLabel}>Meilleur score</Text>
-                    <Text style={styles.personalStatValue}>2,847 points</Text>
-                  </View>
-                  <View style={styles.personalStatRow}>
-                    <Ionicons name='time' size={20} color='#4ECDC4' />
-                    <Text style={styles.personalStatLabel}>Temps record</Text>
-                    <Text style={styles.personalStatValue}>15.3 secondes</Text>
-                  </View>
-                  <View style={styles.personalStatRow}>
-                    <Ionicons
-                      name='checkmark-circle'
-                      size={20}
-                      color='#4CAF50'
-                    />
-                    <Text style={styles.personalStatLabel}>Victoires</Text>
-                    <Text style={styles.personalStatValue}>32 sur 45</Text>
-                  </View>
-                  <View style={styles.personalStatRow}>
-                    <Ionicons name='trending-up' size={20} color='#2196F3' />
-                    <Text style={styles.personalStatLabel}>
-                      Taux de victoire
+                {statsLoading ? (
+                  <View style={styles.loadingContainer}>
+                    <ActivityIndicator size='large' color={game.color} />
+                    <Text style={styles.loadingText}>
+                      Chargement des statistiques...
                     </Text>
-                    <Text style={styles.personalStatValue}>71%</Text>
                   </View>
-                  <View style={styles.personalStatRow}>
-                    <Ionicons name='flame' size={20} color='#FF5722' />
-                    <Text style={styles.personalStatLabel}>Série actuelle</Text>
-                    <Text style={styles.personalStatValue}>8 victoires</Text>
+                ) : (
+                  <View style={styles.personalStats}>
+                    <View style={styles.personalStatRow}>
+                      <Ionicons name='trophy' size={20} color='#FFD700' />
+                      <Text style={styles.personalStatLabel}>
+                        Meilleur score
+                      </Text>
+                      <Text style={styles.personalStatValue}>
+                        {userStats.bestScore
+                          ? `${userStats.bestScore.toLocaleString()} points`
+                          : "Aucun score"}
+                      </Text>
+                    </View>
+                    <View style={styles.personalStatRow}>
+                      <Ionicons name='time' size={20} color='#4ECDC4' />
+                      <Text style={styles.personalStatLabel}>Temps record</Text>
+                      <Text style={styles.personalStatValue}>
+                        {userStats.bestTime
+                          ? `${userStats.bestTime.toFixed(1)} secondes`
+                          : "Aucun temps"}
+                      </Text>
+                    </View>
+                    <View style={styles.personalStatRow}>
+                      <Ionicons
+                        name='checkmark-circle'
+                        size={20}
+                        color='#4CAF50'
+                      />
+                      <Text style={styles.personalStatLabel}>Victoires</Text>
+                      <Text style={styles.personalStatValue}>
+                        {userStats.win} sur {userStats.totalGames || 0}
+                      </Text>
+                    </View>
+                    <View style={styles.personalStatRow}>
+                      <Ionicons name='trending-up' size={20} color='#2196F3' />
+                      <Text style={styles.personalStatLabel}>
+                        Taux de victoire
+                      </Text>
+                      <Text style={styles.personalStatValue}>
+                        {userStats.winRate}%
+                      </Text>
+                    </View>
+                    <View style={styles.personalStatRow}>
+                      <Ionicons name='flame' size={20} color='#FF5722' />
+                      <Text style={styles.personalStatLabel}>
+                        Série actuelle
+                      </Text>
+                      <Text style={styles.personalStatValue}>
+                        {userStats.currentStreak} victoire
+                        {userStats.currentStreak > 1 ? "s" : ""}
+                      </Text>
+                    </View>
+                    <View style={styles.personalStatRow}>
+                      <Ionicons name='medal' size={20} color='#FF9800' />
+                      <Text style={styles.personalStatLabel}>Position</Text>
+                      <Text style={styles.personalStatValue}>
+                        {userRank
+                          ? `#${userRank} sur ${totalPlayers || "?"}`
+                          : "Non classé"}
+                      </Text>
+                    </View>
+                    <View style={styles.personalStatRow}>
+                      <Ionicons
+                        name='game-controller'
+                        size={20}
+                        color='#9C27B0'
+                      />
+                      <Text style={styles.personalStatLabel}>Score total</Text>
+                      <Text style={styles.personalStatValue}>
+                        {userStats.totalPoints} points
+                      </Text>
+                    </View>
+                    <View style={styles.personalStatRow}>
+                      <Ionicons name='time-outline' size={20} color='#607D8B' />
+                      <Text style={styles.personalStatLabel}>Temps total</Text>
+                      <Text style={styles.personalStatValue}>
+                        {userStats.totalDuration
+                          ? `${Math.floor(userStats.totalDuration / 60)}:${(
+                              userStats.totalDuration % 60
+                            )
+                              .toString()
+                              .padStart(2, "0")}`
+                          : "0:00"}
+                      </Text>
+                    </View>
                   </View>
-                  <View style={styles.personalStatRow}>
-                    <Ionicons name='medal' size={20} color='#FF9800' />
-                    <Text style={styles.personalStatLabel}>Position</Text>
-                    <Text style={styles.personalStatValue}>#1 sur 1,247</Text>
-                  </View>
-                </View>
+                )}
               </View>
             </View>
           ) : (
@@ -725,6 +835,10 @@ const styles = StyleSheet.create({
     marginTop: 18,
     fontWeight: "bold",
     letterSpacing: 0.5,
+  },
+  loadingContainer: {
+    alignItems: "center",
+    paddingVertical: 40,
   },
   leaderboardSwitchRow: {
     flexDirection: "row",

@@ -11,11 +11,18 @@ import {
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import Toast from "react-native-toast-message";
+import {
+  recordGameResult,
+  getUserGameScore,
+  getUserRankInLeaderboard,
+} from "../services/scoreService";
+import { useAuth } from "../hooks/useAuth";
 
 const { width } = Dimensions.get("window");
 
 // Composant principal du jeu Morpion
 const Morpion = ({ navigation, route }) => {
+  const { user } = useAuth();
   const [plateau, setPlateau] = useState(Array(9).fill(null));
   const [tourJoueur, setTourJoueur] = useState(true);
   const [partieTerminee, setPartieTerminee] = useState(false);
@@ -24,7 +31,39 @@ const Morpion = ({ navigation, route }) => {
   const [tempsEcoule, setTempsEcoule] = useState(0);
   const [enPartie, setEnPartie] = useState(false);
   const [chargement, setChargement] = useState(false);
-  const [historiqueParties, setHistoriqueParties] = useState([]);
+  const [statsJeu, setStatsJeu] = useState({
+    win: 0,
+    draw: 0,
+    lose: 0,
+    totalPoints: 0,
+    totalGames: 0,
+    winRate: 0,
+  });
+  const [rank, setRank] = useState(null);
+  const [totalPlayers, setTotalPlayers] = useState(null);
+
+  // Charger les statistiques depuis la base de données
+  useEffect(() => {
+    const chargerStats = async () => {
+      if (user?.id) {
+        try {
+          const stats = await getUserGameScore(user.id, "TicTacToe");
+          setStatsJeu(stats);
+          setScore(stats.totalPoints || 0);
+          // Récupérer le rang
+          const { rank, total } = await getUserRankInLeaderboard(
+            user.id,
+            "TicTacToe"
+          );
+          setRank(rank);
+          setTotalPlayers(total);
+        } catch (error) {
+          console.log("Erreur lors du chargement des stats:", error);
+        }
+      }
+    };
+    chargerStats();
+  }, [user?.id]);
 
   // Timer pour le jeu
   useEffect(() => {
@@ -88,11 +127,13 @@ const Morpion = ({ navigation, route }) => {
   };
 
   // Gérer la fin du jeu
-  const gererFinPartie = (resultat, temps) => {
+  const gererFinPartie = async (resultat, temps) => {
     let nouveauScore = 0;
+    let resultatBDD = "lose";
 
     if (resultat === "X") {
       nouveauScore = Math.max(1000 - temps * 10, 100); // Score basé sur le temps
+      resultatBDD = "win";
       Toast.show({
         type: "success",
         text1: "Victoire !",
@@ -102,6 +143,7 @@ const Morpion = ({ navigation, route }) => {
         visibilityTime: 2000,
       });
     } else if (resultat === "O") {
+      resultatBDD = "lose";
       Toast.show({
         type: "error",
         text1: "Défaite",
@@ -112,6 +154,7 @@ const Morpion = ({ navigation, route }) => {
       });
     } else {
       nouveauScore = 50; // Score pour match nul
+      resultatBDD = "draw";
       Toast.show({
         type: "info",
         text1: "Match nul",
@@ -122,17 +165,25 @@ const Morpion = ({ navigation, route }) => {
       });
     }
 
-    setScore((prev) => prev + nouveauScore);
+    // Sauvegarder le résultat en base de données
+    if (user?.id) {
+      try {
+        await recordGameResult(
+          user.id,
+          "TicTacToe",
+          resultatBDD,
+          nouveauScore,
+          temps
+        );
 
-    // Sauvegarder la partie
-    const resultatPartie = {
-      id: Date.now(),
-      resultat,
-      score: nouveauScore,
-      temps,
-      date: new Date().toISOString(),
-    };
-    setHistoriqueParties((prev) => [resultatPartie, ...prev]);
+        // Recharger les statistiques mises à jour
+        const nouvellesStats = await getUserGameScore(user.id, "TicTacToe");
+        setStatsJeu(nouvellesStats);
+        setScore(nouvellesStats.totalPoints || 0);
+      } catch (error) {
+        console.log("Erreur lors de la sauvegarde:", error);
+      }
+    }
   };
 
   // Recommencer une partie
@@ -203,16 +254,11 @@ const Morpion = ({ navigation, route }) => {
 
   // Rendre les statistiques
   const rendreStatistiques = () => {
-    const victoires = historiqueParties.filter(
-      (partie) => partie.resultat === "X"
-    ).length;
-    const defaites = historiqueParties.filter(
-      (partie) => partie.resultat === "O"
-    ).length;
-    const nuls = historiqueParties.filter(
-      (partie) => partie.resultat === "nul"
-    ).length;
-    const totalParties = historiqueParties.length;
+    const victoires = statsJeu.win;
+    const defaites = statsJeu.lose;
+    const nuls = statsJeu.draw;
+    const totalParties = statsJeu.totalGames;
+    const tauxVictoire = statsJeu.winRate;
 
     return (
       <View style={styles.containerStatistiques}>
@@ -231,6 +277,10 @@ const Morpion = ({ navigation, route }) => {
         <View style={styles.elementStat}>
           <Text style={styles.valeurStat}>{totalParties}</Text>
           <Text style={styles.labelStat}>Total</Text>
+        </View>
+        <View style={styles.elementStat}>
+          <Text style={styles.valeurStat}>{tauxVictoire.toFixed(1)}%</Text>
+          <Text style={styles.labelStat}>Taux Victoire</Text>
         </View>
       </View>
     );
@@ -304,10 +354,58 @@ const Morpion = ({ navigation, route }) => {
           </View>
 
           {/* Statistiques */}
-          {historiqueParties.length > 0 && (
+          {statsJeu.totalGames > 0 && (
             <View style={styles.sectionStatistiques}>
               <Text style={styles.titreStatistiques}>Statistiques</Text>
               {rendreStatistiques()}
+
+              {/* Statistiques détaillées */}
+              <View style={styles.containerStatsDetaillees}>
+                <View style={styles.elementStatDetaille}>
+                  <Text style={styles.labelStatDetaille}>Meilleur Score</Text>
+                  <Text style={styles.valeurStatDetaille}>
+                    {statsJeu.bestScore || 0}
+                  </Text>
+                </View>
+                <View style={styles.elementStatDetaille}>
+                  <Text style={styles.labelStatDetaille}>Score Moyen</Text>
+                  <Text style={styles.valeurStatDetaille}>
+                    {statsJeu.averageScore || 0}
+                  </Text>
+                </View>
+                <View style={styles.elementStatDetaille}>
+                  <Text style={styles.labelStatDetaille}>Temps Total</Text>
+                  <Text style={styles.valeurStatDetaille}>
+                    {Math.floor((statsJeu.totalDuration || 0) / 60)}:
+                    {(statsJeu.totalDuration || 0) % 60 < 10 ? "0" : ""}
+                    {(statsJeu.totalDuration || 0) % 60}
+                  </Text>
+                </View>
+                <View style={styles.elementStatDetaille}>
+                  <Text style={styles.labelStatDetaille}>Série actuelle</Text>
+                  <Text style={styles.valeurStatDetaille}>
+                    {statsJeu.currentStreak || 0} victoire
+                    {statsJeu.currentStreak > 1 ? "s" : ""}
+                  </Text>
+                </View>
+                <View style={styles.elementStatDetaille}>
+                  <Text style={styles.labelStatDetaille}>Temps record</Text>
+                  <Text style={styles.valeurStatDetaille}>
+                    {typeof statsJeu.bestTime === "number" &&
+                    statsJeu.bestTime > 0
+                      ? `${statsJeu.bestTime.toFixed(1)} secondes`
+                      : "-"}
+                  </Text>
+                </View>
+                <View style={styles.elementStatDetaille}>
+                  <Text style={styles.labelStatDetaille}>Position</Text>
+                  <Text style={styles.valeurStatDetaille}>
+                    {rank && totalPlayers
+                      ? `#${rank} sur ${totalPlayers}`
+                      : "-"}
+                  </Text>
+                </View>
+              </View>
             </View>
           )}
         </>
@@ -507,6 +605,33 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#666",
     marginTop: 2,
+  },
+  containerStatsDetaillees: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    padding: 15,
+    marginTop: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  elementStatDetaille: {
+    alignItems: "center",
+  },
+  labelStatDetaille: {
+    fontSize: 11,
+    color: "#666",
+    marginBottom: 4,
+    textAlign: "center",
+  },
+  valeurStatDetaille: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#764ba2",
   },
 });
 

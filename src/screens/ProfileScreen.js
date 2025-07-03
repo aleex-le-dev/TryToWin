@@ -40,6 +40,7 @@ import {
   getUserGameScore,
   getLeaderboard,
   getGlobalLeaderboard,
+  recordGameResult,
 } from "../services/scoreService";
 import { GAME_POINTS } from "../constants/gamePoints";
 
@@ -432,52 +433,55 @@ const ProfileScreen = ({ navigation }) => {
       };
       fetchLeaderboard();
       // Calcul des stats globales et par jeu
-      const fetchStats = async () => {
-        const scores = {};
-        let totalGames = 0,
-          wins = 0,
-          draws = 0,
-          loses = 0,
-          points = 0,
-          streak = 0;
-        for (const game of Object.keys(GAME_POINTS)) {
-          const s = await getUserGameScore(user.id, game);
-          scores[game] = {
-            totalGames: (s.win || 0) + (s.draw || 0) + (s.lose || 0),
-            wins: s.win || 0,
-            draws: s.draw || 0,
-            loses: s.lose || 0,
-            points: s.totalPoints || 0,
-            winrate: s.win
-              ? Math.round(
-                  100 *
-                    (s.win /
-                      ((s.win || 0) + (s.draw || 0) + (s.lose || 0) || 1))
-                )
-              : 0,
-          };
-          totalGames += scores[game].totalGames;
-          wins += scores[game].wins;
-          draws += scores[game].draws;
-          loses += scores[game].loses;
-          points += scores[game].points;
-        }
-        // Calcul du streak (série de victoires, simple : max win d'un jeu)
-        streak = Math.max(...Object.values(scores).map((s) => s.wins));
-        setUserStatsByGame(scores);
-        setUserStatsGlobal({
-          totalGames,
-          wins,
-          draws,
-          loses,
-          points,
-          winrate: totalGames ? Math.round(100 * (wins / totalGames)) : 0,
-          streak,
-        });
-      };
       fetchStats();
     }
   }, [user, loading, leaderboardType, selectedCountry]);
+
+  // Fonction fetchStats déplacée en dehors du useEffect pour être accessible
+  const fetchStats = async () => {
+    if (!user?.id) return;
+
+    const scores = {};
+    let totalGames = 0,
+      wins = 0,
+      draws = 0,
+      loses = 0,
+      points = 0,
+      streak = 0;
+    for (const game of Object.keys(GAME_POINTS)) {
+      const s = await getUserGameScore(user.id, game);
+      scores[game] = {
+        totalGames: (s.win || 0) + (s.draw || 0) + (s.lose || 0),
+        wins: s.win || 0,
+        draws: s.draw || 0,
+        loses: s.lose || 0,
+        points: s.totalPoints || 0,
+        winrate: s.win
+          ? Math.round(
+              100 *
+                (s.win / ((s.win || 0) + (s.draw || 0) + (s.lose || 0) || 1))
+            )
+          : 0,
+      };
+      totalGames += scores[game].totalGames;
+      wins += scores[game].wins;
+      draws += scores[game].draws;
+      loses += scores[game].loses;
+      points += scores[game].points;
+    }
+    // Calcul du streak (série de victoires, simple : max win d'un jeu)
+    streak = Math.max(...Object.values(scores).map((s) => s.wins));
+    setUserStatsByGame(scores);
+    setUserStatsGlobal({
+      totalGames,
+      wins,
+      draws,
+      loses,
+      points,
+      winrate: totalGames ? Math.round(100 * (wins / totalGames)) : 0,
+      streak,
+    });
+  };
 
   // Ajoute un useEffect pour synchroniser bannerHex avec profile?.bannerColor :
   useEffect(() => {
@@ -696,6 +700,166 @@ const ProfileScreen = ({ navigation }) => {
     navigation.navigate("Settings");
   };
 
+  // Fonction pour générer des données de test pour tous les jeux
+  const generateAllGamesTestData = async () => {
+    console.log("generateAllGamesTestData appelée");
+    if (user?.id) {
+      try {
+        console.log("Début de la génération des données de test...");
+        // Liste des jeux définis dans GAME_POINTS
+        const games = Object.keys(GAME_POINTS);
+
+        // Générer des données de test pour chaque jeu
+        for (const gameName of games) {
+          // Générer entre 5 et 20 parties par jeu
+          const numGames = Math.floor(Math.random() * 16) + 5;
+
+          for (let i = 0; i < numGames; i++) {
+            // Résultat aléatoire : win, draw, ou lose
+            const results = ["win", "draw", "lose"];
+            const result = results[Math.floor(Math.random() * results.length)];
+
+            // Score aléatoire basé sur le résultat
+            let score = 0;
+            if (result === "win") {
+              score = Math.floor(Math.random() * 500) + 100;
+            } else if (result === "draw") {
+              score = Math.floor(Math.random() * 100) + 20;
+            } else {
+              score = Math.floor(Math.random() * 50);
+            }
+
+            // Durée aléatoire entre 30 et 300 secondes
+            const duration = Math.floor(Math.random() * 270) + 30;
+
+            try {
+              // Enregistrer le résultat
+              await recordGameResult(
+                user.id,
+                gameName,
+                result,
+                score,
+                duration
+              );
+            } catch (error) {
+              console.log(
+                `Erreur lors de l'enregistrement pour ${gameName}:`,
+                error
+              );
+              // Continue avec le jeu suivant même en cas d'erreur
+            }
+          }
+        }
+
+        // Recharger les statistiques
+        fetchStats();
+
+        Toast.show({
+          type: "success",
+          text1: "Données de test générées",
+          text2: "Toutes les statistiques ont été mises à jour",
+          position: "top",
+          topOffset: 40,
+          visibilityTime: 2000,
+        });
+      } catch (error) {
+        console.log("Erreur lors de la génération des données de test:", error);
+
+        // Si c'est une erreur de permissions, proposer une alternative
+        if (error.message && error.message.includes("permissions")) {
+          Toast.show({
+            type: "error",
+            text1: "Erreur de permissions",
+            text2:
+              "Les règles Firestore ne permettent pas l'écriture. Utilisez le mode développement.",
+            position: "top",
+            topOffset: 40,
+            visibilityTime: 4000,
+          });
+
+          // Générer des données locales temporaires
+          generateLocalTestData();
+        } else {
+          Toast.show({
+            type: "error",
+            text1: "Erreur",
+            text2: "Impossible de générer les données de test",
+            position: "top",
+            topOffset: 40,
+            visibilityTime: 2000,
+          });
+        }
+      }
+    }
+  };
+
+  // Fonction alternative pour générer des données locales (mode développement)
+  const generateLocalTestData = () => {
+    try {
+      const games = Object.keys(GAME_POINTS);
+      const localStats = {};
+
+      // Générer des statistiques locales pour chaque jeu
+      for (const gameName of games) {
+        const wins = Math.floor(Math.random() * 20) + 5;
+        const draws = Math.floor(Math.random() * 10);
+        const loses = Math.floor(Math.random() * 15);
+        const totalGames = wins + draws + loses;
+        const totalPoints =
+          wins * (GAME_POINTS[gameName]?.win || 10) +
+          draws * (GAME_POINTS[gameName]?.draw || 0) +
+          loses * (GAME_POINTS[gameName]?.lose || 0);
+
+        localStats[gameName] = {
+          totalGames,
+          wins,
+          draws,
+          loses,
+          points: totalPoints,
+          winrate: totalGames > 0 ? Math.round(100 * (wins / totalGames)) : 0,
+        };
+      }
+
+      // Mettre à jour l'état local
+      setUserStatsByGame(localStats);
+
+      // Calculer les statistiques globales
+      let totalGames = 0,
+        wins = 0,
+        draws = 0,
+        loses = 0,
+        points = 0;
+      Object.values(localStats).forEach((stats) => {
+        totalGames += stats.totalGames;
+        wins += stats.wins;
+        draws += stats.draws;
+        loses += stats.loses;
+        points += stats.points;
+      });
+
+      setUserStatsGlobal({
+        totalGames,
+        wins,
+        draws,
+        loses,
+        points,
+        winrate: totalGames ? Math.round(100 * (wins / totalGames)) : 0,
+        streak: Math.max(...Object.values(localStats).map((s) => s.wins)),
+      });
+
+      Toast.show({
+        type: "success",
+        text1: "Données locales générées",
+        text2: "Mode développement - données temporaires",
+        position: "top",
+        topOffset: 40,
+        visibilityTime: 3000,
+      });
+    } catch (error) {
+      console.log("Erreur lors de la génération des données locales:", error);
+    }
+  };
+
   if (!profileFromFirestoreLoaded || !profile?.username) {
     return (
       <View
@@ -833,8 +997,22 @@ const ProfileScreen = ({ navigation }) => {
             userId={user?.id}
           />
         ) : (
-          // Utilisation du composant StatsTab universel (statistiques globales et par jeu)
-          <StatsTab userStats={userStats} statsByGame={userStatsByGame} />
+          <View>
+            {/* Utilisation du composant StatsTab universel (statistiques globales et par jeu) */}
+            <StatsTab userStats={userStats} statsByGame={userStatsByGame} />
+
+            {/* Bouton pour générer des données de test */}
+            <View style={styles.testDataContainer}>
+              <TouchableOpacity
+                style={styles.testDataButton}
+                onPress={generateAllGamesTestData}>
+                <Ionicons name='refresh-outline' size={20} color='#fff' />
+                <Text style={styles.testDataButtonText}>
+                  Générer des données de test pour tous les jeux
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
         )}
         {/* Modal d'édition du profil */}
         <Modal visible={editModalVisible} animationType='slide' transparent>
@@ -1364,6 +1542,33 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 3.84,
     elevation: 5,
+  },
+  testDataContainer: {
+    paddingHorizontal: 20,
+    paddingVertical: 20,
+  },
+  testDataButton: {
+    backgroundColor: "#667eea",
+    borderRadius: 12,
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  testDataButtonText: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 14,
+    marginLeft: 8,
   },
   actionButtons: {
     flexDirection: "row",
