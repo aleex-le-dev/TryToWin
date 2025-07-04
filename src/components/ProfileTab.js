@@ -5,6 +5,7 @@ import Ionicons from "react-native-vector-icons/Ionicons";
 import ProfileHeaderAvatar from "./ProfileHeaderAvatar";
 import { Button } from "react-native";
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
+import { gamesData } from "../constants/gamesData";
 
 const ProfileTab = ({
   user,
@@ -201,6 +202,7 @@ const ProfileTab = ({
               Score
             </Text>
           </View>
+          {/* Meilleur jeu */}
           <View
             style={{
               flex: 1,
@@ -211,44 +213,51 @@ const ProfileTab = ({
               margin: 8,
               elevation: 2,
             }}>
-            <Ionicons name='game-controller' size={20} color='#4ECDC4' />
-            <Text
-              style={{
-                fontSize: 18,
-                fontWeight: "bold",
-                color: "#23272a",
-                marginTop: 2,
-              }}>
-              {userStats.gamesPlayed}
-            </Text>
-            <Text style={{ fontSize: 11, color: "#6c757d", marginTop: 1 }}>
-              Parties
-            </Text>
+            {/* Espace pour alignement vertical (hauteur icône) */}
+            <View style={{ height: 8 }} />
+            {/* Valeur principale : emoji ou image du meilleur jeu, décalée vers le haut */}
+            {(() => {
+              const img = gamesData.find(
+                (g) => g.id === userStats.bestGame
+              )?.image;
+              if (!img)
+                return (
+                  <Text
+                    style={{
+                      fontSize: 24,
+                      fontWeight: "bold",
+                      color: "#23272a",
+                      marginBottom: 10,
+                    }}>
+                    ?
+                  </Text>
+                );
+              if (typeof img === "string" && img.startsWith("http")) {
+                return (
+                  <Image
+                    source={{ uri: img }}
+                    style={{ width: 24, height: 24, marginBottom: 10 }}
+                    resizeMode='contain'
+                  />
+                );
+              }
+              return (
+                <Text
+                  style={{
+                    fontSize: 24,
+                    fontWeight: "bold",
+                    color: "#23272a",
+                    marginBottom: 10,
+                  }}>
+                  {img}
+                </Text>
+              );
+            })()}
+            {/* Label en bas, centré */}
+            <Text style={{ fontSize: 11, color: "#6c757d" }}>Meilleur jeu</Text>
           </View>
-          <View
-            style={{
-              flex: 1,
-              backgroundColor: "#f8f9fa",
-              borderRadius: 14,
-              alignItems: "center",
-              paddingVertical: 12,
-              margin: 8,
-              elevation: 2,
-            }}>
-            <Ionicons name='checkmark-circle' size={20} color='#45B7D1' />
-            <Text
-              style={{
-                fontSize: 18,
-                fontWeight: "bold",
-                color: "#23272a",
-                marginTop: 2,
-              }}>
-              {userStats.gamesWon}
-            </Text>
-            <Text style={{ fontSize: 11, color: "#6c757d", marginTop: 1 }}>
-              Victoires
-            </Text>
-          </View>
+
+          {/* Victoire */}
           <View
             style={{
               flex: 1,
@@ -270,7 +279,7 @@ const ProfileTab = ({
               {userStats.winRate}%
             </Text>
             <Text style={{ fontSize: 11, color: "#6c757d", marginTop: 1 }}>
-              Winrate
+              Victoires
             </Text>
           </View>
         </View>
@@ -282,7 +291,7 @@ const ProfileTab = ({
             fontStyle: "italic",
             textAlign: "center",
             marginTop: 6,
-            marginBottom: 0,
+            marginBottom: 20,
           }}>
           {profile?.bio ? `« ${profile.bio} »` : ""}
         </Text>

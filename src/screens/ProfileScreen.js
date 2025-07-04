@@ -404,58 +404,75 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
       };
       fetchProfile();
       // Récupération des scores Firestore réels pour chaque jeu
-      const fetchScores = async () => {
-        const allStats = await getUserAllGameStats(user.id);
-        const scores = {};
-        for (const game of Object.keys(GAME_POINTS)) {
-          scores[game] = allStats[game] || {
-            win: 0,
-            draw: 0,
-            lose: 0,
-            totalPoints: 0,
-            totalGames: 0,
-            totalDuration: 0,
-            winRate: 0,
-            currentStreak: 0,
-            bestTime: null,
-            lastUpdated: null,
-            lastPlayed: null,
-          };
-        }
-        setUserScores(scores);
-      };
       fetchScores();
       // Récupération du vrai classement général (tous jeux)
-      const fetchLeaderboard = async () => {
-        const leaderboard = await getGlobalLeaderboard(100);
-        // Récupère les profils utilisateurs pour enrichir chaque entrée
-        const enriched = await Promise.all(
-          leaderboard.map(async (entry) => {
-            const userDoc = await getDoc(doc(db, "users", entry.userId));
-            const userData = userDoc.exists() ? userDoc.data() : {};
-            return {
-              ...entry,
-              username: userData.username || entry.userId,
-              avatar: userData.avatar || "👤",
-              country: userData.country || null,
-            };
-          })
-        );
-        // Filtrage pays si besoin
-        let filtered = enriched;
-        if (leaderboardType === "country") {
-          filtered = enriched.filter((e) => e.country === selectedCountry.code);
-        }
-        // Calcul du rang de l'utilisateur connecté
-        const userIndex = enriched.findIndex((e) => e.userId === user.id);
-        setUserRank(userIndex >= 0 ? userIndex + 1 : null);
-        setTop10Global(filtered.slice(0, 10));
-      };
       fetchLeaderboard();
       // Calcul des stats globales et par jeu
       fetchStats();
     }
   }, [user, loading, leaderboardType, selectedCountry]);
+
+  // Fonction fetchScores déplacée en dehors du useEffect pour être accessible
+  const fetchScores = async () => {
+    if (!user?.id) return;
+    const allStats = await getUserAllGameStats(user.id);
+    const scores = {};
+    for (const game of Object.keys(GAME_POINTS)) {
+      scores[game] = allStats[game] || {
+        win: 0,
+        draw: 0,
+        lose: 0,
+        totalPoints: 0,
+        totalGames: 0,
+        totalDuration: 0,
+        winRate: 0,
+        currentStreak: 0,
+        bestTime: null,
+        lastUpdated: null,
+        lastPlayed: null,
+      };
+    }
+    setUserScores(scores);
+  };
+
+  // Fonction fetchLeaderboard déplacée en dehors du useEffect pour être accessible
+  const fetchLeaderboard = async () => {
+    if (!user?.id) return;
+    const leaderboard = await getGlobalLeaderboard(100);
+    // Récupère les profils utilisateurs pour enrichir chaque entrée
+    const enriched = await Promise.all(
+      leaderboard.map(async (entry) => {
+        const userDoc = await getDoc(doc(db, "users", entry.userId));
+        const userData = userDoc.exists() ? userDoc.data() : {};
+        return {
+          ...entry,
+          username: userData.username || entry.userId,
+          avatar: userData.avatar || "👤",
+          country: userData.country || null,
+        };
+      })
+    );
+    // Filtrage pays si besoin
+    let filtered = enriched;
+    if (leaderboardType === "country") {
+      filtered = enriched.filter((e) => e.country === selectedCountry.code);
+    }
+    // Calcul du rang de l'utilisateur connecté
+    const userIndex = enriched.findIndex((e) => e.userId === user.id);
+    setUserRank(userIndex >= 0 ? userIndex + 1 : null);
+    setTop10Global(filtered.slice(0, 10));
+  };
+
+  // Rafraîchissement automatique des stats quand on revient sur l'écran
+  useFocusEffect(
+    React.useCallback(() => {
+      if (user?.id) {
+        fetchStats();
+        fetchScores();
+        fetchLeaderboard();
+      }
+    }, [user?.id])
+  );
 
   // Fonction fetchStats déplacée en dehors du useEffect pour être accessible
   const fetchStats = async () => {
@@ -1020,14 +1037,7 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
             profileBanner={profileBanner}
             bannerColor={profile?.bannerColor}
             countries={countries}
-            userStats={
-              userScores["TicTacToe"] || {
-                win: 0,
-                draw: 0,
-                lose: 0,
-                totalPoints: 0,
-              }
-            }
+            userStats={userStats}
             openEditModal={openEditModal}
             onLogout={handleLogout}
           />
