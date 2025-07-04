@@ -15,7 +15,6 @@ import { doc, getDoc } from "firebase/firestore";
 import { db } from "../utils/firebaseConfig";
 import { useIsFocused } from "@react-navigation/native";
 import { gamesData } from "../constants/gamesData";
-import { dailyChallenges } from "../constants/dailyChallenges";
 import { categories } from "../constants/categories";
 
 const { width } = Dimensions.get("window");

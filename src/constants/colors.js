@@ -1,5 +1,4 @@
 // Constantes de couleurs pour l'application
-// Centralise toutes les couleurs utilisées dans l'app
 
 export const colors = {
   // Couleurs principales

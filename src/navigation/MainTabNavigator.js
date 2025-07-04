@@ -8,7 +8,7 @@ import HomeScreen from "../screens/HomeScreen";
 import ProfileScreen from "../screens/ProfileScreen";
 import GameDetailsScreen from "../screens/GameDetailsScreen";
 import SocialScreen from "../screens/SocialScreen";
-import Morpion from "../games/TicTacToe";
+import Morpion from "../games/Morpion";
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -23,7 +23,7 @@ const GamesStack = ({ resetCategoryTrigger }) => {
         )}
       </Stack.Screen>
       <Stack.Screen name='GameDetails' component={GameDetailsScreen} />
-      <Stack.Screen name='TicTacToe' component={Morpion} />
+      <Stack.Screen name='Morpion' component={Morpion} />
     </Stack.Navigator>
   );
 };

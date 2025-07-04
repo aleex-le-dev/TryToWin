@@ -1,6 +1,6 @@
 // Collections d'avatars minimalistes : Drapeaux, Animaux, Personnages
 export const AVATAR_COLLECTIONS = [
-  // --- Drapeaux (flagcdn.com, HTTPS, 40px, uniquement ratio standard) ---
+
   {
     id: "flags",
     name: "Drapeaux",
@@ -60,7 +60,7 @@ export const AVATAR_COLLECTIONS = [
       { key: "flag-ae", url: "https://flagcdn.com/w40/ae.png" },
     ],
   },
-  // --- Animaux (OpenMoji PNG, style emoji/cartoon) ---
+
   {
     id: "animals",
     name: "Animaux",
@@ -84,7 +84,6 @@ export const AVATAR_COLLECTIONS = [
       { key: "tiger", url: "https://openmoji.org/data/color/png/72/1F42F.png" },
     ],
   },
-  // --- Personnages enrichis (DiceBear 'avataaars') ---
   {
     id: "characters",
     name: "Personnages",
@@ -135,7 +134,7 @@ export const AVATAR_COLLECTIONS = [
 ];
 
 // Liste d'avatars prédéfinis (cartoon, illustrations, etc.)
-// Tu peux remplacer les URLs par des images locales si tu veux
+
 export const AVATAR_LIBRARY = [
   // Exemples d'avatars libres de droits (remplace par tes propres images si besoin)
   { key: "cat", url: "https://api.dicebear.com/7.x/bottts/png?seed=cat" },

@@ -17,6 +17,7 @@ import {
   getUserRankInLeaderboard,
 } from "../services/scoreService";
 import { useAuth } from "../hooks/useAuth";
+import { GAME_POINTS } from "../constants/gamePoints";
 
 const { width } = Dimensions.get("window");
 
@@ -47,13 +48,13 @@ const Morpion = ({ navigation, route }) => {
     const chargerStats = async () => {
       if (user?.id) {
         try {
-          const stats = await getUserGameScore(user.id, "TicTacToe");
+          const stats = await getUserGameScore(user.id, "Morpion");
           setStatsJeu(stats);
           setScore(stats.totalPoints || 0);
           // Récupérer le rang
           const { rank, total } = await getUserRankInLeaderboard(
             user.id,
-            "TicTacToe"
+            "Morpion"
           );
           setRank(rank);
           setTotalPlayers(total);
@@ -75,6 +76,11 @@ const Morpion = ({ navigation, route }) => {
     }
     return () => clearInterval(interval);
   }, [enPartie, partieTerminee]);
+
+  // Démarrer automatiquement une partie à l'arrivée sur l'écran
+  useEffect(() => {
+    nouvellePartie();
+  }, []);
 
   // Vérifier s'il y a un gagnant
   const verifierGagnant = (cases) => {
@@ -134,20 +140,23 @@ const Morpion = ({ navigation, route }) => {
     if (resultat === "X") {
       nouveauScore = Math.max(1000 - temps * 10, 100); // Score basé sur le temps
       resultatBDD = "win";
+      const points = GAME_POINTS["Morpion"][resultatBDD];
       Toast.show({
         type: "success",
         text1: "Victoire !",
-        text2: `Score: ${nouveauScore} points`,
+        text2: `+${points} points`,
         position: "top",
         topOffset: 40,
         visibilityTime: 2000,
       });
     } else if (resultat === "O") {
+      nouveauScore = Math.max(1000 - temps * 10, 100); // Score basé sur le temps
       resultatBDD = "lose";
+      const points = GAME_POINTS["Morpion"][resultatBDD];
       Toast.show({
         type: "error",
         text1: "Défaite",
-        text2: "L'IA a gagné cette partie",
+        text2: `+${points} points`,
         position: "top",
         topOffset: 40,
         visibilityTime: 2000,
@@ -155,10 +164,11 @@ const Morpion = ({ navigation, route }) => {
     } else {
       nouveauScore = 50; // Score pour match nul
       resultatBDD = "draw";
+      const points = GAME_POINTS["Morpion"][resultatBDD];
       Toast.show({
         type: "info",
         text1: "Match nul",
-        text2: "Aucun gagnant cette fois",
+        text2: `+${points} points`,
         position: "top",
         topOffset: 40,
         visibilityTime: 2000,
@@ -168,16 +178,10 @@ const Morpion = ({ navigation, route }) => {
     // Sauvegarder le résultat en base de données
     if (user?.id) {
       try {
-        await recordGameResult(
-          user.id,
-          "TicTacToe",
-          resultatBDD,
-          nouveauScore,
-          temps
-        );
+        await recordGameResult(user.id, "Morpion", resultatBDD, 0, temps);
 
         // Recharger les statistiques mises à jour
-        const nouvellesStats = await getUserGameScore(user.id, "TicTacToe");
+        const nouvellesStats = await getUserGameScore(user.id, "Morpion");
         setStatsJeu(nouvellesStats);
         setScore(nouvellesStats.totalPoints || 0);
       } catch (error) {
@@ -336,13 +340,14 @@ const Morpion = ({ navigation, route }) => {
 
           {/* Boutons d'action */}
           <View style={styles.containerActions}>
-            <TouchableOpacity
-              style={styles.boutonAction}
-              onPress={nouvellePartie}>
-              <Ionicons name='refresh' size={20} color='#fff' />
-              <Text style={styles.texteBoutonAction}>Nouvelle partie</Text>
-            </TouchableOpacity>
-
+            {!partieTerminee && (
+              <TouchableOpacity
+                style={styles.boutonAction}
+                onPress={nouvellePartie}>
+                <Ionicons name='refresh' size={20} color='#fff' />
+                <Text style={styles.texteBoutonAction}>Nouvelle partie</Text>
+              </TouchableOpacity>
+            )}
             {partieTerminee && (
               <TouchableOpacity
                 style={[styles.boutonAction, styles.boutonPrincipal]}
@@ -362,46 +367,22 @@ const Morpion = ({ navigation, route }) => {
               {/* Statistiques détaillées */}
               <View style={styles.containerStatsDetaillees}>
                 <View style={styles.elementStatDetaille}>
-                  <Text style={styles.labelStatDetaille}>Meilleur Score</Text>
-                  <Text style={styles.valeurStatDetaille}>
-                    {statsJeu.bestScore || 0}
-                  </Text>
-                </View>
-                <View style={styles.elementStatDetaille}>
-                  <Text style={styles.labelStatDetaille}>Score Moyen</Text>
-                  <Text style={styles.valeurStatDetaille}>
-                    {statsJeu.averageScore || 0}
-                  </Text>
-                </View>
-                <View style={styles.elementStatDetaille}>
-                  <Text style={styles.labelStatDetaille}>Temps Total</Text>
-                  <Text style={styles.valeurStatDetaille}>
-                    {Math.floor((statsJeu.totalDuration || 0) / 60)}:
-                    {(statsJeu.totalDuration || 0) % 60 < 10 ? "0" : ""}
-                    {(statsJeu.totalDuration || 0) % 60}
-                  </Text>
-                </View>
-                <View style={styles.elementStatDetaille}>
-                  <Text style={styles.labelStatDetaille}>Série actuelle</Text>
-                  <Text style={styles.valeurStatDetaille}>
-                    {statsJeu.currentStreak || 0} victoire
-                    {statsJeu.currentStreak > 1 ? "s" : ""}
-                  </Text>
-                </View>
-                <View style={styles.elementStatDetaille}>
-                  <Text style={styles.labelStatDetaille}>Temps record</Text>
-                  <Text style={styles.valeurStatDetaille}>
-                    {typeof statsJeu.bestTime === "number" &&
-                    statsJeu.bestTime > 0
-                      ? `${statsJeu.bestTime.toFixed(1)} secondes`
-                      : "-"}
-                  </Text>
-                </View>
-                <View style={styles.elementStatDetaille}>
                   <Text style={styles.labelStatDetaille}>Position</Text>
                   <Text style={styles.valeurStatDetaille}>
                     {rank && totalPlayers
                       ? `#${rank} sur ${totalPlayers}`
+                      : "-"}
+                  </Text>
+                </View>
+                <View style={styles.elementStatDetaille}>
+                  <Text style={styles.labelStatDetaille}>
+                    <Ionicons name='trophy' size={16} color='#FFD700' />{" "}
+                    Meilleur temps
+                  </Text>
+                  <Text style={styles.valeurStatDetaille}>
+                    {typeof statsJeu.bestTime === "number" &&
+                    statsJeu.bestTime > 0
+                      ? `${statsJeu.bestTime.toFixed(1)} s`
                       : "-"}
                   </Text>
                 </View>

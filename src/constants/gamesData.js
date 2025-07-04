@@ -1,8 +1,8 @@
 // Liste des jeux jouables contre une IA, utilisée pour l'affichage dans l'accueil et la navigation.
 export const gamesData = [
   {
-    id: "1",
-    title: "Puissance 4",
+    id: "Puissance4",
+    title: "Puissance4",
     description: "Alignez 4 pions pour gagner",
     category: "Stratégie",
     image: "🔴",
@@ -10,7 +10,7 @@ export const gamesData = [
     gameType: "grid",
   },
   {
-    id: "2",
+    id: "Othello",
     title: "Othello",
     description: "Retournez les pions adverses",
     category: "Stratégie",
@@ -19,7 +19,7 @@ export const gamesData = [
     gameType: "grid",
   },
   {
-    id: "3",
+    id: "Morpion",
     title: "Morpion",
     description: "3 en ligne pour gagner",
     category: "Logique",
@@ -28,7 +28,7 @@ export const gamesData = [
     gameType: "grid",
   },
   {
-    id: "4",
+    id: "Pong",
     title: "Pong",
     description: "Bataille de raquettes",
     category: "Arcade",

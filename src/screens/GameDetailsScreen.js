@@ -18,6 +18,7 @@ import {
   getUserRankInLeaderboard,
   recordGameResult,
 } from "../services/scoreService";
+import { useFocusEffect } from "@react-navigation/native";
 
 const { width } = Dimensions.get("window");
 
@@ -114,42 +115,36 @@ const GameDetailsScreen = ({ route, navigation }) => {
     .slice(0, 10);
 
   // Charger les statistiques de l'utilisateur pour ce jeu (uniquement Firestore)
-  useEffect(() => {
-    const loadUserStats = async () => {
-      if (user?.id && gameId) {
-        try {
-          setStatsLoading(true);
-          // Récupérer les statistiques du jeu depuis Firestore avec l'id technique
-          const stats = await getUserGameScore(user.id, gameId);
-          setUserStats(stats);
-          // Récupérer le rang de l'utilisateur
-          const { rank, total } = await getUserRankInLeaderboard(
-            user.id,
-            gameId
-          );
-          setUserRank(rank);
-          setTotalPlayers(total);
-        } catch (error) {
-          console.log("Erreur lors du chargement des stats:", error);
-        } finally {
-          setStatsLoading(false);
+  useFocusEffect(
+    React.useCallback(() => {
+      const loadUserStats = async () => {
+        if (user?.id && gameId) {
+          try {
+            setStatsLoading(true);
+            const stats = await getUserGameScore(user.id, gameId);
+            setUserStats(stats);
+            const { rank, total } = await getUserRankInLeaderboard(
+              user.id,
+              gameId
+            );
+            setUserRank(rank);
+            setTotalPlayers(total);
+          } catch (error) {
+            console.log("Erreur lors du chargement des stats:", error);
+          } finally {
+            setStatsLoading(false);
+          }
         }
-      }
-    };
-    loadUserStats();
-  }, [user?.id, gameId]);
+      };
+      loadUserStats();
+    }, [user?.id, gameId])
+  );
 
   const handlePlayGame = () => {
     setLoading(true);
     setTimeout(() => {
       setLoading(false);
-      // Navigation vers le jeu réel
-      if (game.title === "Morpion") {
-        navigation.navigate("TicTacToe");
-      } else {
-        // Pour les autres jeux, garder le comportement actuel
-        // navigation vers le jeu réel ici
-      }
+      navigation.navigate(game.id);
     }, 1500);
   };
 
@@ -338,20 +333,11 @@ const GameDetailsScreen = ({ route, navigation }) => {
                     <View style={styles.personalStatRow}>
                       <Ionicons name='trophy' size={20} color='#FFD700' />
                       <Text style={styles.personalStatLabel}>
-                        Meilleur score
+                        Meilleur temps
                       </Text>
-                      <Text style={styles.personalStatValue}>
-                        {userStats.bestScore
-                          ? `${userStats.bestScore.toLocaleString()} points`
-                          : "Aucun score"}
-                      </Text>
-                    </View>
-                    <View style={styles.personalStatRow}>
-                      <Ionicons name='time' size={20} color='#4ECDC4' />
-                      <Text style={styles.personalStatLabel}>Temps record</Text>
                       <Text style={styles.personalStatValue}>
                         {userStats.bestTime
-                          ? `${userStats.bestTime.toFixed(1)} secondes`
+                          ? `${userStats.bestTime.toFixed(1)} s`
                           : "Aucun temps"}
                       </Text>
                     </View>
@@ -383,15 +369,6 @@ const GameDetailsScreen = ({ route, navigation }) => {
                       <Text style={styles.personalStatValue}>
                         {userStats.currentStreak} victoire
                         {userStats.currentStreak > 1 ? "s" : ""}
-                      </Text>
-                    </View>
-                    <View style={styles.personalStatRow}>
-                      <Ionicons name='medal' size={20} color='#FF9800' />
-                      <Text style={styles.personalStatLabel}>Position</Text>
-                      <Text style={styles.personalStatValue}>
-                        {userRank
-                          ? `#${userRank} sur ${totalPlayers || "?"}`
-                          : "Non classé"}
                       </Text>
                     </View>
                     <View style={styles.personalStatRow}>

@@ -45,10 +45,7 @@ export async function recordGameResult(
     lose: 0,
     totalPoints: 0,
     totalGames: 0,
-    totalScore: 0,
     totalDuration: 0,
-    bestScore: 0,
-    averageScore: 0,
     winRate: 0,
     lastUpdated: new Date().toISOString(),
     lastPlayed: new Date().toISOString(),
@@ -66,18 +63,9 @@ export async function recordGameResult(
   data[result] += 1;
   data.totalGames += 1;
   data.totalPoints += points;
-  data.totalScore += score;
   data.totalDuration += duration;
   data.lastUpdated = new Date().toISOString();
   data.lastPlayed = new Date().toISOString();
-
-  // Calcul du meilleur score
-  if (score > data.bestScore) {
-    data.bestScore = score;
-  }
-
-  // Calcul de la moyenne
-  data.averageScore = Math.round(data.totalScore / data.totalGames);
 
   // Calcul du taux de victoire
   data.winRate =
@@ -101,13 +89,27 @@ export async function recordGameResult(
  * Récupère le score cumulé d'un joueur pour un jeu donné.
  * @param {string} userId
  * @param {string} game
- * @returns {Promise<{win:number,draw:number,lose:number,totalPoints:number,totalGames:number,totalScore:number,totalDuration:number,bestScore:number,averageScore:number,winRate:number,currentStreak:number,bestTime:number|null}>}
+ * @returns {Promise<{win:number,draw:number,lose:number,totalPoints:number,totalGames:number,totalDuration:number,winRate:number,currentStreak:number,bestTime:number|null,lastUpdated:string|null,lastPlayed:string|null}>}
  */
 export async function getUserGameScore(userId, game) {
   const scoreRef = doc(db, "users", userId, "scores", game);
   const docSnap = await getDoc(scoreRef);
   if (docSnap.exists()) {
-    return docSnap.data();
+    const d = docSnap.data();
+    // On ne retourne que les champs utiles
+    return {
+      win: d.win || 0,
+      draw: d.draw || 0,
+      lose: d.lose || 0,
+      totalPoints: d.totalPoints || 0,
+      totalGames: d.totalGames || 0,
+      totalDuration: d.totalDuration || 0,
+      winRate: d.winRate || 0,
+      currentStreak: d.currentStreak || 0,
+      bestTime: d.bestTime || null,
+      lastUpdated: d.lastUpdated || null,
+      lastPlayed: d.lastPlayed || null,
+    };
   }
   return {
     win: 0,
@@ -115,13 +117,12 @@ export async function getUserGameScore(userId, game) {
     lose: 0,
     totalPoints: 0,
     totalGames: 0,
-    totalScore: 0,
     totalDuration: 0,
-    bestScore: 0,
-    averageScore: 0,
     winRate: 0,
     currentStreak: 0,
     bestTime: null,
+    lastUpdated: null,
+    lastPlayed: null,
   };
 }
 
@@ -214,10 +215,7 @@ export async function resetUserGameStats(userId, game) {
     lose: 0,
     totalPoints: 0,
     totalGames: 0,
-    totalScore: 0,
     totalDuration: 0,
-    bestScore: 0,
-    averageScore: 0,
     winRate: 0,
     lastUpdated: new Date().toISOString(),
     lastPlayed: new Date().toISOString(),
@@ -241,10 +239,7 @@ export async function resetAllUserStats(userId) {
       lose: 0,
       totalPoints: 0,
       totalGames: 0,
-      totalScore: 0,
       totalDuration: 0,
-      bestScore: 0,
-      averageScore: 0,
       winRate: 0,
       lastUpdated: new Date().toISOString(),
       lastPlayed: new Date().toISOString(),
