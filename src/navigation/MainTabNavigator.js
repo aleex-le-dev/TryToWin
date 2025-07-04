@@ -14,10 +14,14 @@ const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
 
 // Stack pour l'écran des jeux avec détails
-const GamesStack = () => {
+const GamesStack = ({ resetCategoryTrigger }) => {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
-      <Stack.Screen name='GamesMain' component={HomeScreen} />
+      <Stack.Screen name='GamesMain'>
+        {(props) => (
+          <HomeScreen {...props} resetCategoryTrigger={resetCategoryTrigger} />
+        )}
+      </Stack.Screen>
       <Stack.Screen name='GameDetails' component={GameDetailsScreen} />
       <Stack.Screen name='TicTacToe' component={Morpion} />
     </Stack.Navigator>
@@ -26,6 +30,7 @@ const GamesStack = () => {
 
 // Navigateur principal avec barre de navigation en bas
 const MainTabNavigator = () => {
+  const [resetCategoryTrigger, setResetCategoryTrigger] = React.useState(0);
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -68,9 +73,15 @@ const MainTabNavigator = () => {
       })}>
       <Tab.Screen
         name='Games'
-        component={GamesStack}
+        children={() => (
+          <GamesStack resetCategoryTrigger={resetCategoryTrigger} />
+        )}
         options={{
           title: "Jeux",
+          unmountOnBlur: true,
+        }}
+        listeners={{
+          tabPress: () => setResetCategoryTrigger((t) => t + 1),
         }}
       />
       <Tab.Screen
@@ -78,6 +89,7 @@ const MainTabNavigator = () => {
         component={ProfileScreen}
         options={{
           title: "Profil",
+          unmountOnBlur: true,
         }}
       />
       <Tab.Screen

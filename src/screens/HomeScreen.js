@@ -147,7 +147,7 @@ function GameCard({ item, onPress }) {
 }
 
 // Écran d'accueil fusionné avec liste des jeux
-const HomeScreen = ({ navigation }) => {
+const HomeScreen = ({ navigation, resetCategoryTrigger }) => {
   const { user, loading } = useAuth();
   const [selectedCategory, setSelectedCategory] = useState("Tous");
   const [profile, setProfile] = useState(null);
@@ -185,6 +185,11 @@ const HomeScreen = ({ navigation }) => {
 
     fetchProfile();
   }, [user, isFocused]);
+
+  // Réinitialise la catégorie à "Tous" à chaque clic sur l'onglet Jeux (via resetCategoryTrigger)
+  useEffect(() => {
+    setSelectedCategory("Tous");
+  }, [resetCategoryTrigger]);
 
   // Utilisation du composant GameCard dans renderGameCard
   const renderGameCard = ({ item }) => (

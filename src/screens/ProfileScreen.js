@@ -43,6 +43,7 @@ import {
   recordGameResult,
 } from "../services/scoreService";
 import { GAME_POINTS } from "../constants/gamePoints";
+import { useIsFocused } from "@react-navigation/native";
 
 const { width } = Dimensions.get("window");
 
@@ -272,6 +273,7 @@ const ProfileScreen = ({ navigation }) => {
     streak: 0,
   });
   const [userStatsByGame, setUserStatsByGame] = useState({});
+  const isFocused = useIsFocused();
 
   // Calcul des vraies statistiques utilisateur basées sur les données Firestore
   const userStats = {
@@ -306,6 +308,14 @@ const ProfileScreen = ({ navigation }) => {
       }
     })(),
   };
+
+  // Réinitialise l'onglet actif à chaque clic sur l'onglet Profil (même si déjà affiché)
+  useEffect(() => {
+    const unsubscribe = navigation.addListener("tabPress", () => {
+      setActiveTab("profile");
+    });
+    return unsubscribe;
+  }, [navigation]);
 
   // Récupération du profil Firestore à l'ouverture
   useEffect(() => {
