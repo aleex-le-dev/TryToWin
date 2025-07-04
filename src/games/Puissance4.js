@@ -14,6 +14,7 @@ import {
 } from "../services/scoreService";
 import { useAuth } from "../hooks/useAuth";
 import { GAME_POINTS } from "../constants/gamePoints";
+import GameLayout from "./GameLayout";
 
 const Puissance4 = ({ navigation }) => {
   const { user } = useAuth();
@@ -66,24 +67,31 @@ const Puissance4 = ({ navigation }) => {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Puissance 4</Text>
-      {/* Plateau de jeu à implémenter ici */}
-      <TouchableOpacity style={styles.button} onPress={enregistrerVictoire}>
-        <Ionicons name='trophy' size={20} color='#fff' />
-        <Text style={styles.buttonText}>Simuler une victoire</Text>
-      </TouchableOpacity>
-      <View style={styles.stats}>
-        <Text>Points : {stats.totalPoints}</Text>
-        <Text>Victoires : {stats.win}</Text>
-        <Text>Nuls : {stats.draw}</Text>
-        <Text>Défaites : {stats.lose}</Text>
-        <Text>Parties : {stats.totalGames}</Text>
-        <Text>Winrate : {stats.winRate}%</Text>
-        <Text>Classement : {rank ? `#${rank} sur ${totalPlayers}` : "-"}</Text>
+    <GameLayout
+      title="Puissance4"
+      score={score}
+      streak={stats.currentStreak}
+      onBack={() => navigation.goBack()}
+    >
+      <View style={styles.container}>
+        <Text style={styles.title}>Puissance 4</Text>
+        {/* Plateau de jeu à implémenter ici */}
+        <TouchableOpacity style={styles.button} onPress={enregistrerVictoire}>
+          <Ionicons name='trophy' size={20} color='#fff' />
+          <Text style={styles.buttonText}>Simuler une victoire</Text>
+        </TouchableOpacity>
+        <View style={styles.stats}>
+          <Text>Points : {stats.totalPoints}</Text>
+          <Text>Victoires : {stats.win}</Text>
+          <Text>Nuls : {stats.draw}</Text>
+          <Text>Défaites : {stats.lose}</Text>
+          <Text>Parties : {stats.totalGames}</Text>
+          <Text>Winrate : {stats.winRate}%</Text>
+          <Text>Classement : {rank ? `#${rank} sur ${totalPlayers}` : "-"}</Text>
+        </View>
       </View>
       <Toast />
-    </View>
+    </GameLayout>
   );
 };
 

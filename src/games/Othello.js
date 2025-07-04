@@ -14,6 +14,7 @@ import {
 } from "../services/scoreService";
 import { useAuth } from "../hooks/useAuth";
 import { GAME_POINTS } from "../constants/gamePoints";
+import GameLayout from "./GameLayout";
 
 const Othello = ({ navigation }) => {
   const { user } = useAuth();
@@ -66,9 +67,16 @@ const Othello = ({ navigation }) => {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Othello</Text>
-      {/* Plateau de jeu à implémenter ici */}
+    <GameLayout
+      title='Othello'
+      score={score}
+      streak={stats.currentStreak}
+      onBack={() => navigation.goBack()}>
+      {/* Ancien contenu principal du jeu (plateau, stats, etc.) ici */}
+      {/* ... tout sauf l'ancien header/score/multiplicateur ... */}
+      {/* Par exemple : */}
+      {/* Plateau */}
+      {/* ... */}
       <TouchableOpacity style={styles.button} onPress={enregistrerVictoire}>
         <Ionicons name='trophy' size={20} color='#fff' />
         <Text style={styles.buttonText}>Simuler une victoire</Text>
@@ -83,7 +91,7 @@ const Othello = ({ navigation }) => {
         <Text>Classement : {rank ? `#${rank} sur ${totalPlayers}` : "-"}</Text>
       </View>
       <Toast />
-    </View>
+    </GameLayout>
   );
 };
 

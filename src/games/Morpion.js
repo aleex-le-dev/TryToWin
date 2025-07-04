@@ -17,7 +17,8 @@ import {
   getUserRankInLeaderboard,
 } from "../services/scoreService";
 import { useAuth } from "../hooks/useAuth";
-import { GAME_POINTS } from "../constants/gamePoints";
+import { GAME_POINTS, getSerieMultiplier } from "../constants/gamePoints";
+import GameLayout from "./GameLayout";
 
 const { width } = Dimensions.get("window");
 
@@ -291,109 +292,88 @@ const Morpion = ({ navigation, route }) => {
   };
 
   return (
-    <View style={styles.container}>
-      {chargement && (
-        <View style={styles.containerChargement}>
-          <ActivityIndicator size='large' color='#667eea' />
-          <Text style={styles.texteChargement}>Nouvelle partie...</Text>
+    <GameLayout
+      title='Morpion'
+      score={score}
+      streak={statsJeu.currentStreak}
+      onBack={() => navigation.goBack()}>
+      {/* Informations du jeu */}
+      <View style={styles.infoJeu}>
+        <View style={styles.infoJoueur}>
+          <Text style={styles.labelJoueur}>
+            {tourJoueur ? "Votre tour" : "Tour de l'IA"}
+          </Text>
+          <Text style={styles.symboleJoueur}>{tourJoueur ? "X" : "O"}</Text>
+        </View>
+
+        <View style={styles.containerTimer}>
+          <Ionicons name='time' size={20} color='#667eea' />
+          <Text style={styles.texteTimer}>
+            {Math.floor(tempsEcoule / 60)}:
+            {(tempsEcoule % 60).toString().padStart(2, "0")}
+          </Text>
+        </View>
+      </View>
+
+      {/* Plateau de jeu */}
+      <View style={styles.containerJeu}>{rendrePlateau()}</View>
+
+      {/* Boutons d'action */}
+      <View style={styles.containerActions}>
+        {!partieTerminee && (
+          <TouchableOpacity
+            style={styles.boutonAction}
+            onPress={nouvellePartie}>
+            <Ionicons name='refresh' size={20} color='#fff' />
+            <Text style={styles.texteBoutonAction}>Nouvelle partie</Text>
+          </TouchableOpacity>
+        )}
+        {partieTerminee && (
+          <TouchableOpacity
+            style={[styles.boutonAction, styles.boutonPrincipal]}
+            onPress={recommencerPartie}>
+            <Ionicons name='play' size={20} color='#fff' />
+            <Text style={styles.texteBoutonAction}>Rejouer</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+
+      {/* Statistiques */}
+      {statsJeu.totalGames > 0 && (
+        <View style={styles.sectionStatistiques}>
+          <Text style={styles.titreStatistiques}>Statistiques</Text>
+          {rendreStatistiques()}
+
+          {/* Statistiques détaillées */}
+          <View style={styles.containerStatsDetaillees}>
+            <View style={styles.elementStatDetaille}>
+              <Text style={styles.labelStatDetaille}>Position</Text>
+              <Text style={styles.valeurStatDetaille}>
+                {rank !== null ? `${rank}/${totalPlayers}` : "-"}
+              </Text>
+            </View>
+            <View style={styles.elementStatDetaille}>
+              <Text style={styles.labelStatDetaille}>Meilleur temps</Text>
+              <Text style={styles.valeurStatDetaille}>
+                {typeof statsJeu.bestTime === "number" && statsJeu.bestTime > 0
+                  ? `${statsJeu.bestTime.toFixed(1)} s`
+                  : "-"}
+              </Text>
+            </View>
+            {statsJeu.currentStreak >= 5 && (
+              <View style={styles.elementStatDetaille}>
+                <Text style={styles.labelStatDetaille}>Multiplicateur</Text>
+                <Text style={styles.valeurStatDetaille}>
+                  x{(1 + getSerieMultiplier(statsJeu.currentStreak)).toFixed(2)}
+                </Text>
+              </View>
+            )}
+          </View>
         </View>
       )}
 
-      {!chargement && (
-        <>
-          {/* En-tête */}
-          <LinearGradient colors={["#667eea", "#764ba2"]} style={styles.enTete}>
-            <View style={styles.contenuEnTete}>
-              <TouchableOpacity
-                style={styles.boutonRetour}
-                onPress={() => navigation.goBack()}>
-                <Ionicons name='arrow-back' size={24} color='#fff' />
-              </TouchableOpacity>
-              <Text style={styles.titreJeu}>Morpion</Text>
-              <View style={styles.containerScore}>
-                <Text style={styles.texteScore}>{score}</Text>
-                <Text style={styles.labelScore}>points</Text>
-              </View>
-            </View>
-          </LinearGradient>
-
-          {/* Informations du jeu */}
-          <View style={styles.infoJeu}>
-            <View style={styles.infoJoueur}>
-              <Text style={styles.labelJoueur}>
-                {tourJoueur ? "Votre tour" : "Tour de l'IA"}
-              </Text>
-              <Text style={styles.symboleJoueur}>{tourJoueur ? "X" : "O"}</Text>
-            </View>
-
-            <View style={styles.containerTimer}>
-              <Ionicons name='time' size={20} color='#667eea' />
-              <Text style={styles.texteTimer}>
-                {Math.floor(tempsEcoule / 60)}:
-                {(tempsEcoule % 60).toString().padStart(2, "0")}
-              </Text>
-            </View>
-          </View>
-
-          {/* Plateau de jeu */}
-          <View style={styles.containerJeu}>{rendrePlateau()}</View>
-
-          {/* Boutons d'action */}
-          <View style={styles.containerActions}>
-            {!partieTerminee && (
-              <TouchableOpacity
-                style={styles.boutonAction}
-                onPress={nouvellePartie}>
-                <Ionicons name='refresh' size={20} color='#fff' />
-                <Text style={styles.texteBoutonAction}>Nouvelle partie</Text>
-              </TouchableOpacity>
-            )}
-            {partieTerminee && (
-              <TouchableOpacity
-                style={[styles.boutonAction, styles.boutonPrincipal]}
-                onPress={recommencerPartie}>
-                <Ionicons name='play' size={20} color='#fff' />
-                <Text style={styles.texteBoutonAction}>Rejouer</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-
-          {/* Statistiques */}
-          {statsJeu.totalGames > 0 && (
-            <View style={styles.sectionStatistiques}>
-              <Text style={styles.titreStatistiques}>Statistiques</Text>
-              {rendreStatistiques()}
-
-              {/* Statistiques détaillées */}
-              <View style={styles.containerStatsDetaillees}>
-                <View style={styles.elementStatDetaille}>
-                  <Text style={styles.labelStatDetaille}>Position</Text>
-                  <Text style={styles.valeurStatDetaille}>
-                    {rank && totalPlayers
-                      ? `#${rank} sur ${totalPlayers}`
-                      : "-"}
-                  </Text>
-                </View>
-                <View style={styles.elementStatDetaille}>
-                  <Text style={styles.labelStatDetaille}>
-                    <Ionicons name='trophy' size={16} color='#FFD700' />{" "}
-                    Meilleur temps
-                  </Text>
-                  <Text style={styles.valeurStatDetaille}>
-                    {typeof statsJeu.bestTime === "number" &&
-                    statsJeu.bestTime > 0
-                      ? `${statsJeu.bestTime.toFixed(1)} s`
-                      : "-"}
-                  </Text>
-                </View>
-              </View>
-            </View>
-          )}
-        </>
-      )}
-
       <Toast />
-    </View>
+    </GameLayout>
   );
 };
 
