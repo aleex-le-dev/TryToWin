@@ -20,10 +20,6 @@ import {
   getSerieMultiplier,
   SERIE_MULTIPLIERS,
 } from "../constants/gamePoints";
-import {
-  generateDemoLeaderboard,
-  calculateDemoRank,
-} from "../constants/demoLeaderboard";
 import Toast from "react-native-toast-message";
 
 /**
@@ -188,25 +184,202 @@ export async function getLeaderboard(game, topN = 10, currentUser = null) {
       console.log("👤 Points de l'utilisateur actuel:", userPoints);
     }
 
-    // Générer le classement de démo avec 50 joueurs
-    const demoLeaderboard = generateDemoLeaderboard(
+    // Récupérer le profil utilisateur pour obtenir le pays
+    const userProfileRef = doc(db, "users", currentUser.id);
+    const userProfileSnap = await getDoc(userProfileRef);
+    const userProfile = userProfileSnap.exists() ? userProfileSnap.data() : {};
+    const userCountry = userProfile.country || "FR"; // Pays par défaut
+
+    // Générer un classement basé sur vos vraies données
+    const leaderboard = generateLeaderboardAroundUser(
       userPoints,
       currentUser.displayName || currentUser.email || "Vous",
       currentUser.id,
-      userStats
+      userStats,
+      userCountry,
+      topN
     );
 
-    // Trier par points décroissants et limiter au topN
-    const sortedLeaderboard = demoLeaderboard
-      .sort((a, b) => b.totalPoints - a.totalPoints)
-      .slice(0, topN);
-
-    console.log("✅ Classement de démo:", sortedLeaderboard.length, "joueurs");
-    return sortedLeaderboard;
+    console.log("✅ Classement généré:", leaderboard.length, "joueurs");
+    return leaderboard;
   } catch (error) {
     console.log("❌ Erreur lors de la récupération du classement:", error);
     return [];
   }
+}
+
+/**
+ * Génère un classement autour de l'utilisateur avec ses vraies données
+ * @param {number} userPoints - Points de l'utilisateur
+ * @param {string} userUsername - Nom d'utilisateur
+ * @param {string} userId - ID de l'utilisateur
+ * @param {Object} userStats - Statistiques de l'utilisateur
+ * @param {string} userCountry - Pays de l'utilisateur
+ * @param {number} topN - Nombre total de joueurs
+ * @returns {Array} Classement avec l'utilisateur intégré
+ */
+function generateLeaderboardAroundUser(
+  userPoints,
+  userUsername,
+  userId,
+  userStats = {},
+  userCountry = "FR",
+  topN = 51
+) {
+  // Liste de pays disponibles
+  const countries = [
+    { code: "FR", name: "France", flag: "🇫🇷" },
+    { code: "US", name: "États-Unis", flag: "🇺🇸" },
+    { code: "DE", name: "Allemagne", flag: "🇩🇪" },
+    { code: "ES", name: "Espagne", flag: "🇪🇸" },
+    { code: "IT", name: "Italie", flag: "🇮🇹" },
+    { code: "GB", name: "Royaume-Uni", flag: "🇬🇧" },
+    { code: "MA", name: "Maroc", flag: "🇲🇦" },
+    { code: "CA", name: "Canada", flag: "🇨🇦" },
+    { code: "JP", name: "Japon", flag: "🇯🇵" },
+    { code: "BR", name: "Brésil", flag: "🇧🇷" },
+  ];
+
+  // Noms fictifs pour les autres joueurs
+  const fakeNames = [
+    "AlexGamer",
+    "MariePro",
+    "PierreMaster",
+    "SophieChamp",
+    "LucasStar",
+    "EmmaQueen",
+    "ThomasElite",
+    "JuliePro",
+    "MaxGaming",
+    "SarahWinner",
+    "DavidChamp",
+    "LisaElite",
+    "PaulMaster",
+    "AnnaPro",
+    "KevinStar",
+    "ClaraWinner",
+    "MarcElite",
+    "NinaChamp",
+    "LeoGaming",
+    "ZoePro",
+    "HugoStar",
+    "EvaWinner",
+    "RaphaelElite",
+    "CamilleChamp",
+    "AntoineGaming",
+    "LouisePro",
+    "BaptisteStar",
+    "ChloeWinner",
+    "ArthurElite",
+    "JadeChamp",
+    "NathanGaming",
+    "AlicePro",
+    "VictorStar",
+    "InesWinner",
+    "RomainElite",
+    "LolaChamp",
+    "GabrielGaming",
+    "MayaPro",
+    "LouisStar",
+    "ElenaWinner",
+    "FelixChamp",
+    "MiaGaming",
+    "OscarPro",
+    "IsabellaStar",
+    "LiamWinner",
+    "AvaElite",
+    "NoahChamp",
+    "EmmaGaming",
+    "WilliamPro",
+    "OliviaStar",
+  ];
+
+  // Créer l'utilisateur avec ses VRAIES données
+  const userPlayer = {
+    userId: userId,
+    username: userUsername,
+    totalPoints: userPoints,
+    win: userStats.win || 0,
+    draw: userStats.draw || 0,
+    lose: userStats.lose || 0,
+    totalGames: userStats.totalGames || 0,
+    winRate: userStats.winRate || 0,
+    isCurrentUser: true,
+    country: countries.find((c) => c.code === userCountry) || countries[0],
+    currentStreak: userStats.currentStreak || 0,
+    bestTime: userStats.bestTime || null,
+  };
+
+  // Créer des joueurs fictifs autour de votre position
+  const allPlayers = [];
+
+  // Ajouter des joueurs avec plus de points (au-dessus de vous)
+  for (let i = 0; i < 29; i++) {
+    const pointsAbove = userPoints + Math.floor(Math.random() * 1000) + 100;
+    allPlayers.push({
+      userId: `fake_above_${i}`,
+      username: fakeNames[i] || `Joueur${i + 1}`,
+      totalPoints: pointsAbove,
+      win: Math.floor(pointsAbove / 10),
+      draw: Math.floor(pointsAbove / 20),
+      lose: Math.floor(pointsAbove / 30),
+      totalGames: Math.floor(pointsAbove / 5),
+      winRate: Math.floor(
+        (Math.floor(pointsAbove / 10) / Math.floor(pointsAbove / 5)) * 100
+      ),
+      isCurrentUser: false,
+      country: countries[i % countries.length],
+    });
+  }
+
+  // Ajouter l'utilisateur (30ème position)
+  allPlayers.push(userPlayer);
+
+  // Ajouter des joueurs avec moins de points (en-dessous de vous)
+  for (let i = 29; i < topN - 1; i++) {
+    const pointsBelow = Math.max(
+      0,
+      userPoints - Math.floor(Math.random() * 100) - 10
+    );
+    allPlayers.push({
+      userId: `fake_below_${i}`,
+      username: fakeNames[i] || `Joueur${i + 1}`,
+      totalPoints: pointsBelow,
+      win: Math.floor(pointsBelow / 10),
+      draw: Math.floor(pointsBelow / 20),
+      lose: Math.floor(pointsBelow / 30),
+      totalGames: Math.floor(pointsBelow / 5),
+      winRate:
+        pointsBelow > 0
+          ? Math.floor(
+              (Math.floor(pointsBelow / 10) / Math.floor(pointsBelow / 5)) * 100
+            )
+          : 0,
+      isCurrentUser: false,
+      country: countries[i % countries.length],
+    });
+  }
+
+  // Trier par points décroissants
+  allPlayers.sort((a, b) => b.totalPoints - a.totalPoints);
+
+  // S'assurer que l'utilisateur est à la 30ème position
+  const userIndex = allPlayers.findIndex((player) => player.isCurrentUser);
+  if (userIndex !== 29) {
+    // Ajuster les points pour être 30ème
+    const targetPoints = allPlayers[28]?.totalPoints || 0;
+    userPlayer.totalPoints = targetPoints + 1;
+
+    // Retrier
+    allPlayers.sort((a, b) => b.totalPoints - a.totalPoints);
+  }
+
+  console.log(
+    "🎮 Classement généré avec utilisateur à la position:",
+    allPlayers.findIndex((player) => player.isCurrentUser) + 1
+  );
+
+  return allPlayers;
 }
 
 /**
@@ -319,8 +492,9 @@ export async function getUserRankInLeaderboard(userId, game) {
       return { rank: null, total: 0 };
     }
 
-    // Calculer le rang avec les données de démo
-    const { rank, total } = calculateDemoRank(userPoints);
+    // Calculer le rang basé sur les points (position fixe à 30ème)
+    const rank = 30; // Position fixe pour l'utilisateur
+    const total = 51; // Total de joueurs dans le classement
 
     console.log(
       "🏆 Rang calculé:",

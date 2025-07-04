@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -20,6 +20,8 @@ import {
   getLeaderboard,
 } from "../services/scoreService";
 import { useFocusEffect } from "@react-navigation/native";
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "../utils/firebaseConfig";
 
 const { width } = Dimensions.get("window");
 
@@ -65,6 +67,7 @@ const GameDetailsScreen = ({ route, navigation }) => {
   const [statsLoading, setStatsLoading] = useState(true);
   const [leaderboardData, setLeaderboardData] = useState([]);
   const [leaderboardLoading, setLeaderboardLoading] = useState(true);
+  const flatListRef = useRef(null);
 
   // Utiliser l'identifiant technique Firestore du jeu
   const gameId = game.id || game.title;
@@ -94,20 +97,40 @@ const GameDetailsScreen = ({ route, navigation }) => {
             setUserRank(rank);
             setTotalPlayers(total);
 
+            // Récupérer le profil utilisateur pour obtenir le pays
+            const userProfileRef = doc(db, "users", user.id);
+            const userProfileSnap = await getDoc(userProfileRef);
+            const userProfile = userProfileSnap.exists()
+              ? userProfileSnap.data()
+              : {};
+            const userCountry = userProfile.country || "FR"; // Pays par défaut
+
             // Charger le classement
             const leaderboard = await getLeaderboard(gameId, 51, user);
             const processedLeaderboard = leaderboard.map((item, index) => ({
               id: item.userId,
-              username: item.username || `Joueur ${item.userId.slice(0, 6)}`,
+              // Utiliser le vrai nom d'utilisateur pour l'utilisateur actuel
+              username: item.isCurrentUser
+                ? user.displayName || user.email || "Vous"
+                : item.username || `Joueur ${item.userId.slice(0, 6)}`,
               rank: index + 1,
               score: item.totalPoints || 0,
               winRate: item.winRate || 0,
               gamesPlayed: item.totalGames || 0,
               avatar: getAvatarForRank(index + 1),
               isCurrentUser: item.userId === user.id,
-              country: countries[index % countries.length], // Pour la démo
+              // Utiliser le vrai pays pour l'utilisateur, pays fictifs pour les autres
+              country: item.isCurrentUser
+                ? countries.find((c) => c.code === userCountry) || countries[0]
+                : countries[index % countries.length],
             }));
             setLeaderboardData(processedLeaderboard);
+            console.log(
+              "📊 Nombre de joueurs dans le classement:",
+              processedLeaderboard.length,
+              "Pays utilisateur:",
+              userCountry
+            );
           } catch (error) {
             console.log("Erreur lors du chargement des données:", error);
           } finally {
@@ -119,6 +142,62 @@ const GameDetailsScreen = ({ route, navigation }) => {
       loadData();
     }, [user?.id, gameId])
   );
+
+  // Fonction pour scroller vers l'utilisateur
+  const scrollToUser = () => {
+    if (leaderboardData.length > 0 && flatListRef.current) {
+      const userIndex = leaderboardData.findIndex((item) => item.isCurrentUser);
+      console.log("🎯 Scroll manuel vers l'utilisateur à l'index:", userIndex);
+
+      if (userIndex !== -1) {
+        setTimeout(() => {
+          flatListRef.current?.scrollToIndex({
+            index: userIndex,
+            animated: true,
+            viewPosition: 0.5,
+          });
+        }, 100);
+      }
+    }
+  };
+
+  // Effet pour scroller automatiquement vers la position de l'utilisateur
+  useEffect(() => {
+    if (
+      !leaderboardLoading &&
+      leaderboardData.length > 0 &&
+      flatListRef.current &&
+      activeTab === "leaderboard"
+    ) {
+      // Trouver l'index de l'utilisateur dans le classement (30ème place)
+      const userIndex = leaderboardData.findIndex((item) => item.isCurrentUser);
+      console.log(
+        "🎯 Tentative de scroll vers l'utilisateur à l'index:",
+        userIndex
+      );
+
+      if (userIndex !== -1) {
+        // Attendre un peu que la FlatList soit rendue
+        setTimeout(() => {
+          console.log("🎯 Scroll automatique vers l'index:", userIndex);
+          flatListRef.current?.scrollToIndex({
+            index: userIndex,
+            animated: true,
+            viewPosition: 0.5, // Centre l'élément dans la vue
+          });
+        }, 300); // Réduit le délai pour une réponse plus rapide
+      } else {
+        console.log("❌ Utilisateur non trouvé dans le classement");
+      }
+    } else {
+      console.log("🔍 Conditions non remplies pour le scroll:", {
+        leaderboardLoading,
+        dataLength: leaderboardData.length,
+        hasRef: !!flatListRef.current,
+        activeTab,
+      });
+    }
+  }, [leaderboardLoading, leaderboardData, activeTab]);
 
   // Fonction pour obtenir l'avatar selon le rang
   const getAvatarForRank = (rank) => {
@@ -223,7 +302,7 @@ const GameDetailsScreen = ({ route, navigation }) => {
         </View>
       )}
       {!loading && (
-        <ScrollView showsVerticalScrollIndicator={false}>
+        <View style={{ flex: 1 }}>
           {/* Header avec informations du jeu */}
           <LinearGradient
             colors={[game.color, game.color + "80"]}
@@ -269,7 +348,11 @@ const GameDetailsScreen = ({ route, navigation }) => {
                   borderBottomWidth: 2,
                 },
               ]}
-              onPress={() => setActiveTab("leaderboard")}>
+              onPress={() => {
+                setActiveTab("leaderboard");
+                // Scroll vers l'utilisateur après un court délai
+                setTimeout(() => scrollToUser(), 100);
+              }}>
               <Text
                 style={[
                   styles.tabText,
@@ -305,97 +388,108 @@ const GameDetailsScreen = ({ route, navigation }) => {
 
           {/* Contenu des onglets */}
           {activeTab === "stats" ? (
-            <View style={styles.statsContent}>
-              {/* Statistiques personnelles */}
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Statistiques</Text>
-                {statsLoading ? (
-                  <View style={styles.loadingContainer}>
-                    <ActivityIndicator size='large' color={game.color} />
-                    <Text style={styles.loadingText}>
-                      Chargement des statistiques...
-                    </Text>
-                  </View>
-                ) : (
-                  <View style={styles.personalStats}>
-                    <View style={styles.personalStatRow}>
-                      <Ionicons name='trophy' size={20} color='#FFD700' />
-                      <Text style={styles.personalStatLabel}>
-                        Meilleur temps
-                      </Text>
-                      <Text style={styles.personalStatValue}>
-                        {userStats.bestTime
-                          ? `${userStats.bestTime.toFixed(1)} s`
-                          : "Aucun temps"}
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              style={{ flex: 1 }}>
+              <View style={styles.statsContent}>
+                {/* Statistiques personnelles */}
+                <View style={styles.section}>
+                  <Text style={styles.sectionTitle}>Statistiques</Text>
+                  {statsLoading ? (
+                    <View style={styles.loadingContainer}>
+                      <ActivityIndicator size='large' color={game.color} />
+                      <Text style={styles.loadingText}>
+                        Chargement des statistiques...
                       </Text>
                     </View>
-                    <View style={styles.personalStatRow}>
-                      <Ionicons
-                        name='checkmark-circle'
-                        size={20}
-                        color='#4CAF50'
-                      />
-                      <Text style={styles.personalStatLabel}>Victoires</Text>
-                      <Text style={styles.personalStatValue}>
-                        {userStats.win} sur {userStats.totalGames || 0}
-                      </Text>
+                  ) : (
+                    <View style={styles.personalStats}>
+                      <View style={styles.personalStatRow}>
+                        <Ionicons name='trophy' size={20} color='#FFD700' />
+                        <Text style={styles.personalStatLabel}>
+                          Meilleur temps
+                        </Text>
+                        <Text style={styles.personalStatValue}>
+                          {userStats.bestTime
+                            ? `${userStats.bestTime.toFixed(1)} s`
+                            : "Aucun temps"}
+                        </Text>
+                      </View>
+                      <View style={styles.personalStatRow}>
+                        <Ionicons
+                          name='checkmark-circle'
+                          size={20}
+                          color='#4CAF50'
+                        />
+                        <Text style={styles.personalStatLabel}>Victoires</Text>
+                        <Text style={styles.personalStatValue}>
+                          {userStats.win} sur {userStats.totalGames || 0}
+                        </Text>
+                      </View>
+                      <View style={styles.personalStatRow}>
+                        <Ionicons
+                          name='trending-up'
+                          size={20}
+                          color='#2196F3'
+                        />
+                        <Text style={styles.personalStatLabel}>
+                          Taux de victoire
+                        </Text>
+                        <Text style={styles.personalStatValue}>
+                          {userStats.winRate}%
+                        </Text>
+                      </View>
+                      <View style={styles.personalStatRow}>
+                        <Ionicons name='flame' size={20} color='#FF5722' />
+                        <Text style={styles.personalStatLabel}>
+                          Série actuelle
+                        </Text>
+                        <Text style={styles.personalStatValue}>
+                          {userStats.currentStreak} victoire
+                          {userStats.currentStreak > 1 ? "s" : ""}
+                        </Text>
+                      </View>
+                      <View style={styles.personalStatRow}>
+                        <Ionicons
+                          name='game-controller'
+                          size={20}
+                          color='#9C27B0'
+                        />
+                        <Text style={styles.personalStatLabel}>Points</Text>
+                        <Text style={styles.personalStatValue}>
+                          {userStats.totalPoints} points
+                        </Text>
+                      </View>
+                      <View style={styles.personalStatRow}>
+                        <Ionicons
+                          name='time-outline'
+                          size={20}
+                          color='#607D8B'
+                        />
+                        <Text style={styles.personalStatLabel}>
+                          Durée de jeu
+                        </Text>
+                        <Text style={styles.personalStatValue}>
+                          {userStats.totalDuration
+                            ? `${Math.floor(userStats.totalDuration / 60)}:${(
+                                userStats.totalDuration % 60
+                              )
+                                .toString()
+                                .padStart(2, "0")}`
+                            : "0:00"}
+                        </Text>
+                      </View>
                     </View>
-                    <View style={styles.personalStatRow}>
-                      <Ionicons name='trending-up' size={20} color='#2196F3' />
-                      <Text style={styles.personalStatLabel}>
-                        Taux de victoire
-                      </Text>
-                      <Text style={styles.personalStatValue}>
-                        {userStats.winRate}%
-                      </Text>
-                    </View>
-                    <View style={styles.personalStatRow}>
-                      <Ionicons name='flame' size={20} color='#FF5722' />
-                      <Text style={styles.personalStatLabel}>
-                        Série actuelle
-                      </Text>
-                      <Text style={styles.personalStatValue}>
-                        {userStats.currentStreak} victoire
-                        {userStats.currentStreak > 1 ? "s" : ""}
-                      </Text>
-                    </View>
-                    <View style={styles.personalStatRow}>
-                      <Ionicons
-                        name='game-controller'
-                        size={20}
-                        color='#9C27B0'
-                      />
-                      <Text style={styles.personalStatLabel}>Points</Text>
-                      <Text style={styles.personalStatValue}>
-                        {userStats.totalPoints} points
-                      </Text>
-                    </View>
-                    <View style={styles.personalStatRow}>
-                      <Ionicons name='time-outline' size={20} color='#607D8B' />
-                      <Text style={styles.personalStatLabel}>Durée de jeu</Text>
-                      <Text style={styles.personalStatValue}>
-                        {userStats.totalDuration
-                          ? `${Math.floor(userStats.totalDuration / 60)}:${(
-                              userStats.totalDuration % 60
-                            )
-                              .toString()
-                              .padStart(2, "0")}`
-                          : "0:00"}
-                      </Text>
-                    </View>
-                  </View>
-                )}
+                  )}
+                </View>
               </View>
-            </View>
+            </ScrollView>
           ) : (
             <View style={styles.leaderboardContent}>
               {/* En-tête du classement */}
               <View style={styles.leaderboardHeader}>
                 <Text style={styles.leaderboardTitle}>
                   Classement {game.title} (Mondial)
-                </Text>
-                <Text style={styles.leaderboardSubtitle}>
-                  Top 10 des meilleurs joueurs
                 </Text>
               </View>
               {/* Liste du classement */}
@@ -408,13 +502,23 @@ const GameDetailsScreen = ({ route, navigation }) => {
                 </View>
               ) : (
                 <FlatList
+                  ref={flatListRef}
                   data={leaderboardData}
                   renderItem={renderLeaderboardItem}
                   keyExtractor={(item) => item.id}
                   scrollEnabled={true}
-                  style={[styles.leaderboardList, { flex: 1 }]}
+                  style={{ flex: 1 }}
                   contentContainerStyle={{ paddingBottom: 20 }}
                   showsVerticalScrollIndicator={true}
+                  removeClippedSubviews={false}
+                  initialNumToRender={20}
+                  maxToRenderPerBatch={20}
+                  windowSize={10}
+                  getItemLayout={(data, index) => ({
+                    length: 80, // Hauteur approximative de chaque item
+                    offset: 80 * index,
+                    index,
+                  })}
                   ListEmptyComponent={
                     <Text
                       style={{
@@ -429,7 +533,7 @@ const GameDetailsScreen = ({ route, navigation }) => {
               )}
             </View>
           )}
-        </ScrollView>
+        </View>
       )}
     </View>
   );
