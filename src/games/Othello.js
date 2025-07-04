@@ -13,7 +13,7 @@ import {
   getUserRankInLeaderboard,
 } from "../services/scoreService";
 import { useAuth } from "../hooks/useAuth";
-import { GAME_POINTS } from "../constants/gamePoints";
+import { GAME_POINTS, getSerieMultiplier } from "../constants/gamePoints";
 import GameLayout from "./GameLayout";
 
 const Othello = ({ navigation }) => {
@@ -49,13 +49,6 @@ const Othello = ({ navigation }) => {
   const enregistrerVictoire = async () => {
     if (user?.id) {
       await recordGameResult(user.id, "Othello", "win", 0, 0);
-      const points = GAME_POINTS["Othello"]["win"];
-      Toast.show({
-        type: "success",
-        text1: "Victoire enregistrée !",
-        text2: `+${points} points`,
-        topOffset: 40,
-      });
       const s = await getUserGameScore(user.id, "Othello");
       setStats(s);
       const { rank, total } = await getUserRankInLeaderboard(
@@ -64,6 +57,31 @@ const Othello = ({ navigation }) => {
       );
       setRank(rank);
       setTotalPlayers(total);
+
+      // Afficher le toast avec les points gagnés et la série si applicable
+      const points = GAME_POINTS["Othello"]["win"];
+      const mult = getSerieMultiplier(s.currentStreak);
+      const pointsAvecMultiplicateur =
+        mult > 0 ? Math.round(points * (1 + mult)) : points;
+
+      let toastConfig = {
+        type: "success",
+        position: "top",
+        topOffset: 40,
+        visibilityTime: 3000,
+      };
+
+      if (mult > 0) {
+        toastConfig.text1 = `🔥 Victoire ! Série de ${s.currentStreak}`;
+        toastConfig.text2 = `+${pointsAvecMultiplicateur} points (x${(
+          1 + mult
+        ).toFixed(2)})`;
+      } else {
+        toastConfig.text1 = "Victoire enregistrée !";
+        toastConfig.text2 = `+${points} points`;
+      }
+
+      Toast.show(toastConfig);
     }
   };
 

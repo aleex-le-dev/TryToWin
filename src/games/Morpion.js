@@ -137,45 +137,14 @@ const Morpion = ({ navigation, route }) => {
 
   // Gérer la fin du jeu
   const gererFinPartie = async (resultat, temps) => {
-    let nouveauScore = 0;
     let resultatBDD = "lose";
 
     if (resultat === "X") {
-      nouveauScore = Math.max(1000 - temps * 10, 100); // Score basé sur le temps
       resultatBDD = "win";
-      const points = GAME_POINTS["Morpion"][resultatBDD];
-      Toast.show({
-        type: "success",
-        text1: "Victoire !",
-        text2: `+${points} points`,
-        position: "top",
-        topOffset: 40,
-        visibilityTime: 2000,
-      });
     } else if (resultat === "O") {
-      nouveauScore = Math.max(1000 - temps * 10, 100); // Score basé sur le temps
       resultatBDD = "lose";
-      const points = GAME_POINTS["Morpion"][resultatBDD];
-      Toast.show({
-        type: "error",
-        text1: "Défaite",
-        text2: `+${points} points`,
-        position: "top",
-        topOffset: 40,
-        visibilityTime: 2000,
-      });
     } else {
-      nouveauScore = 50; // Score pour match nul
       resultatBDD = "draw";
-      const points = GAME_POINTS["Morpion"][resultatBDD];
-      Toast.show({
-        type: "info",
-        text1: "Match nul",
-        text2: `+${points} points`,
-        position: "top",
-        topOffset: 40,
-        visibilityTime: 2000,
-      });
     }
 
     // Sauvegarder le résultat en base de données
@@ -187,6 +156,41 @@ const Morpion = ({ navigation, route }) => {
         const nouvellesStats = await getUserGameScore(user.id, "Morpion");
         setStatsJeu(nouvellesStats);
         setScore(nouvellesStats.totalPoints || 0);
+
+        // Afficher le toast avec les points gagnés et la série si applicable
+        const points = GAME_POINTS["Morpion"][resultatBDD];
+        const mult = getSerieMultiplier(nouvellesStats.currentStreak);
+        const pointsAvecMultiplicateur =
+          mult > 0 ? Math.round(points * (1 + mult)) : points;
+
+        let toastConfig = {
+          position: "top",
+          topOffset: 40,
+          visibilityTime: 3000,
+        };
+
+        if (resultatBDD === "win") {
+          toastConfig.type = "success";
+          toastConfig.text1 = "Victoire !";
+          if (mult > 0) {
+            toastConfig.text1 = `🔥 Victoire ! Série de ${nouvellesStats.currentStreak}`;
+            toastConfig.text2 = `+${pointsAvecMultiplicateur} points (x${(
+              1 + mult
+            ).toFixed(2)})`;
+          } else {
+            toastConfig.text2 = `+${points} points`;
+          }
+        } else if (resultatBDD === "lose") {
+          toastConfig.type = "error";
+          toastConfig.text1 = "Défaite";
+          toastConfig.text2 = `+${points} points`;
+        } else {
+          toastConfig.type = "info";
+          toastConfig.text1 = "Match nul";
+          toastConfig.text2 = `+${points} points`;
+        }
+
+        Toast.show(toastConfig);
       } catch (error) {
         console.log("Erreur lors de la sauvegarde:", error);
       }

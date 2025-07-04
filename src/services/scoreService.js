@@ -82,15 +82,6 @@ export async function recordGameResult(
     const mult = getSerieMultiplier(data.currentStreak);
     if (mult > 0) {
       points = Math.round(points * (1 + mult));
-      if (data.currentStreak >= 2) {
-        Toast.show({
-          type: "success",
-          text1: `🔥 Série de ${data.currentStreak} !`,
-          text2: `Multiplicateur x${(1 + mult).toFixed(2)}`,
-          position: "top",
-          topOffset: 40,
-        });
-      }
     }
     // Gestion du temps record (le plus bas)
     if (duration > 0 && (data.bestTime === null || duration < data.bestTime)) {
