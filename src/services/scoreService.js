@@ -15,7 +15,12 @@ import {
   collection,
   increment,
 } from "firebase/firestore";
-import { GAME_POINTS } from "../constants/gamePoints";
+import {
+  GAME_POINTS,
+  getSerieMultiplier,
+  SERIE_MULTIPLIERS,
+} from "../constants/gamePoints";
+import Toast from "react-native-toast-message";
 
 /**
  * Enregistre le résultat d'une partie pour un joueur et un jeu.
@@ -33,7 +38,7 @@ export async function recordGameResult(
   score = 0,
   duration = 0
 ) {
-  const points = GAME_POINTS[game]?.[result] ?? 0;
+  let points = GAME_POINTS[game]?.[result] ?? 0;
   if (!userId || !game || !["win", "draw", "lose"].includes(result)) return;
 
   const scoreRef = doc(db, "users", userId, "scores", game);
@@ -62,7 +67,6 @@ export async function recordGameResult(
   // Mise à jour des statistiques
   data[result] += 1;
   data.totalGames += 1;
-  data.totalPoints += points;
   data.totalDuration += duration;
   data.lastUpdated = new Date().toISOString();
   data.lastPlayed = new Date().toISOString();
@@ -71,9 +75,22 @@ export async function recordGameResult(
   data.winRate =
     data.totalGames > 0 ? Math.round((data.win / data.totalGames) * 100) : 0;
 
-  // Gestion de la série de victoires
+  // Gestion de la série de victoires et du multiplicateur
   if (result === "win") {
     data.currentStreak = (data.currentStreak || 0) + 1;
+    // Appliquer le multiplicateur de série
+    const mult = getSerieMultiplier(data.currentStreak);
+    if (mult > 0) {
+      points = Math.round(points * (1 + mult));
+      if (data.currentStreak >= 2) {
+        Toast.show({
+          type: "success",
+          text1: `🔥 Série de ${data.currentStreak} !`,
+          text2: `Multiplicateur x${(1 + mult).toFixed(2)}`,
+          position: "top",
+        });
+      }
+    }
     // Gestion du temps record (le plus bas)
     if (duration > 0 && (data.bestTime === null || duration < data.bestTime)) {
       data.bestTime = duration;
@@ -81,6 +98,9 @@ export async function recordGameResult(
   } else if (result === "lose" || result === "draw") {
     data.currentStreak = 0;
   }
+
+  // Ajout des points (après multiplicateur éventuel)
+  data.totalPoints += points;
 
   await setDoc(scoreRef, data, { merge: true });
 }
