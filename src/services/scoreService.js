@@ -20,6 +20,10 @@ import {
   getSerieMultiplier,
   SERIE_MULTIPLIERS,
 } from "../constants/gamePoints";
+import {
+  generateDemoLeaderboard,
+  calculateDemoRank,
+} from "../constants/demoLeaderboard";
 import Toast from "react-native-toast-message";
 
 /**
@@ -159,20 +163,50 @@ export async function getUserAllGameStats(userId) {
  * Récupère le classement global pour un jeu donné (top N joueurs).
  * @param {string} game - Nom du jeu (ex: 'TicTacToe')
  * @param {number} topN - Nombre de joueurs à afficher
- * @returns {Promise<Array<{userId:string, win:number, draw:number, lose:number, totalPoints:number, totalGames:number, winRate:number}>>}
+ * @param {Object} currentUser - Utilisateur actuel (optionnel)
+ * @returns {Promise<Array<{userId:string, username:string, win:number, draw:number, lose:number, totalPoints:number, totalGames:number, winRate:number}>>}
  */
-export async function getLeaderboard(game, topN = 10) {
-  const q = query(
-    collectionGroup(db, "scores"),
-    where("__name__", "==", game),
-    orderBy("totalPoints", "desc"),
-    limit(topN)
-  );
-  const snapshot = await getDocs(q);
-  return snapshot.docs.map((doc) => ({
-    userId: doc.ref.parent.parent.id,
-    ...doc.data(),
-  }));
+export async function getLeaderboard(game, topN = 10, currentUser = null) {
+  console.log("🔍 Récupération du classement pour le jeu:", game);
+
+  try {
+    if (!currentUser?.id) {
+      console.log("❌ Aucun utilisateur connecté");
+      return [];
+    }
+
+    // Récupérer le score de l'utilisateur actuel
+    const userScoreDoc = await getDoc(
+      doc(db, "users", currentUser.id, "scores", game)
+    );
+    let userPoints = 0;
+    let userStats = {};
+
+    if (userScoreDoc.exists()) {
+      userStats = userScoreDoc.data();
+      userPoints = userStats.totalPoints || 0;
+      console.log("👤 Points de l'utilisateur actuel:", userPoints);
+    }
+
+    // Générer le classement de démo avec 50 joueurs
+    const demoLeaderboard = generateDemoLeaderboard(
+      userPoints,
+      currentUser.displayName || currentUser.email || "Vous",
+      currentUser.id,
+      userStats
+    );
+
+    // Trier par points décroissants et limiter au topN
+    const sortedLeaderboard = demoLeaderboard
+      .sort((a, b) => b.totalPoints - a.totalPoints)
+      .slice(0, topN);
+
+    console.log("✅ Classement de démo:", sortedLeaderboard.length, "joueurs");
+    return sortedLeaderboard;
+  } catch (error) {
+    console.log("❌ Erreur lors de la récupération du classement:", error);
+    return [];
+  }
 }
 
 /**
@@ -270,21 +304,38 @@ export async function resetAllUserStats(userId) {
  * @returns {Promise<{rank:number, total:number}>}
  */
 export async function getUserRankInLeaderboard(userId, game) {
-  // Récupère tous les scores pour ce jeu, triés par totalPoints décroissant
-  const q = query(
-    collectionGroup(db, "scores"),
-    where("__name__", "==", game),
-    orderBy("totalPoints", "desc")
-  );
-  const snapshot = await getDocs(q);
-  let rank = null;
-  let total = snapshot.size;
-  snapshot.docs.forEach((doc, idx) => {
-    if (doc.ref.parent.parent.id === userId) {
-      rank = idx + 1;
+  try {
+    // Récupérer le score de l'utilisateur
+    const userScoreDoc = await getDoc(doc(db, "users", userId, "scores", game));
+
+    if (!userScoreDoc.exists()) {
+      return { rank: null, total: 0 };
     }
-  });
-  return { rank, total };
+
+    const userStats = userScoreDoc.data();
+    const userPoints = userStats.totalPoints || 0;
+
+    if (userPoints === 0) {
+      return { rank: null, total: 0 };
+    }
+
+    // Calculer le rang avec les données de démo
+    const { rank, total } = calculateDemoRank(userPoints);
+
+    console.log(
+      "🏆 Rang calculé:",
+      rank,
+      "/",
+      total,
+      "pour",
+      userPoints,
+      "points"
+    );
+    return { rank, total };
+  } catch (error) {
+    console.log("❌ Erreur lors du calcul du rang:", error);
+    return { rank: null, total: 0 };
+  }
 }
 
 /**
