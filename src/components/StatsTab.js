@@ -18,25 +18,61 @@ import Ionicons from "react-native-vector-icons/Ionicons";
 
 const { width } = Dimensions.get("window");
 
-const detailedStatsData = [
+const mainStats = [
   {
-    icon: "star",
+    icon: "trophy",
     color: "#FFD700",
-    label: "Meilleur jeu",
-    valueKey: "bestGame",
+    label: "Score Total",
+    valueKey: "totalScore",
+  },
+  {
+    icon: "game-controller",
+    color: "#4ECDC4",
+    label: "Parties Jouées",
+    valueKey: "gamesPlayed",
+  },
+  {
+    icon: "checkmark-circle",
+    color: "#45B7D1",
+    label: "Victoires",
+    valueKey: "gamesWon",
+  },
+  {
+    icon: "trending-up",
+    color: "#96CEB4",
+    label: "Taux de Victoire",
+    valueKey: "winRate",
+    suffix: "%",
+  },
+  {
+    icon: "hand-left-outline",
+    color: "#A3A3A3",
+    label: "Nuls",
+    valueKey: "draws",
+  },
+  {
+    icon: "close-circle",
+    color: "#FF6B6B",
+    label: "Défaites",
+    valueKey: "loses",
   },
   {
     icon: "flame",
-    color: "#FF6B6B",
-    label: "Série actuelle",
+    color: "#FF9800",
+    label: "Série de victoires",
     valueKey: "currentStreak",
-    suffix: " victoires",
   },
   {
     icon: "time",
     color: "#4ECDC4",
     label: "Temps total",
     valueKey: "totalTime",
+  },
+  {
+    icon: "timer-outline",
+    color: "#667eea",
+    label: "Meilleur temps",
+    valueKey: "bestTime",
   },
 ];
 
@@ -52,60 +88,23 @@ const StatsTab = ({ userStats, statsByGame }) => {
 
   return (
     <View style={styles.container}>
-      {/* Statistiques principales */}
+      {/* Statistiques principales (grille moderne) */}
       <View style={styles.statsGrid}>
-        <StatCard
-          icon='trophy'
-          value={String(userStats?.totalScore ?? 0)}
-          label='Score Total'
-          color='#FF6B6B'
-        />
-        <StatCard
-          icon='game-controller'
-          value={String(userStats?.gamesPlayed ?? 0)}
-          label='Parties Jouées'
-          color='#4ECDC4'
-        />
-        <StatCard
-          icon='checkmark-circle'
-          value={String(userStats?.gamesWon ?? 0)}
-          label='Victoires'
-          color='#45B7D1'
-        />
-        <StatCard
-          icon='trending-up'
-          value={String(userStats?.winRate ?? 0) + "%"}
-          label='Taux de Victoire'
-          color='#96CEB4'
-        />
+        {mainStats.map((item) => (
+          <StatCard
+            key={item.label}
+            icon={item.icon}
+            value={
+              item.valueKey === "winRate"
+                ? String(userStats?.[item.valueKey] ?? 0) + (item.suffix ?? "")
+                : String(userStats?.[item.valueKey] ?? 0)
+            }
+            label={item.label}
+            color={item.color}
+          />
+        ))}
       </View>
-      {/* Statistiques détaillées avec mise en forme améliorée */}
-      <View style={styles.detailedStats}>
-        <Text style={styles.sectionTitle}>Statistiques Détaillées</Text>
-        {detailedStatsData.map((item) => {
-          const value = userStats?.[item.valueKey];
-          return (
-            <View
-              key={item.label}
-              style={[styles.statRowEnhanced, { borderLeftColor: item.color }]}>
-              <View
-                style={[
-                  styles.statRowIconCircle,
-                  { backgroundColor: item.color + "22" },
-                ]}>
-                <Ionicons name={item.icon} size={20} color={item.color} />
-              </View>
-              <Text style={styles.statRowLabel}>
-                {String(item.label ?? "")}
-              </Text>
-              <Text style={styles.statRowValue}>
-                {String(value ?? "0") + (item.suffix ?? "")}
-              </Text>
-            </View>
-          );
-        })}
-      </View>
-      {/* Statistiques par jeu si fourni */}
+      {/* Statistiques par jeu si fourni (debug) */}
       {statsByGame && Object.keys(statsByGame).length > 0 && (
         <View style={styles.detailedStats}>
           <Text style={styles.sectionTitle}>Par jeu</Text>
@@ -261,41 +260,6 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#333",
     marginBottom: 15,
-  },
-  // Style amélioré pour les lignes de stats détaillées
-  statRowEnhanced: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 12,
-    paddingHorizontal: 10,
-    borderLeftWidth: 5,
-    backgroundColor: "#f7faff",
-    borderRadius: 10,
-    marginBottom: 10,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  statRowIconCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 12,
-  },
-  statRowLabel: {
-    flex: 1,
-    fontSize: 16,
-    color: "#333",
-    marginLeft: 2,
-  },
-  statRowValue: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#667eea",
   },
   gameBlock: {
     marginBottom: 18,
