@@ -49,6 +49,7 @@ import {
   useNavigation,
   useRoute,
 } from "@react-navigation/native";
+import VisualStatsTab from "../components/VisualStatsTab";
 
 const { width } = Dimensions.get("window");
 
@@ -1054,22 +1055,7 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
             userId={user?.id}
           />
         ) : (
-          <View>
-            {/* Utilisation du composant StatsTab universel (statistiques globales et par jeu) */}
-            <StatsTab userStats={userStats} statsByGame={userStatsByGame} />
-
-            {/* Bouton pour générer des données de test */}
-            <View style={styles.testDataContainer}>
-              <TouchableOpacity
-                style={styles.testDataButton}
-                onPress={generateAllGamesTestData}>
-                <Ionicons name='refresh-outline' size={20} color='#fff' />
-                <Text style={styles.testDataButtonText}>
-                  Générer des données de test pour tous les jeux
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
+          <VisualStatsTab userStats={userStats} statsByGame={userStatsByGame} />
         )}
         {/* Modal d'édition du profil */}
         <Modal visible={editModalVisible} animationType='slide' transparent>
