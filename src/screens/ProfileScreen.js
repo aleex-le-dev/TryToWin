@@ -43,7 +43,11 @@ import {
   recordGameResult,
 } from "../services/scoreService";
 import { GAME_POINTS } from "../constants/gamePoints";
-import { useIsFocused } from "@react-navigation/native";
+import {
+  useFocusEffect,
+  useNavigation,
+  useRoute,
+} from "@react-navigation/native";
 
 const { width } = Dimensions.get("window");
 
@@ -224,7 +228,7 @@ const SkeletonProfile = () => {
 };
 
 // Écran de profil avec classement et statistiques
-const ProfileScreen = ({ navigation }) => {
+const ProfileScreen = ({ navigation, profileTabResetKey }) => {
   const { logout, user, loading } = useAuth();
   const [activeTab, setActiveTab] = useState("profile");
   const [profileBanner, setProfileBanner] = useState("");
@@ -273,7 +277,7 @@ const ProfileScreen = ({ navigation }) => {
     streak: 0,
   });
   const [userStatsByGame, setUserStatsByGame] = useState({});
-  const isFocused = useIsFocused();
+  const nav = useNavigation();
 
   // Calcul des vraies statistiques utilisateur basées sur les données Firestore
   const userStats = {
@@ -308,14 +312,6 @@ const ProfileScreen = ({ navigation }) => {
       }
     })(),
   };
-
-  // Réinitialise l'onglet actif à chaque clic sur l'onglet Profil (même si déjà affiché)
-  useEffect(() => {
-    const unsubscribe = navigation.addListener("tabPress", () => {
-      setActiveTab("profile");
-    });
-    return unsubscribe;
-  }, [navigation]);
 
   // Récupération du profil Firestore à l'ouverture
   useEffect(() => {
@@ -501,6 +497,19 @@ const ProfileScreen = ({ navigation }) => {
       setBannerHex("#fff");
     }
   }, [profile?.bannerColor]);
+
+  useEffect(() => {
+    const unsubscribe = nav.addListener("tabPress", (e) => {
+      if (e?.data?.resetProfileTab) {
+        setActiveTab("profile");
+      }
+    });
+    return unsubscribe;
+  }, [nav]);
+
+  useEffect(() => {
+    setActiveTab("profile");
+  }, [profileTabResetKey]);
 
   const handleLogout = async () => {
     const result = await logout();

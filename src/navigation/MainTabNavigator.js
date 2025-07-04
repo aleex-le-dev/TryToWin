@@ -31,6 +31,7 @@ const GamesStack = ({ resetCategoryTrigger }) => {
 // Navigateur principal avec barre de navigation en bas
 const MainTabNavigator = () => {
   const [resetCategoryTrigger, setResetCategoryTrigger] = React.useState(0);
+  const [profileTabResetKey, setProfileTabResetKey] = React.useState(0);
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -86,10 +87,14 @@ const MainTabNavigator = () => {
       />
       <Tab.Screen
         name='Profile'
-        component={ProfileScreen}
+        children={() => (
+          <ProfileScreen profileTabResetKey={profileTabResetKey} />
+        )}
         options={{
           title: "Profil",
-          unmountOnBlur: true,
+        }}
+        listeners={{
+          tabPress: () => setProfileTabResetKey((k) => k + 1),
         }}
       />
       <Tab.Screen

@@ -14,112 +14,11 @@ import { useAuth } from "../contexts/AuthContext";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../utils/firebaseConfig";
 import { useIsFocused } from "@react-navigation/native";
+import { gamesData } from "../constants/gamesData";
+import { dailyChallenges } from "../constants/dailyChallenges";
+import { categories } from "../constants/categories";
 
 const { width } = Dimensions.get("window");
-
-// Données des jeux simples
-const gamesData = [
-  {
-    id: "1",
-    title: "Puissance 4",
-    description: "Alignez 4 pions pour gagner",
-    category: "Stratégie",
-    image: "🔴",
-    color: "#FF6B6B",
-    gameType: "grid",
-  },
-  {
-    id: "2",
-    title: "Othello",
-    description: "Retournez les pions adverses",
-    category: "Stratégie",
-    image: "⚫",
-    color: "#4ECDC4",
-    gameType: "grid",
-  },
-  {
-    id: "3",
-    title: "Morpion",
-    description: "3 en ligne pour gagner",
-    category: "Logique",
-    image: "❌",
-    color: "#45B7D1",
-    gameType: "grid",
-  },
-  {
-    id: "4",
-    title: "Memory Game",
-    description: "Retrouvez les paires",
-    category: "Mémoire",
-    image: "🧠",
-    color: "#96CEB4",
-    gameType: "cards",
-  },
-  {
-    id: "5",
-    title: "Snake",
-    description: "Mangez et grandissez",
-    category: "Arcade",
-    image: "🐍",
-    color: "#FFEAA7",
-    gameType: "arcade",
-  },
-  {
-    id: "6",
-    title: "Tetris",
-    description: "Empilez les blocs",
-    category: "Puzzle",
-    image: "🧩",
-    color: "#DDA0DD",
-    gameType: "puzzle",
-  },
-  {
-    id: "7",
-    title: "Pong",
-    description: "Bataille de raquettes",
-    category: "Arcade",
-    image: "🏓",
-    color: "#FFB6C1",
-    gameType: "arcade",
-  },
-  {
-    id: "8",
-    title: "2048",
-    description: "Fusionnez les nombres",
-    category: "Puzzle",
-    image: "��",
-    color: "#98D8C8",
-    gameType: "puzzle",
-  },
-];
-
-// Données des défis quotidiens
-const dailyChallenges = [
-  {
-    id: "1",
-    title: "Gagner 5 parties",
-    reward: "+50 points",
-    progress: 3,
-    total: 5,
-    icon: "trophy",
-  },
-  {
-    id: "2",
-    title: "Jouer 3 jeux différents",
-    reward: "+30 points",
-    progress: 2,
-    total: 3,
-    icon: "game-controller",
-  },
-  {
-    id: "3",
-    title: "Atteindre 1000 points",
-    reward: "+100 points",
-    progress: 847,
-    total: 1000,
-    icon: "star",
-  },
-];
 
 // Composant GameCard : carte de jeu moderne avec gestion de l'appui (pressed)
 function GameCard({ item, onPress }) {
@@ -152,15 +51,6 @@ const HomeScreen = ({ navigation, resetCategoryTrigger }) => {
   const [selectedCategory, setSelectedCategory] = useState("Tous");
   const [profile, setProfile] = useState(null);
   const isFocused = useIsFocused();
-
-  const categories = [
-    "Tous",
-    "Stratégie",
-    "Logique",
-    "Mémoire",
-    "Arcade",
-    "Puzzle",
-  ];
 
   const filteredGames = gamesData.filter((game) => {
     return selectedCategory === "Tous" || game.category === selectedCategory;
@@ -195,7 +85,12 @@ const HomeScreen = ({ navigation, resetCategoryTrigger }) => {
   const renderGameCard = ({ item }) => (
     <GameCard
       item={item}
-      onPress={() => navigation.navigate("GameDetails", { game: item })}
+      onPress={() => {
+        // Passe simplement l'id = title
+        navigation.navigate("GameDetails", {
+          game: { ...item, id: item.title },
+        });
+      }}
     />
   );
 
