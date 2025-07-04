@@ -133,6 +133,10 @@ const HomeScreen = ({ navigation, resetCategoryTrigger }) => {
     </View>
   );
 
+  useEffect(() => {
+    if (isFocused) setSelectedCategory("Tous");
+  }, [isFocused]);
+
   return (
     <View style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false}>
