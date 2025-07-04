@@ -54,6 +54,7 @@ const Puissance4 = ({ navigation }) => {
         type: "success",
         text1: "Victoire enregistrée !",
         text2: `+${points} points`,
+        topOffset: 40,
       });
       const s = await getUserGameScore(user.id, "Puissance4");
       setStats(s);
@@ -68,11 +69,10 @@ const Puissance4 = ({ navigation }) => {
 
   return (
     <GameLayout
-      title="Puissance4"
-      score={score}
+      title='Puissance4'
+      stats={stats}
       streak={stats.currentStreak}
-      onBack={() => navigation.goBack()}
-    >
+      onBack={() => navigation.goBack()}>
       <View style={styles.container}>
         <Text style={styles.title}>Puissance 4</Text>
         {/* Plateau de jeu à implémenter ici */}
@@ -87,7 +87,9 @@ const Puissance4 = ({ navigation }) => {
           <Text>Défaites : {stats.lose}</Text>
           <Text>Parties : {stats.totalGames}</Text>
           <Text>Winrate : {stats.winRate}%</Text>
-          <Text>Classement : {rank ? `#${rank} sur ${totalPlayers}` : "-"}</Text>
+          <Text>
+            Classement : {rank ? `#${rank} sur ${totalPlayers}` : "-"}
+          </Text>
         </View>
       </View>
       <Toast />

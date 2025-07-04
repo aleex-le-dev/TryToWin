@@ -54,6 +54,7 @@ const Othello = ({ navigation }) => {
         type: "success",
         text1: "Victoire enregistrée !",
         text2: `+${points} points`,
+        topOffset: 40,
       });
       const s = await getUserGameScore(user.id, "Othello");
       setStats(s);
@@ -69,7 +70,7 @@ const Othello = ({ navigation }) => {
   return (
     <GameLayout
       title='Othello'
-      score={score}
+      stats={stats}
       streak={stats.currentStreak}
       onBack={() => navigation.goBack()}>
       {/* Ancien contenu principal du jeu (plateau, stats, etc.) ici */}

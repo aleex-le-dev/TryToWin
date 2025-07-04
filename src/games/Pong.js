@@ -51,6 +51,7 @@ const Pong = ({ navigation }) => {
         type: "success",
         text1: "Victoire enregistrée !",
         text2: `+${points} points`,
+        topOffset: 40,
       });
       const s = await getUserGameScore(user.id, "Pong");
       setStats(s);
@@ -63,7 +64,7 @@ const Pong = ({ navigation }) => {
   return (
     <GameLayout
       title='Pong'
-      score={score}
+      stats={stats}
       streak={stats.currentStreak}
       onBack={() => navigation.goBack()}>
       <View style={styles.container}>

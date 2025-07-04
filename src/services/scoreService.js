@@ -88,6 +88,7 @@ export async function recordGameResult(
           text1: `🔥 Série de ${data.currentStreak} !`,
           text2: `Multiplicateur x${(1 + mult).toFixed(2)}`,
           position: "top",
+          topOffset: 40,
         });
       }
     }
@@ -293,4 +294,27 @@ export async function getUserRankInLeaderboard(userId, game) {
     }
   });
   return { rank, total };
+}
+
+/**
+ * Réinitialise uniquement la série de victoires d'un utilisateur pour un jeu spécifique.
+ * @param {string} userId
+ * @param {string} game
+ */
+export async function resetUserStreak(userId, game) {
+  const scoreRef = doc(db, "users", userId, "scores", game);
+  await setDoc(scoreRef, { currentStreak: 0 }, { merge: true });
+}
+
+/**
+ * Réinitialise la série de victoires (currentStreak) pour tous les jeux d'un utilisateur.
+ * @param {string} userId
+ */
+export async function resetAllUserStreaks(userId) {
+  const scoresRef = collection(db, "users", userId, "scores");
+  const snapshot = await getDocs(scoresRef);
+  const resetPromises = snapshot.docs.map((doc) =>
+    setDoc(doc.ref, { currentStreak: 0 }, { merge: true })
+  );
+  await Promise.all(resetPromises);
 }

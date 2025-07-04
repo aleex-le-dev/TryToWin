@@ -15,10 +15,12 @@ import {
   recordGameResult,
   getUserGameScore,
   getUserRankInLeaderboard,
+  resetUserStreak,
 } from "../services/scoreService";
 import { useAuth } from "../hooks/useAuth";
 import { GAME_POINTS, getSerieMultiplier } from "../constants/gamePoints";
 import GameLayout from "./GameLayout";
+import { useFocusEffect } from "@react-navigation/native";
 
 const { width } = Dimensions.get("window");
 
@@ -291,10 +293,20 @@ const Morpion = ({ navigation, route }) => {
     );
   };
 
+  useFocusEffect(
+    React.useCallback(() => {
+      return () => {
+        if (user?.id) {
+          resetUserStreak(user.id, "Morpion");
+        }
+      };
+    }, [user?.id])
+  );
+
   return (
     <GameLayout
       title='Morpion'
-      score={score}
+      stats={statsJeu}
       streak={statsJeu.currentStreak}
       onBack={() => navigation.goBack()}>
       {/* Informations du jeu */}

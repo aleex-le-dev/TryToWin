@@ -5,18 +5,18 @@ import React from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import Ionicons from "react-native-vector-icons/Ionicons";
-import SerieMultiplierBanner from "../components/SerieMultiplierBanner";
+import Toast from "react-native-toast-message";
 
 /**
  * Layout commun pour les jeux
  * @param {Object} props
  * @param {string} props.title - Titre du jeu
- * @param {number} props.score - Score actuel
+ * @param {Object} props.stats - Statistiques du joueur pour le jeu (doit contenir totalPoints)
  * @param {number} props.streak - Série de victoires en cours
  * @param {function} [props.onBack] - Callback retour
  * @param {React.ReactNode} props.children - Contenu spécifique au jeu
  */
-const GameLayout = ({ title, score, streak, onBack, children }) => {
+const GameLayout = ({ title, stats, streak, onBack, children }) => {
   return (
     <View style={{ flex: 1, backgroundColor: "#f8f9fa" }}>
       {/* Header */}
@@ -39,7 +39,7 @@ const GameLayout = ({ title, score, streak, onBack, children }) => {
           </Text>
           <View style={{ alignItems: "center" }}>
             <Text style={{ fontSize: 20, fontWeight: "bold", color: "#fff" }}>
-              {score}
+              {stats?.totalPoints || 0}
             </Text>
             <Text style={{ fontSize: 12, color: "#fff", opacity: 0.8 }}>
               points
@@ -47,10 +47,10 @@ const GameLayout = ({ title, score, streak, onBack, children }) => {
           </View>
         </View>
       </LinearGradient>
-      {/* Multiplicateur de série actif */}
-      <SerieMultiplierBanner streak={streak} />
       {/* Contenu spécifique au jeu */}
       <View style={{ flex: 1 }}>{children}</View>
+      {/* Toast global pour tous les jeux */}
+      <Toast />
     </View>
   );
 };
