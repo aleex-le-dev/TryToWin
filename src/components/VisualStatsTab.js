@@ -1,6 +1,6 @@
 // VisualStatsTab.js
-// Composant de statistiques ultra-visuel avec graphiques modernes (camembert, barres, radar) et chips de stats clés
-// Nécessite : react-native-chart-kit et react-native-svg
+// Composant de statistiques visuelles 100% compatible Expo Go
+// Utilise react-native-chart-kit pour BarChart multicolore, PieChart et ProgressChart
 
 import React from "react";
 import {
@@ -10,70 +10,25 @@ import {
   ScrollView,
   TouchableOpacity,
 } from "react-native";
-import { PieChart, BarChart, ProgressChart } from "react-native-chart-kit";
 import Ionicons from "react-native-vector-icons/Ionicons";
+import { gamesData } from "../constants/gamesData";
 
 const screenWidth = Dimensions.get("window").width;
+const gameColors = Object.fromEntries(
+  gamesData.map((g) => [g.id.toLowerCase(), g.color])
+);
 
-const chartConfig = {
-  backgroundGradientFrom: "#fff",
-  backgroundGradientTo: "#fff",
-  color: (opacity = 1) => `rgba(102, 126, 234, ${opacity})`,
-  labelColor: (opacity = 1) => `rgba(44, 62, 80, ${opacity})`,
-  strokeWidth: 2,
-  barPercentage: 0.7,
-  useShadowColorFromDataset: false,
-};
-
-const VisualStatsTab = ({ userStats, statsByGame }) => {
-  // Préparation des données pour les graphiques
-  const pieData = [
-    {
-      name: "Victoires",
-      population: userStats?.gamesWon ?? 0,
-      color: "#45B7D1",
-      legendFontColor: "#45B7D1",
-      legendFontSize: 13,
-    },
-    {
-      name: "Nuls",
-      population: userStats?.draws ?? 0,
-      color: "#A3A3A3",
-      legendFontColor: "#A3A3A3",
-      legendFontSize: 13,
-    },
-    {
-      name: "Défaites",
-      population: userStats?.loses ?? 0,
-      color: "#FF6B6B",
-      legendFontColor: "#FF6B6B",
-      legendFontSize: 13,
-    },
-  ];
-
-  const barLabels = statsByGame ? Object.keys(statsByGame) : [];
-  const barData = {
-    labels: barLabels,
-    datasets: [
-      {
-        data: barLabels.map((jeu) => statsByGame[jeu]?.points ?? 0),
-      },
-    ],
-  };
-
-  // Radar chart : profil par jeu (winrate)
-  const radarLabels = statsByGame ? Object.keys(statsByGame) : [];
-  const progressData = {
-    labels: radarLabels,
-    data: radarLabels.map((jeu) => (statsByGame[jeu]?.winrate ?? 0) / 100),
-  };
-
+const VisualStatsTab = ({
+  userStats,
+  statsByGame,
+  generateAllGamesTestData,
+}) => {
   // Chips stats clés
   const chips = [
     {
       icon: "trophy",
       color: "#FFD700",
-      label: "Score",
+      label: "Points",
       value: userStats?.totalScore ?? 0,
     },
     {
@@ -89,10 +44,13 @@ const VisualStatsTab = ({ userStats, statsByGame }) => {
       value: userStats?.currentStreak ?? 0,
     },
     {
-      icon: "timer-outline",
-      color: "#667eea",
-      label: "Best",
-      value: userStats?.bestTime ?? "-",
+      icon: "stats-chart-outline",
+      color: "#4ECDC4",
+      label: "Victoires",
+      value:
+        userStats && userStats.gamesPlayed > 0
+          ? Math.round((userStats.gamesWon / userStats.gamesPlayed) * 100) + "%"
+          : "-",
     },
   ];
 
@@ -106,7 +64,7 @@ const VisualStatsTab = ({ userStats, statsByGame }) => {
           color: "#667eea",
           marginVertical: 12,
         }}>
-        Statistiques visuelles
+        Mes statistiques
       </Text>
       {/* Chips chiffres clés */}
       <View
@@ -153,63 +111,7 @@ const VisualStatsTab = ({ userStats, statsByGame }) => {
           </View>
         ))}
       </View>
-      {/* Pie chart */}
-      <Text
-        style={{
-          fontSize: 16,
-          fontWeight: "bold",
-          marginTop: 10,
-          marginBottom: 2,
-        }}>
-        Répartition des résultats
-      </Text>
-      <PieChart
-        data={pieData}
-        width={screenWidth - 32}
-        height={180}
-        chartConfig={chartConfig}
-        accessor={"population"}
-        backgroundColor={"transparent"}
-        paddingLeft={"10"}
-        absolute
-      />
-      {/* Bar chart */}
-      <Text
-        style={{
-          fontSize: 16,
-          fontWeight: "bold",
-          marginTop: 18,
-          marginBottom: 2,
-        }}>
-        Points par jeu
-      </Text>
-      <BarChart
-        data={barData}
-        width={screenWidth - 32}
-        height={180}
-        chartConfig={chartConfig}
-        fromZero
-        showValuesOnTopOfBars
-        style={{ borderRadius: 12 }}
-      />
-      {/* Progress (radar) chart */}
-      <Text
-        style={{
-          fontSize: 16,
-          fontWeight: "bold",
-          marginTop: 18,
-          marginBottom: 2,
-        }}>
-        Winrate par jeu
-      </Text>
-      <ProgressChart
-        data={progressData}
-        width={screenWidth - 32}
-        height={180}
-        chartConfig={chartConfig}
-        style={{ borderRadius: 12 }}
-      />
-      {/* Stats par jeu (debug) */}
+      {/* Stats détaillées par jeu */}
       {statsByGame && Object.keys(statsByGame).length > 0 && (
         <View
           style={{
@@ -232,7 +134,7 @@ const VisualStatsTab = ({ userStats, statsByGame }) => {
               color: "#333",
               marginBottom: 15,
             }}>
-            Par jeu (debug)
+            Par jeu
           </Text>
           {Object.entries(statsByGame).map(([jeu, stats]) => (
             <View
@@ -273,27 +175,26 @@ const VisualStatsTab = ({ userStats, statsByGame }) => {
               </View>
             </View>
           ))}
-          {/* Bouton générer des données de test (callback à passer en prop si besoin) */}
-          {typeof global.generateAllGamesTestData === "function" && (
-            <View style={{ alignItems: "center", marginTop: 10 }}>
-              <TouchableOpacity
-                style={{
-                  backgroundColor: "#667eea",
-                  borderRadius: 18,
-                  paddingVertical: 10,
-                  paddingHorizontal: 22,
-                  flexDirection: "row",
-                  alignItems: "center",
-                }}
-                onPress={global.generateAllGamesTestData}>
-                <Ionicons name='refresh-outline' size={20} color='#fff' />
-                <Text
-                  style={{ color: "#fff", fontWeight: "bold", marginLeft: 8 }}>
-                  Générer des données de test pour tous les jeux
-                </Text>
-              </TouchableOpacity>
-            </View>
-          )}
+        </View>
+      )}
+      {/* Bouton DEBUG : Générer des données de test (toujours visible, centré) */}
+      {typeof generateAllGamesTestData === "function" && (
+        <View style={{ alignItems: "center", marginTop: 10, marginBottom: 20 }}>
+          <TouchableOpacity
+            style={{
+              backgroundColor: "#667eea",
+              borderRadius: 18,
+              paddingVertical: 10,
+              paddingHorizontal: 22,
+              flexDirection: "row",
+              alignItems: "center",
+            }}
+            onPress={generateAllGamesTestData}>
+            <Ionicons name='refresh-outline' size={20} color='#fff' />
+            <Text style={{ color: "#fff", fontWeight: "bold", marginLeft: 8 }}>
+              Générer des données de test pour tous les jeux
+            </Text>
+          </TouchableOpacity>
         </View>
       )}
     </ScrollView>

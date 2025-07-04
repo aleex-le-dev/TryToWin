@@ -22,7 +22,7 @@ const mainStats = [
   {
     icon: "trophy",
     color: "#FFD700",
-    label: "Score Total",
+    label: "Points",
     valueKey: "totalScore",
   },
   {
@@ -65,7 +65,7 @@ const mainStats = [
   {
     icon: "time",
     color: "#4ECDC4",
-    label: "Temps total",
+    label: "Durée de jeu",
     valueKey: "totalTime",
   },
   {

@@ -199,7 +199,7 @@ const ProfileTab = ({
               {userStats.totalScore}
             </Text>
             <Text style={{ fontSize: 11, color: "#6c757d", marginTop: 1 }}>
-              Score
+              Points
             </Text>
           </View>
           {/* Meilleur jeu */}

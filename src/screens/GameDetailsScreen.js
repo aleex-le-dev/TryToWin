@@ -377,14 +377,14 @@ const GameDetailsScreen = ({ route, navigation }) => {
                         size={20}
                         color='#9C27B0'
                       />
-                      <Text style={styles.personalStatLabel}>Score total</Text>
+                      <Text style={styles.personalStatLabel}>Points</Text>
                       <Text style={styles.personalStatValue}>
                         {userStats.totalPoints} points
                       </Text>
                     </View>
                     <View style={styles.personalStatRow}>
                       <Ionicons name='time-outline' size={20} color='#607D8B' />
-                      <Text style={styles.personalStatLabel}>Temps total</Text>
+                      <Text style={styles.personalStatLabel}>Durée de jeu</Text>
                       <Text style={styles.personalStatValue}>
                         {userStats.totalDuration
                           ? `${Math.floor(userStats.totalDuration / 60)}:${(

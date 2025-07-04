@@ -1055,7 +1055,11 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
             userId={user?.id}
           />
         ) : (
-          <VisualStatsTab userStats={userStats} statsByGame={userStatsByGame} />
+          <VisualStatsTab
+            userStats={userStats}
+            statsByGame={userStatsByGame}
+            generateAllGamesTestData={generateAllGamesTestData}
+          />
         )}
         {/* Modal d'édition du profil */}
         <Modal visible={editModalVisible} animationType='slide' transparent>
