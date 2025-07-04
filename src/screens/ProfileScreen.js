@@ -38,6 +38,7 @@ import WheelColorPicker from "react-native-wheel-color-picker";
 import SettingsScreen from "./SettingsScreen";
 import {
   getUserGameScore,
+  getUserAllGameStats,
   getLeaderboard,
   getGlobalLeaderboard,
   recordGameResult,
@@ -404,9 +405,22 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
       fetchProfile();
       // Récupération des scores Firestore réels pour chaque jeu
       const fetchScores = async () => {
+        const allStats = await getUserAllGameStats(user.id);
         const scores = {};
         for (const game of Object.keys(GAME_POINTS)) {
-          scores[game] = await getUserGameScore(user.id, game);
+          scores[game] = allStats[game] || {
+            win: 0,
+            draw: 0,
+            lose: 0,
+            totalPoints: 0,
+            totalGames: 0,
+            totalDuration: 0,
+            winRate: 0,
+            currentStreak: 0,
+            bestTime: null,
+            lastUpdated: null,
+            lastPlayed: null,
+          };
         }
         setUserScores(scores);
       };
@@ -447,6 +461,7 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
   const fetchStats = async () => {
     if (!user?.id) return;
 
+    const allStats = await getUserAllGameStats(user.id);
     const scores = {};
     let totalGames = 0,
       wins = 0,
@@ -454,8 +469,21 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
       loses = 0,
       points = 0,
       streak = 0;
+
     for (const game of Object.keys(GAME_POINTS)) {
-      const s = await getUserGameScore(user.id, game);
+      const s = allStats[game] || {
+        win: 0,
+        draw: 0,
+        lose: 0,
+        totalPoints: 0,
+        totalGames: 0,
+        totalDuration: 0,
+        winRate: 0,
+        currentStreak: 0,
+        bestTime: null,
+        lastUpdated: null,
+        lastPlayed: null,
+      };
       scores[game] = {
         totalGames: (s.win || 0) + (s.draw || 0) + (s.lose || 0),
         wins: s.win || 0,
