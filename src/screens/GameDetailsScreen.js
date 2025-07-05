@@ -24,25 +24,12 @@ import {
 import { useFocusEffect } from "@react-navigation/native";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../utils/firebaseConfig";
+import { countries } from "../constants";
 
 const { width } = Dimensions.get("window");
 
 // Données du classement spécifique au jeu (remplacées par les vraies données Firestore)
 const gameLeaderboardData = [];
-
-// Liste de pays avec drapeau (emoji)
-const countries = [
-  { code: "FR", name: "France", flag: "🇫🇷" },
-  { code: "US", name: "États-Unis", flag: "🇺🇸" },
-  { code: "DE", name: "Allemagne", flag: "🇩🇪" },
-  { code: "ES", name: "Espagne", flag: "🇪🇸" },
-  { code: "IT", name: "Italie", flag: "🇮🇹" },
-  { code: "GB", name: "Royaume-Uni", flag: "🇬🇧" },
-  { code: "MA", name: "Maroc", flag: "🇲🇦" },
-  { code: "CA", name: "Canada", flag: "🇨🇦" },
-  { code: "JP", name: "Japon", flag: "🇯🇵" },
-  { code: "BR", name: "Brésil", flag: "🇧🇷" },
-];
 
 // Écran de détails d'un jeu avec focus sur classement et statistiques
 const GameDetailsScreen = ({ route, navigation }) => {
@@ -525,7 +512,11 @@ const GameDetailsScreen = ({ route, navigation }) => {
                       fontWeight: "bold",
                       fontSize: 15,
                     }}>
-                    {userCountry === "FR" ? "🇫🇷 France" : userCountry}
+                    {(countries.find((c) => c.code === userCountry)?.flag ||
+                      "🌍") +
+                      " " +
+                      (countries.find((c) => c.code === userCountry)?.name ||
+                        userCountry)}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -539,12 +530,24 @@ const GameDetailsScreen = ({ route, navigation }) => {
                   }}>
                   {leaderboardType === "global"
                     ? `Classement ${game.title} (Mondial)`
-                    : `Classement ${game.title} - ${userCountry}`}
+                    : `Classement ${game.title} - ${
+                        (countries.find((c) => c.code === userCountry)?.flag ||
+                          "🌍") +
+                        " " +
+                        (countries.find((c) => c.code === userCountry)?.name ||
+                          userCountry)
+                      }`}
                 </Text>
                 <Text style={{ fontSize: 14, color: "#6c757d" }}>
                   {leaderboardType === "global"
                     ? `Top des meilleurs joueurs tous pays`
-                    : `Joueurs du pays : ${userCountry}`}
+                    : `${
+                        (countries.find((c) => c.code === userCountry)?.flag ||
+                          "🌍") +
+                        " " +
+                        (countries.find((c) => c.code === userCountry)?.name ||
+                          userCountry)
+                      }`}
                 </Text>
                 {/* Rang de l'utilisateur connecté */}
                 {userRank && (
@@ -603,7 +606,7 @@ const GameDetailsScreen = ({ route, navigation }) => {
                         }}>
                         <Text
                           style={{
-                            width: 28,
+                            width: 48,
                             fontWeight: "bold",
                             color:
                               index === 0
@@ -616,7 +619,7 @@ const GameDetailsScreen = ({ route, navigation }) => {
                             fontSize: 18,
                             textAlign: "center",
                           }}>
-                          {medal || `#${index + 1}`}
+                          {medal ? `${medal} #${index + 1}` : `#${index + 1}`}
                         </Text>
                         <View
                           style={{

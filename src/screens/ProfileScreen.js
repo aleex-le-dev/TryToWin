@@ -53,19 +53,7 @@ import VisualStatsTab from "../components/VisualStatsTab";
 
 const { width } = Dimensions.get("window");
 
-// Liste de pays avec drapeau (emoji)
-const countries = [
-  { code: "FR", name: "France", flag: "🇫🇷" },
-  { code: "US", name: "États-Unis", flag: "🇺🇸" },
-  { code: "DE", name: "Allemagne", flag: "🇩🇪" },
-  { code: "ES", name: "Espagne", flag: "🇪🇸" },
-  { code: "IT", name: "Italie", flag: "🇮🇹" },
-  { code: "GB", name: "Royaume-Uni", flag: "🇬🇧" },
-  { code: "MA", name: "Maroc", flag: "🇲🇦" },
-  { code: "CA", name: "Canada", flag: "🇨🇦" },
-  { code: "JP", name: "Japon", flag: "🇯🇵" },
-  { code: "BR", name: "Brésil", flag: "🇧🇷" },
-];
+import { countries } from "../constants";
 
 // Bannière par défaut (placeholder) via Placeholders.xyz
 const DEFAULT_BANNER =

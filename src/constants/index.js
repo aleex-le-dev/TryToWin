@@ -9,3 +9,4 @@ export {
   getEmailUrls,
   getEmailTemplates,
 } from "./emailConfig";
+export { countries } from "./countries";
