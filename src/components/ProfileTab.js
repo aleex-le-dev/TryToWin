@@ -213,9 +213,8 @@ const ProfileTab = ({
               margin: 8,
               elevation: 2,
             }}>
-            {/* Espace pour alignement vertical (hauteur icône) */}
             <View style={{ height: 8 }} />
-            {/* Valeur principale : emoji ou image du meilleur jeu, décalée vers le haut */}
+            {/* Affichage conditionnel emoji ou image pour le meilleur jeu */}
             {(() => {
               const img = gamesData.find(
                 (g) => g.id === userStats.bestGame
@@ -232,28 +231,27 @@ const ProfileTab = ({
                     ?
                   </Text>
                 );
-              if (typeof img === "string" && img.startsWith("http")) {
+              if (typeof img === "string") {
                 return (
-                  <Image
-                    source={{ uri: img }}
-                    style={{ width: 24, height: 24, marginBottom: 10 }}
-                    resizeMode='contain'
-                  />
+                  <Text
+                    style={{
+                      fontSize: 24,
+                      fontWeight: "bold",
+                      color: "#23272a",
+                      marginBottom: 10,
+                    }}>
+                    {img}
+                  </Text>
                 );
               }
               return (
-                <Text
-                  style={{
-                    fontSize: 24,
-                    fontWeight: "bold",
-                    color: "#23272a",
-                    marginBottom: 10,
-                  }}>
-                  {img}
-                </Text>
+                <Image
+                  source={img}
+                  style={{ width: 32, height: 32, marginBottom: 10 }}
+                  resizeMode='contain'
+                />
               );
             })()}
-            {/* Label en bas, centré */}
             <Text style={{ fontSize: 11, color: "#6c757d" }}>Meilleur jeu</Text>
           </View>
 

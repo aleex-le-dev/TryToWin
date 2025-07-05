@@ -17,6 +17,7 @@ import { db } from "../utils/firebaseConfig";
 import { useIsFocused } from "@react-navigation/native";
 import { gamesData } from "../constants/gamesData";
 import { categories } from "../constants/categories";
+import { getUserAllGameStats } from "../services/scoreService";
 
 const { width } = Dimensions.get("window");
 
@@ -61,6 +62,7 @@ const HomeScreen = ({ navigation, resetCategoryTrigger }) => {
   const { user, loading } = useAuth();
   const [selectedCategory, setSelectedCategory] = useState("Tous");
   const [profile, setProfile] = useState(null);
+  const [totalPoints, setTotalPoints] = useState(0);
   const isFocused = useIsFocused();
 
   const filteredGames = gamesData.filter((game) => {
@@ -85,6 +87,21 @@ const HomeScreen = ({ navigation, resetCategoryTrigger }) => {
     };
 
     fetchProfile();
+  }, [user, isFocused]);
+
+  // Récupération du total de points utilisateur
+  useEffect(() => {
+    const fetchPoints = async () => {
+      if (user?.uid) {
+        const stats = await getUserAllGameStats(user.uid);
+        let sum = 0;
+        Object.values(stats).forEach((s) => {
+          sum += s.totalPoints || 0;
+        });
+        setTotalPoints(sum);
+      }
+    };
+    fetchPoints();
   }, [user, isFocused]);
 
   // Réinitialise la catégorie à "Tous" à chaque clic sur l'onglet Jeux (via resetCategoryTrigger)
@@ -162,7 +179,7 @@ const HomeScreen = ({ navigation, resetCategoryTrigger }) => {
                   ? "..."
                   : profile?.username ||
                     user?.displayName ||
-                    user?.email?.split("@")[0] ||
+                    user?.email?.split("@")?.[0] ||
                     "Joueur"}{" "}
                 ! 👋
               </Text>
@@ -170,7 +187,7 @@ const HomeScreen = ({ navigation, resetCategoryTrigger }) => {
             </View>
             <View style={styles.headerStats}>
               <View style={styles.statItem}>
-                <Text style={styles.statNumber}>2847</Text>
+                <Text style={styles.statNumber}>{totalPoints}</Text>
                 <Text style={styles.statLabel}>Points</Text>
               </View>
               <View style={styles.statDivider} />
