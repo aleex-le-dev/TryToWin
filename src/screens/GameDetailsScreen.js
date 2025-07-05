@@ -109,17 +109,15 @@ const GameDetailsScreen = ({ route, navigation }) => {
             const leaderboard = await getLeaderboard(gameId, 51, user);
             const processedLeaderboard = leaderboard.map((item, index) => ({
               id: item.userId,
-              // Utiliser le vrai nom d'utilisateur pour l'utilisateur actuel
               username: item.isCurrentUser
                 ? user.displayName || user.email || "Vous"
                 : item.username || `Joueur ${item.userId.slice(0, 6)}`,
-              rank: index + 1,
+              rank: item.rank,
               score: item.totalPoints || 0,
               winRate: item.winRate || 0,
               gamesPlayed: item.totalGames || 0,
-              avatar: getAvatarForRank(index + 1),
+              avatar: getAvatarForRank(item.rank),
               isCurrentUser: item.userId === user.id,
-              // Utiliser le vrai pays pour l'utilisateur, pays fictifs pour les autres
               country: item.isCurrentUser
                 ? countries.find((c) => c.code === userCountry) || countries[0]
                 : countries[index % countries.length],
