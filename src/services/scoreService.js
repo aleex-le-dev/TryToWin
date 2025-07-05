@@ -246,6 +246,7 @@ export async function getGlobalLeaderboard(topN = 10) {
   }
 
   leaderboard.sort((a, b) => b.totalPoints - a.totalPoints);
+  console.log("[DEBUG SERVICE] leaderboard:", leaderboard);
   return leaderboard.slice(0, topN);
 }
 

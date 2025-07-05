@@ -33,7 +33,8 @@ import AvatarLibrary from "../components/AvatarLibrary";
 import ProfileHeaderAvatar from "../components/ProfileHeaderAvatar";
 import ProfileTab from "../components/ProfileTab";
 import StatsTab from "../components/StatsTab";
-import LeaderboardTab from "../components/LeaderboardTab";
+import GlobalLeaderboard from "../components/GlobalLeaderboard";
+import GameStatsTab from "../components/GameStatsTab";
 import WheelColorPicker from "react-native-wheel-color-picker";
 import SettingsScreen from "./SettingsScreen";
 import {
@@ -42,6 +43,7 @@ import {
   getLeaderboard,
   getGlobalLeaderboard,
   recordGameResult,
+  initializeLeaderboardsForUser,
 } from "../services/scoreService";
 import { GAME_POINTS } from "../constants/gamePoints";
 import {
@@ -53,7 +55,7 @@ import VisualStatsTab from "../components/VisualStatsTab";
 
 const { width } = Dimensions.get("window");
 
-import { countries } from "../constants";
+import { countries } from "../constants/countries";
 
 // Bannière par défaut (placeholder) via Placeholders.xyz
 const DEFAULT_BANNER =
@@ -437,7 +439,19 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
           ...entry,
           username: userData.username || entry.userId,
           avatar: userData.avatar || "👤",
-          country: userData.country || null,
+          // Log pour debug pays
+          // eslint-disable-next-line no-console
+          ...(console.log(
+            `[LEADERBOARD] userId: ${entry.userId}, userData.country: ${userData.country}, mapped:`,
+            countries.find(
+              (c) => c.code === (userData.country || "").toUpperCase()
+            )
+          ),
+          {}),
+          country:
+            countries.find(
+              (c) => c.code === (userData.country || "").toUpperCase()
+            ) || countries[0],
         };
       })
     );
@@ -611,9 +625,20 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
           <View style={{ flexDirection: "row", alignItems: "center" }}>
             {/* Affiche le drapeau du pays dans le classement mondial */}
             {leaderboardType === "global" && item.country && (
-              <Text style={{ fontSize: 18, marginRight: 5 }}>
-                {item.country.flag}
-              </Text>
+              <>
+                <Text style={{ fontSize: 18, marginRight: 5 }}>
+                  {/* Gestion robuste du drapeau : code pays ou objet pays, forçage en majuscules */}
+                  {typeof item.country === "string"
+                    ? countries.find(
+                        (c) => c.code === item.country.toUpperCase()
+                      )?.flag || "🌍"
+                    : item.country?.flag || "🌍"}
+                </Text>
+                {/* Debug temporaire : affiche la valeur brute du code pays */}
+                <Text style={{ fontSize: 12, color: "#aaa" }}>
+                  {JSON.stringify(item.country)}
+                </Text>
+              </>
             )}
             <Text
               style={[
@@ -728,6 +753,8 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
         setProfile(docSnap.data());
         setProfilePhoto(docSnap.data().photoURL || "");
       }
+      // Recharge le classement global après modification du profil
+      await fetchLeaderboard();
       setEditModalVisible(false);
       Toast.show({
         type: "success",
@@ -1031,21 +1058,13 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
             onLogout={handleLogout}
           />
         ) : activeTab === "leaderboard" ? (
-          <LeaderboardTab
-            leaderboardType={leaderboardType}
-            setLeaderboardType={setLeaderboardType}
-            selectedCountry={selectedCountry}
-            setSelectedCountry={setSelectedCountry}
-            top10Global={top10Global}
-            top10Country={[]}
-            countries={countries}
-            userRank={userRank}
-            userId={user?.id}
-          />
+          <GlobalLeaderboard />
         ) : (
-          <VisualStatsTab
+          <GameStatsTab
             userStats={userStats}
             statsByGame={userStatsByGame}
+            statsLoading={false}
+            gameColor='#667eea'
             generateAllGamesTestData={generateAllGamesTestData}
           />
         )}

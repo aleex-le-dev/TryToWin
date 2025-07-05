@@ -58,7 +58,7 @@ const GameDetailsScreen = ({ route, navigation }) => {
   const [leaderboardLoading, setLeaderboardLoading] = useState(true);
   const [leaderboardType, setLeaderboardType] = useState("global");
   const flatListRef = useRef(null);
-  const [userCountry, setUserCountry] = useState("FR");
+  const [userCountry, setUserCountry] = useState(null);
   const prevTab = useRef(activeTab);
 
   // Utiliser l'identifiant technique Firestore du jeu
@@ -89,13 +89,15 @@ const GameDetailsScreen = ({ route, navigation }) => {
             setUserRank(rank);
             setTotalPlayers(total);
 
-            // Récupérer le profil utilisateur pour obtenir le pays
+            // Récupérer le profil utilisateur pour obtenir le pays et le username
             const userProfileRef = doc(db, "users", user.id);
             const userProfileSnap = await getDoc(userProfileRef);
             const userProfile = userProfileSnap.exists()
               ? userProfileSnap.data()
               : {};
-            const userCountry = userProfile.country || "FR"; // Pays par défaut
+            const userCountry = userProfile.country || null;
+            const userUsername =
+              userProfile.username || user.displayName || user.email || "Vous";
             setUserCountry(userCountry);
 
             // Charger le classement
@@ -103,7 +105,7 @@ const GameDetailsScreen = ({ route, navigation }) => {
             const processedLeaderboard = leaderboard.map((item, index) => ({
               id: item.userId,
               username: item.isCurrentUser
-                ? user.displayName || user.email || "Vous"
+                ? userUsername
                 : item.username || `Joueur ${item.userId.slice(0, 6)}`,
               rank: item.rank,
               score: item.totalPoints || 0,
@@ -112,7 +114,15 @@ const GameDetailsScreen = ({ route, navigation }) => {
               avatar: getAvatarForRank(item.rank),
               isCurrentUser: item.userId === user.id,
               country: item.isCurrentUser
-                ? countries.find((c) => c.code === userCountry) || countries[0]
+                ? countries.find((c) => c.code === userCountry) || {
+                    code: "",
+                    name: "Monde",
+                    flag: "🌍",
+                  }
+                : item.country && typeof item.country === "string"
+                ? countries.find(
+                    (c) => c.code === item.country.toUpperCase()
+                  ) || { code: "", name: "Monde", flag: "🌍" }
                 : countries[index % countries.length],
             }));
             setLeaderboardData(processedLeaderboard);
@@ -186,12 +196,10 @@ const GameDetailsScreen = ({ route, navigation }) => {
         <Text style={styles.userAvatar}>{item.avatar}</Text>
         <View style={styles.userDetails}>
           <View style={{ flexDirection: "row", alignItems: "center" }}>
-            {/* Affiche le drapeau du pays dans le classement mondial */}
-            {item.country && (
-              <Text style={{ fontSize: 18, marginRight: 5 }}>
-                {item.country.flag}
-              </Text>
-            )}
+            {/* Affiche le drapeau du pays dans le classement mondial, ou 🌍 si non renseigné */}
+            <Text style={{ fontSize: 18, marginRight: 5 }}>
+              {item.country?.flag || "🌍"}
+            </Text>
             <Text
               style={[
                 styles.username,
@@ -493,32 +501,35 @@ const GameDetailsScreen = ({ route, navigation }) => {
                     Mondial
                   </Text>
                 </TouchableOpacity>
-                <TouchableOpacity
-                  style={{
-                    backgroundColor:
-                      leaderboardType === "country" ? "#667eea" : "#f1f3f4",
-                    borderRadius: 16,
-                    paddingVertical: 7,
-                    paddingHorizontal: 18,
-                    marginHorizontal: 2,
-                  }}
-                  onPress={() => {
-                    setLeaderboardType("country");
-                    setTimeout(scrollToUserInCountry, 400);
-                  }}>
-                  <Text
+                {userCountry && (
+                  <TouchableOpacity
                     style={{
-                      color: leaderboardType === "country" ? "#fff" : "#667eea",
-                      fontWeight: "bold",
-                      fontSize: 15,
+                      backgroundColor:
+                        leaderboardType === "country" ? "#667eea" : "#f1f3f4",
+                      borderRadius: 16,
+                      paddingVertical: 7,
+                      paddingHorizontal: 18,
+                      marginHorizontal: 2,
+                    }}
+                    onPress={() => {
+                      setLeaderboardType("country");
+                      setTimeout(scrollToUserInCountry, 400);
                     }}>
-                    {(countries.find((c) => c.code === userCountry)?.flag ||
-                      "🌍") +
-                      " " +
-                      (countries.find((c) => c.code === userCountry)?.name ||
-                        userCountry)}
-                  </Text>
-                </TouchableOpacity>
+                    <Text
+                      style={{
+                        color:
+                          leaderboardType === "country" ? "#fff" : "#667eea",
+                        fontWeight: "bold",
+                        fontSize: 15,
+                      }}>
+                      {(countries.find((c) => c.code === userCountry)?.flag ||
+                        "🌍") +
+                        " " +
+                        (countries.find((c) => c.code === userCountry)?.name ||
+                          userCountry)}
+                    </Text>
+                  </TouchableOpacity>
+                )}
               </View>
               <View style={{ alignItems: "center", marginBottom: 20 }}>
                 <Text
@@ -531,23 +542,25 @@ const GameDetailsScreen = ({ route, navigation }) => {
                   {leaderboardType === "global"
                     ? `Classement ${game.title} (Mondial)`
                     : `Classement ${game.title} - ${
-                        (countries.find((c) => c.code === userCountry)?.flag ||
-                          "🌍") +
-                        " " +
-                        (countries.find((c) => c.code === userCountry)?.name ||
-                          userCountry)
+                        userCountry
+                          ? (countries.find((c) => c.code === userCountry)
+                              ?.flag || "🌍") +
+                            " " +
+                            (countries.find((c) => c.code === userCountry)
+                              ?.name || userCountry)
+                          : null
                       }`}
                 </Text>
                 <Text style={{ fontSize: 14, color: "#6c757d" }}>
                   {leaderboardType === "global"
                     ? `Top des meilleurs joueurs tous pays`
-                    : `${
-                        (countries.find((c) => c.code === userCountry)?.flag ||
-                          "🌍") +
-                        " " +
-                        (countries.find((c) => c.code === userCountry)?.name ||
-                          userCountry)
-                      }`}
+                    : userCountry
+                    ? (countries.find((c) => c.code === userCountry)?.flag ||
+                        "🌍") +
+                      " " +
+                      (countries.find((c) => c.code === userCountry)?.name ||
+                        userCountry)
+                    : null}
                 </Text>
                 {/* Rang de l'utilisateur connecté */}
                 {userRank && (
@@ -665,7 +678,9 @@ const GameDetailsScreen = ({ route, navigation }) => {
                     </Animated.View>
                   );
                 }}
-                keyExtractor={(item) => item.id}
+                keyExtractor={(item) =>
+                  item.userId || item.id || `player_${item.rank}`
+                }
                 showsVerticalScrollIndicator={true}
                 contentContainerStyle={{ paddingBottom: 200 }}
               />
