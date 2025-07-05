@@ -72,6 +72,7 @@ const GameDetailsScreen = ({ route, navigation }) => {
   const [leaderboardType, setLeaderboardType] = useState("global");
   const flatListRef = useRef(null);
   const [userCountry, setUserCountry] = useState("FR");
+  const prevTab = useRef(activeTab);
 
   // Utiliser l'identifiant technique Firestore du jeu
   const gameId = game.id || game.title;
@@ -145,6 +146,13 @@ const GameDetailsScreen = ({ route, navigation }) => {
       loadData();
     }, [user?.id, gameId])
   );
+
+  useEffect(() => {
+    if (activeTab === "leaderboard" && prevTab.current !== "leaderboard") {
+      setTimeout(scrollToUserInWorld, 400);
+    }
+    prevTab.current = activeTab;
+  }, [activeTab]);
 
   // Fonction pour obtenir l'avatar selon le rang
   const getAvatarForRank = (rank) => {
@@ -245,16 +253,26 @@ const GameDetailsScreen = ({ route, navigation }) => {
       ? leaderboardData
       : leaderboardData.filter((item) => item.country?.code === userCountry);
 
-  // Fonction pour scroller vers l'utilisateur dans la liste Monde
+  // Fonction pour scroller vers l'utilisateur dans Monde
   const scrollToUserInWorld = () => {
     const data = leaderboardData;
     const userIndex = data.findIndex((item) => item.isCurrentUser);
-    console.log(
-      "ScrollToUserInWorld - index:",
-      userIndex,
-      "data.length:",
-      data.length
+    if (userIndex !== -1 && flatListRef.current) {
+      setTimeout(() => {
+        flatListRef.current.scrollToIndex({
+          index: userIndex,
+          animated: true,
+          viewPosition: 0.5,
+        });
+      }, 100);
+    }
+  };
+  // Fonction pour scroller vers l'utilisateur dans Pays
+  const scrollToUserInCountry = () => {
+    const data = leaderboardData.filter(
+      (item) => item.country?.code === userCountry
     );
+    const userIndex = data.findIndex((item) => item.isCurrentUser);
     if (userIndex !== -1 && flatListRef.current) {
       setTimeout(() => {
         flatListRef.current.scrollToIndex({
@@ -320,15 +338,10 @@ const GameDetailsScreen = ({ route, navigation }) => {
           {/* Onglets avec couleur dynamique pour l'onglet actif */}
           <View style={styles.tabsContainer}>
             <TouchableOpacity
-              style={[
-                styles.tab,
-                activeTab === "leaderboard" && {
-                  borderBottomColor: game.color,
-                  borderBottomWidth: 2,
-                },
-              ]}
+              style={styles.tab}
               onPress={() => {
                 setActiveTab("leaderboard");
+                setTimeout(scrollToUserInWorld, 400);
               }}>
               <Text
                 style={[
@@ -504,6 +517,7 @@ const GameDetailsScreen = ({ route, navigation }) => {
                   }}
                   onPress={() => {
                     setLeaderboardType("country");
+                    setTimeout(scrollToUserInCountry, 400);
                   }}>
                   <Text
                     style={{
