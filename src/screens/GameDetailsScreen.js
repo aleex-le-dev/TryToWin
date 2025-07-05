@@ -8,6 +8,7 @@ import {
   Dimensions,
   FlatList,
   ActivityIndicator,
+  Image,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
@@ -314,9 +315,15 @@ const GameDetailsScreen = ({ route, navigation }) => {
             </View>
 
             <View style={styles.gameHeader}>
-              <View style={styles.gameIconContainer}>
-                <Text style={styles.gameIcon}>{game.image}</Text>
-              </View>
+              {/* Image en arrière-plan, grande et dépassant à gauche */}
+              {typeof game.image !== "string" && (
+                <Image
+                  source={game.image}
+                  style={styles.gameBgImage}
+                  resizeMode='contain'
+                  pointerEvents='none'
+                />
+              )}
               <View style={styles.gameInfo}>
                 <Text style={styles.gameTitle}>{game.title}</Text>
                 <Text style={styles.gameDescription}>{game.description}</Text>
@@ -559,21 +566,23 @@ const styles = StyleSheet.create({
   gameHeader: {
     flexDirection: "row",
     alignItems: "center",
+    position: "relative",
+    minHeight: 120,
+    overflow: "visible",
   },
-  gameIconContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: "rgba(255,255,255,0.2)",
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 20,
-  },
-  gameIcon: {
-    fontSize: 40,
+  gameBgImage: {
+    position: "absolute",
+    left: -40,
+    top: -20,
+    width: 300,
+    height: 250,
+    opacity: 0.18,
+    zIndex: 0,
   },
   gameInfo: {
     flex: 1,
+    zIndex: 1,
+    paddingLeft: 60,
   },
   gameTitle: {
     fontSize: 24,
