@@ -9,6 +9,7 @@ import {
   FlatList,
   ActivityIndicator,
   Image,
+  Animated,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
@@ -68,7 +69,9 @@ const GameDetailsScreen = ({ route, navigation }) => {
   const [statsLoading, setStatsLoading] = useState(true);
   const [leaderboardData, setLeaderboardData] = useState([]);
   const [leaderboardLoading, setLeaderboardLoading] = useState(true);
+  const [leaderboardType, setLeaderboardType] = useState("global");
   const flatListRef = useRef(null);
+  const [userCountry, setUserCountry] = useState("FR");
 
   // Utiliser l'identifiant technique Firestore du jeu
   const gameId = game.id || game.title;
@@ -105,6 +108,7 @@ const GameDetailsScreen = ({ route, navigation }) => {
               ? userProfileSnap.data()
               : {};
             const userCountry = userProfile.country || "FR"; // Pays par défaut
+            setUserCountry(userCountry);
 
             // Charger le classement
             const leaderboard = await getLeaderboard(gameId, 51, user);
@@ -141,62 +145,6 @@ const GameDetailsScreen = ({ route, navigation }) => {
       loadData();
     }, [user?.id, gameId])
   );
-
-  // Fonction pour scroller vers l'utilisateur
-  const scrollToUser = () => {
-    if (leaderboardData.length > 0 && flatListRef.current) {
-      const userIndex = leaderboardData.findIndex((item) => item.isCurrentUser);
-      console.log("🎯 Scroll manuel vers l'utilisateur à l'index:", userIndex);
-
-      if (userIndex !== -1) {
-        setTimeout(() => {
-          flatListRef.current?.scrollToIndex({
-            index: userIndex,
-            animated: true,
-            viewPosition: 0.5,
-          });
-        }, 100);
-      }
-    }
-  };
-
-  // Effet pour scroller automatiquement vers la position de l'utilisateur
-  useEffect(() => {
-    if (
-      !leaderboardLoading &&
-      leaderboardData.length > 0 &&
-      flatListRef.current &&
-      activeTab === "leaderboard"
-    ) {
-      // Trouver l'index de l'utilisateur dans le classement (30ème place)
-      const userIndex = leaderboardData.findIndex((item) => item.isCurrentUser);
-      console.log(
-        "🎯 Tentative de scroll vers l'utilisateur à l'index:",
-        userIndex
-      );
-
-      if (userIndex !== -1) {
-        // Attendre un peu que la FlatList soit rendue
-        setTimeout(() => {
-          console.log("🎯 Scroll automatique vers l'index:", userIndex);
-          flatListRef.current?.scrollToIndex({
-            index: userIndex,
-            animated: true,
-            viewPosition: 0.5, // Centre l'élément dans la vue
-          });
-        }, 300); // Réduit le délai pour une réponse plus rapide
-      } else {
-        console.log("❌ Utilisateur non trouvé dans le classement");
-      }
-    } else {
-      console.log("🔍 Conditions non remplies pour le scroll:", {
-        leaderboardLoading,
-        dataLength: leaderboardData.length,
-        hasRef: !!flatListRef.current,
-        activeTab,
-      });
-    }
-  }, [leaderboardLoading, leaderboardData, activeTab]);
 
   // Fonction pour obtenir l'avatar selon le rang
   const getAvatarForRank = (rank) => {
@@ -292,6 +240,32 @@ const GameDetailsScreen = ({ route, navigation }) => {
     </View>
   );
 
+  const filteredLeaderboardData =
+    leaderboardType === "global"
+      ? leaderboardData
+      : leaderboardData.filter((item) => item.country?.code === userCountry);
+
+  // Fonction pour scroller vers l'utilisateur dans la liste Monde
+  const scrollToUserInWorld = () => {
+    const data = leaderboardData;
+    const userIndex = data.findIndex((item) => item.isCurrentUser);
+    console.log(
+      "ScrollToUserInWorld - index:",
+      userIndex,
+      "data.length:",
+      data.length
+    );
+    if (userIndex !== -1 && flatListRef.current) {
+      setTimeout(() => {
+        flatListRef.current.scrollToIndex({
+          index: userIndex,
+          animated: true,
+          viewPosition: 0.5,
+        });
+      }, 100);
+    }
+  };
+
   return (
     <View style={styles.container}>
       {loading && (
@@ -355,8 +329,6 @@ const GameDetailsScreen = ({ route, navigation }) => {
               ]}
               onPress={() => {
                 setActiveTab("leaderboard");
-                // Scroll vers l'utilisateur après un court délai
-                setTimeout(() => scrollToUser(), 100);
               }}>
               <Text
                 style={[
@@ -492,50 +464,194 @@ const GameDetailsScreen = ({ route, navigation }) => {
           ) : (
             <View style={styles.leaderboardContent}>
               {/* En-tête du classement */}
-              <View style={styles.leaderboardHeader}>
-                <Text style={styles.leaderboardTitle}>
-                  Classement {game.title} (Mondial)
-                </Text>
-              </View>
-              {/* Liste du classement */}
-              {leaderboardLoading ? (
-                <View style={styles.loadingContainer}>
-                  <ActivityIndicator size='large' color={game.color} />
-                  <Text style={styles.loadingText}>
-                    Chargement du classement...
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "center",
+                  marginBottom: 12,
+                  gap: 10,
+                }}>
+                <TouchableOpacity
+                  style={{
+                    backgroundColor:
+                      leaderboardType === "global" ? "#667eea" : "#f1f3f4",
+                    borderRadius: 16,
+                    paddingVertical: 7,
+                    paddingHorizontal: 18,
+                    marginHorizontal: 2,
+                  }}
+                  onPress={() => {
+                    setLeaderboardType("global");
+                    setTimeout(scrollToUserInWorld, 400);
+                  }}>
+                  <Text
+                    style={{
+                      color: leaderboardType === "global" ? "#fff" : "#667eea",
+                      fontWeight: "bold",
+                      fontSize: 15,
+                    }}>
+                    Mondial
                   </Text>
-                </View>
-              ) : (
-                <FlatList
-                  ref={flatListRef}
-                  data={leaderboardData}
-                  renderItem={renderLeaderboardItem}
-                  keyExtractor={(item) => item.id}
-                  scrollEnabled={true}
-                  style={{ flex: 1 }}
-                  contentContainerStyle={{ paddingBottom: 20 }}
-                  showsVerticalScrollIndicator={true}
-                  removeClippedSubviews={false}
-                  initialNumToRender={20}
-                  maxToRenderPerBatch={20}
-                  windowSize={10}
-                  getItemLayout={(data, index) => ({
-                    length: 80, // Hauteur approximative de chaque item
-                    offset: 80 * index,
-                    index,
-                  })}
-                  ListEmptyComponent={
-                    <Text
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={{
+                    backgroundColor:
+                      leaderboardType === "country" ? "#667eea" : "#f1f3f4",
+                    borderRadius: 16,
+                    paddingVertical: 7,
+                    paddingHorizontal: 18,
+                    marginHorizontal: 2,
+                  }}
+                  onPress={() => {
+                    setLeaderboardType("country");
+                  }}>
+                  <Text
+                    style={{
+                      color: leaderboardType === "country" ? "#fff" : "#667eea",
+                      fontWeight: "bold",
+                      fontSize: 15,
+                    }}>
+                    {userCountry === "FR" ? "🇫🇷 France" : userCountry}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+              <View style={{ alignItems: "center", marginBottom: 20 }}>
+                <Text
+                  style={{
+                    fontSize: 24,
+                    fontWeight: "bold",
+                    color: "#333",
+                    marginBottom: 5,
+                  }}>
+                  {leaderboardType === "global"
+                    ? `Classement ${game.title} (Mondial)`
+                    : `Classement ${game.title} - ${userCountry}`}
+                </Text>
+                <Text style={{ fontSize: 14, color: "#6c757d" }}>
+                  {leaderboardType === "global"
+                    ? `Top des meilleurs joueurs tous pays`
+                    : `Joueurs du pays : ${userCountry}`}
+                </Text>
+                {/* Rang de l'utilisateur connecté */}
+                {userRank && (
+                  <Text
+                    style={{
+                      marginTop: 8,
+                      color: "#667eea",
+                      fontWeight: "bold",
+                    }}>
+                    Ton rang : #{userRank}
+                  </Text>
+                )}
+              </View>
+              {/* Liste du classement harmonisée */}
+              <FlatList
+                ref={flatListRef}
+                data={
+                  leaderboardType === "global"
+                    ? leaderboardData
+                    : leaderboardData.filter(
+                        (item) => item.country?.code === userCountry
+                      )
+                }
+                renderItem={({ item, index }) => {
+                  let medal = null;
+                  if (index === 0) medal = "🥇";
+                  else if (index === 1) medal = "🥈";
+                  else if (index === 2) medal = "🥉";
+                  const isCurrentUser = item.isCurrentUser;
+                  return (
+                    <Animated.View
                       style={{
-                        color: "#6c757d",
-                        textAlign: "center",
-                        marginTop: 20,
+                        opacity: 1,
+                        transform: [{ translateY: 0 }],
+                        marginBottom: 12,
                       }}>
-                      Aucun joueur n'a encore gagné de points dans ce jeu.
-                    </Text>
-                  }
-                />
-              )}
+                      <View
+                        style={{
+                          flexDirection: "row",
+                          alignItems: "center",
+                          backgroundColor: isCurrentUser
+                            ? "rgba(102,126,234,0.10)"
+                            : "#fff",
+                          borderRadius: 18,
+                          paddingVertical: 12,
+                          paddingHorizontal: 16,
+                          shadowColor: isCurrentUser ? "#667eea" : "#000",
+                          shadowOffset: { width: 0, height: 2 },
+                          shadowOpacity: isCurrentUser ? 0.18 : 0.08,
+                          shadowRadius: isCurrentUser ? 8 : 3,
+                          elevation: isCurrentUser ? 7 : 3,
+                          borderWidth: isCurrentUser ? 2 : 0,
+                          borderColor: isCurrentUser
+                            ? "#667eea"
+                            : "transparent",
+                        }}>
+                        <Text
+                          style={{
+                            width: 28,
+                            fontWeight: "bold",
+                            color:
+                              index === 0
+                                ? "#FFD700"
+                                : index === 1
+                                ? "#C0C0C0"
+                                : index === 2
+                                ? "#CD7F32"
+                                : "#23272a",
+                            fontSize: 18,
+                            textAlign: "center",
+                          }}>
+                          {medal || `#${index + 1}`}
+                        </Text>
+                        <View
+                          style={{
+                            width: 44,
+                            height: 44,
+                            borderRadius: 22,
+                            backgroundColor: "#f7faff",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            marginHorizontal: 8,
+                            borderWidth: 2,
+                            borderColor: isCurrentUser ? "#667eea" : "#e0e3ea",
+                          }}>
+                          <Text style={{ fontSize: 28 }}>{item.avatar}</Text>
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <Text
+                            style={{
+                              fontWeight: "bold",
+                              fontSize: 16,
+                              color: isCurrentUser ? "#667eea" : "#23272a",
+                            }}>
+                            {item.username}
+                          </Text>
+                          <Text style={{ fontSize: 12, color: "#6c757d" }}>
+                            {item.country?.flag || "🌍"}
+                          </Text>
+                        </View>
+                        <View style={{ alignItems: "flex-end" }}>
+                          <Text
+                            style={{
+                              fontWeight: "bold",
+                              fontSize: 16,
+                              color: isCurrentUser ? "#667eea" : "#23272a",
+                            }}>
+                            {item.score}
+                          </Text>
+                          <Text style={{ fontSize: 12, color: "#6c757d" }}>
+                            points
+                          </Text>
+                        </View>
+                      </View>
+                    </Animated.View>
+                  );
+                }}
+                keyExtractor={(item) => item.id}
+                showsVerticalScrollIndicator={true}
+                contentContainerStyle={{ paddingBottom: 200 }}
+              />
             </View>
           )}
         </View>
@@ -888,6 +1004,27 @@ const styles = StyleSheet.create({
   loadingContainer: {
     alignItems: "center",
     paddingVertical: 40,
+  },
+  scopeButton: {
+    paddingHorizontal: 18,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: "#f8f9fa",
+    marginHorizontal: 6,
+    borderWidth: 1,
+    borderColor: "#e9ecef",
+  },
+  scopeButtonActive: {
+    backgroundColor: "#667eea",
+    borderColor: "#667eea",
+  },
+  scopeButtonText: {
+    fontSize: 14,
+    color: "#6c757d",
+    fontWeight: "bold",
+  },
+  scopeButtonTextActive: {
+    color: "#fff",
   },
 });
 
