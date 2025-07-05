@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Dimensions,
   FlatList,
+  Image,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
@@ -35,7 +36,18 @@ function GameCard({ item, onPress }) {
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}>
         <View style={styles.gameCardContent}>
-          <Text style={styles.gameIconCentered}>{item.image}</Text>
+          {typeof item.image === "string" ? (
+            <Text style={styles.gameIconCentered}>{item.image}</Text>
+          ) : (
+            <Image
+              source={item.image}
+              style={[
+                styles.gameIconCentered,
+                { width: 80, height: 80, fontSize: undefined },
+              ]}
+              resizeMode='contain'
+            />
+          )}
           <Text style={styles.gameTitleModern}>{item.title}</Text>
           <Text style={styles.gameDescriptionModern}>{item.description}</Text>
         </View>
@@ -495,7 +507,6 @@ const styles = StyleSheet.create({
   },
   gameIconCentered: {
     fontSize: 44,
-    marginBottom: 10,
     alignSelf: "center",
   },
   gameMeta: {
