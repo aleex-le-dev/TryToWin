@@ -4,13 +4,24 @@
 
 ## Fonctionnalités principales
 
-- Création et personnalisation de profil (avatar, bannière, pays, bio)
+- Jeux disponibles :
+  - **Puissance 4**
+  - **Othello**
+  - **Morpion / TicTacToe**
+  - **Pong**
+- Création et personnalisation avancée de profil (avatar, bannière, pays, bio, carrousel d'avatars)
 - Classements : Top 10 mondial et par pays, pour chaque jeu et pour le profil
 - Partage de profil via QR code ou lien unique
 - Ajout d'ami par scan ou lien
-- Statistiques détaillées par joueur et par jeu
+- Statistiques détaillées par joueur et par jeu (victoires, défaites, nuls, points, séries de victoires, temps de jeu)
+- Notifications toast personnalisées et harmonisées (succès, erreur, info)
+- Gestion des scores avec multiplicateur de série de victoires
+- Authentification sécurisée (Firebase) et gestion de la validation d'email
+- Réinitialisation de mot de passe et gestion des erreurs utilisateur
+- Upload et synchronisation de la photo de profil (Firebase Storage)
 - Interface utilisateur moderne et responsive
 - Support multi-plateforme (Android/iOS)
+- Architecture modulaire (services, hooks, contextes, composants réutilisables)
 
 ## Liens utiles
 
