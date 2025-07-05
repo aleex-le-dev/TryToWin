@@ -50,24 +50,27 @@ export function generateLeaderboard(
     return (a.name || "").localeCompare(b.name || "");
   });
 
-  // Attribution correcte des rangs pour les égalités
-  let rank = 1;
+  // Attribution des rangs pour classement dense strict (pas de saut)
   let prevPoints = null;
-  let prevRank = 1;
-  const rankedPlayers = allPlayers.map((player, index) => {
-    if (player.points === prevPoints) {
-      return { ...player, rank: prevRank };
+  let rank = 1;
+  allPlayers.forEach((player, i) => {
+    if (i === 0) {
+      player.rank = rank;
+    } else if (player.points !== prevPoints) {
+      rank++;
+      player.rank = rank;
     } else {
-      prevRank = rank;
-      prevPoints = player.points;
-      const res = { ...player, rank: prevRank };
-      rank = index + 2;
-      return res;
+      player.rank = rank;
     }
+    prevPoints = player.points;
+    // Log détaillé pour debug
+    console.log(
+      `[RANKING] ${player.name} | points: ${player.points} | rang: #${player.rank}`
+    );
   });
 
   // Mapping final pour compatibilité avec l'affichage
-  return rankedPlayers.map((player, index) => ({
+  return allPlayers.map((player, index) => ({
     userId: player.userId || `player_${index}`,
     username: player.name,
     gameId: player.gameId || "demo",

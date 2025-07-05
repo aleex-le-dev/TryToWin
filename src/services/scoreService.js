@@ -308,28 +308,39 @@ export async function getUserRankInLeaderboard(userId, game) {
   try {
     // Récupérer le score de l'utilisateur
     const userScoreDoc = await getDoc(doc(db, "users", userId, "scores", game));
-
     if (!userScoreDoc.exists()) {
       return { rank: null, total: 0 };
     }
-
     const userStats = userScoreDoc.data();
-    const userPoints = userStats.totalPoints || 0;
-
-    if (userPoints === 0) {
+    if (!userStats.totalPoints) {
       return { rank: null, total: 0 };
     }
-
-    // Calculer le rang avec les données de démo
-    const { rank, total } = calculateDemoRank(userPoints);
-
+    // Récupérer le profil utilisateur pour obtenir le pays
+    const userProfileRef = doc(db, "users", userId);
+    const userProfileSnap = await getDoc(userProfileRef);
+    const userProfile = userProfileSnap.exists() ? userProfileSnap.data() : {};
+    const userCountry = userProfile.country || "FR";
+    // Générer le leaderboard avec la logique utilitaire
+    const leaderboard = generateLeaderboard(
+      DEMO_PLAYERS,
+      {
+        id: userId,
+        displayName: userProfile.username || userProfile.displayName || "Vous",
+        email: userProfile.email,
+      },
+      userStats,
+      userCountry
+    );
+    const myEntry = leaderboard.find((p) => p.isCurrentUser);
+    const rank = myEntry ? myEntry.rank : null;
+    const total = leaderboard.length;
     console.log(
       "🏆 Rang calculé:",
       rank,
       "/",
       total,
       "pour",
-      userPoints,
+      userStats.totalPoints,
       "points"
     );
     return { rank, total };
