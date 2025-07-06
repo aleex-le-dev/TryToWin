@@ -20,7 +20,7 @@ import {
   getSerieMultiplier,
   SERIE_MULTIPLIERS,
 } from "../constants/gamePoints";
-import { DEMO_PLAYERS } from "../constants/demoLeaderboard";
+
 import { generateLeaderboard } from "../utils/leaderboardUtils";
 import Toast from "react-native-toast-message";
 
@@ -192,9 +192,9 @@ export async function getLeaderboard(game, topN = 10, currentUser = null) {
     const userProfile = userProfileSnap.exists() ? userProfileSnap.data() : {};
     const userCountry = userProfile.country || "FR"; // Pays par défaut
 
-    // Générer le classement avec la logique utilitaire
+    // Générer le classement avec la logique utilitaire (sans données de démo)
     const leaderboard = generateLeaderboard(
-      DEMO_PLAYERS,
+      [],
       currentUser,
       userStats,
       userCountry
@@ -321,9 +321,9 @@ export async function getUserRankInLeaderboard(userId, game) {
     const userProfileSnap = await getDoc(userProfileRef);
     const userProfile = userProfileSnap.exists() ? userProfileSnap.data() : {};
     const userCountry = userProfile.country || "FR";
-    // Générer le leaderboard avec la logique utilitaire
+    // Générer le leaderboard avec la logique utilitaire (sans données de démo)
     const leaderboard = generateLeaderboard(
-      DEMO_PLAYERS,
+      [],
       {
         id: userId,
         displayName: userProfile.username || userProfile.displayName || "Vous",

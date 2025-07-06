@@ -202,7 +202,7 @@ const GameDetailsScreen = ({ route, navigation }) => {
       <View style={styles.rankContainer}>
         <Text
           style={[styles.rankText, item.isCurrentUser && { color: "#fff" }]}>
-          #{index + 1}
+          #{item.rank}
         </Text>
         {index < 3 && (
           <Ionicons
@@ -348,22 +348,8 @@ const GameDetailsScreen = ({ route, navigation }) => {
 
   // Génère une liste avec placeholders pour centrage parfait
   const getCenteredLeaderboardData = () => {
-    const minItemsToFill = 7; // nombre d'items pour remplir l'écran (ajustable)
-    const data = filteredLeaderboardData;
-    if (data.length >= minItemsToFill) return data;
-    const userIndex = data.findIndex((item) => item.isCurrentUser);
-    // On veut que l'utilisateur soit au centre
-    const before = Math.max(0, Math.floor(minItemsToFill / 2) - userIndex);
-    const after = Math.max(0, minItemsToFill - (data.length + before));
-    const placeholdersTop = Array.from({ length: before }, (_, i) => ({
-      placeholder: true,
-      key: `top_${i}`,
-    }));
-    const placeholdersBottom = Array.from({ length: after }, (_, i) => ({
-      placeholder: true,
-      key: `bottom_${i}`,
-    }));
-    return [...placeholdersTop, ...data, ...placeholdersBottom];
+    // Désormais, on retourne simplement la liste filtrée sans placeholder
+    return filteredLeaderboardData;
   };
   const centeredLeaderboardData = getCenteredLeaderboardData();
 
