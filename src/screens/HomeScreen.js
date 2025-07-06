@@ -58,12 +58,13 @@ function GameCard({ item, onPress }) {
 }
 
 // Écran d'accueil fusionné avec liste des jeux
-const HomeScreen = ({ navigation, resetCategoryTrigger }) => {
+const HomeScreen = ({ navigation, resetCategoryTrigger, forceHomeReset }) => {
   const { user, loading } = useAuth();
   const [selectedCategory, setSelectedCategory] = useState("Tous");
   const [profile, setProfile] = useState(null);
   const [totalPoints, setTotalPoints] = useState(0);
   const isFocused = useIsFocused();
+  const scrollViewRef = React.useRef(null);
 
   const filteredGames = gamesData.filter((game) => {
     return selectedCategory === "Tous" || game.category === selectedCategory;
@@ -108,6 +109,14 @@ const HomeScreen = ({ navigation, resetCategoryTrigger }) => {
   useEffect(() => {
     setSelectedCategory("Tous");
   }, [resetCategoryTrigger]);
+
+  // Force le retour à l'accueil et scroll en haut
+  useEffect(() => {
+    if (forceHomeReset && scrollViewRef.current) {
+      // Scroll en haut de la page
+      scrollViewRef.current.scrollTo({ y: 0, animated: true });
+    }
+  }, [forceHomeReset]);
 
   // Utilisation du composant GameCard dans renderGameCard
   const renderGameCard = ({ item }) => (
@@ -168,7 +177,7 @@ const HomeScreen = ({ navigation, resetCategoryTrigger }) => {
 
   return (
     <View style={styles.container}>
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView ref={scrollViewRef} showsVerticalScrollIndicator={false}>
         {/* Header avec salutation */}
         <LinearGradient colors={["#667eea", "#764ba2"]} style={styles.header}>
           <View style={styles.headerContent}>

@@ -14,12 +14,16 @@ const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
 
 // Stack pour l'écran des jeux avec détails
-const GamesStack = ({ resetCategoryTrigger }) => {
+const GamesStack = ({ resetCategoryTrigger, forceHomeReset }) => {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name='GamesMain'>
         {(props) => (
-          <HomeScreen {...props} resetCategoryTrigger={resetCategoryTrigger} />
+          <HomeScreen
+            {...props}
+            resetCategoryTrigger={resetCategoryTrigger}
+            forceHomeReset={forceHomeReset}
+          />
         )}
       </Stack.Screen>
       <Stack.Screen name='GameDetails' component={GameDetailsScreen} />
@@ -32,6 +36,8 @@ const GamesStack = ({ resetCategoryTrigger }) => {
 const MainTabNavigator = () => {
   const [resetCategoryTrigger, setResetCategoryTrigger] = React.useState(0);
   const [profileTabResetKey, setProfileTabResetKey] = React.useState(0);
+  const [forceHomeReset, setForceHomeReset] = React.useState(0);
+
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -75,23 +81,37 @@ const MainTabNavigator = () => {
       <Tab.Screen
         name='Games'
         children={() => (
-          <GamesStack resetCategoryTrigger={resetCategoryTrigger} />
+          <GamesStack
+            resetCategoryTrigger={resetCategoryTrigger}
+            forceHomeReset={forceHomeReset}
+          />
         )}
         options={{
           title: "Jeux",
           unmountOnBlur: true,
         }}
-        listeners={{
-          tabPress: () => setResetCategoryTrigger((t) => t + 1),
-        }}
+        listeners={({ navigation }) => ({
+          tabPress: (e) => {
+            // Empêcher le comportement par défaut
+            e.preventDefault();
+
+            // Réinitialiser la catégorie
+            setResetCategoryTrigger((t) => t + 1);
+
+            // Forcer le retour à l'accueil
+            setForceHomeReset((r) => r + 1);
+
+            // Naviguer vers l'écran principal
+            navigation.navigate("Games", { screen: "GamesMain" });
+          },
+        })}
       />
       <Tab.Screen
         name='Profile'
-        children={() => (
-          <ProfileScreen profileTabResetKey={profileTabResetKey} />
-        )}
+        children={() => <ProfileScreen key={profileTabResetKey} />}
         options={{
           title: "Profil",
+          unmountOnBlur: true,
         }}
         listeners={{
           tabPress: () => setProfileTabResetKey((k) => k + 1),
