@@ -401,7 +401,7 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
     const allStats = await getUserAllGameStats(user.id);
     const scores = {};
     for (const game of Object.keys(GAME_POINTS)) {
-      scores[game] = allStats[game] || {
+      scores[game] = allStats.gamesPlayed[game] || {
         win: 0,
         draw: 0,
         lose: 0,
@@ -442,7 +442,7 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
       streak = 0;
 
     for (const game of Object.keys(GAME_POINTS)) {
-      const s = allStats[game] || {
+      const s = allStats.gamesPlayed[game] || {
         win: 0,
         draw: 0,
         lose: 0,
