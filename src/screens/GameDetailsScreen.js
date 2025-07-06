@@ -62,15 +62,10 @@ const GameDetailsScreen = ({ route, navigation }) => {
   const prevTab = useRef(activeTab);
   const [pendingScrollToUserCountry, setPendingScrollToUserCountry] =
     useState(false);
+  const [selectedCountry, setSelectedCountry] = useState(null);
 
   // Utiliser l'identifiant technique Firestore du jeu
   const gameId = game.id || game.title;
-  console.log(
-    "🎯 GameDetailsScreen - gameId utilisé:",
-    gameId,
-    "pour le jeu:",
-    game.title
-  );
 
   // Charger les statistiques de l'utilisateur et le classement pour ce jeu
   useFocusEffect(
@@ -117,13 +112,8 @@ const GameDetailsScreen = ({ route, navigation }) => {
                     if (userDoc.exists()) {
                       const userData = userDoc.data();
                       userAvatar = userData.photoURL || userData.avatar || "👤";
-                      console.log(
-                        `[AVATAR DEBUG] userId: ${item.userId}, photoURL: ${userData.photoURL}, finalAvatar: ${userAvatar}`
-                      );
                     }
-                  } catch (e) {
-                    console.log("Erreur récupération avatar:", e);
-                  }
+                  } catch (e) {}
                 }
 
                 return {
@@ -152,14 +142,7 @@ const GameDetailsScreen = ({ route, navigation }) => {
               })
             );
             setLeaderboardData(processedLeaderboard);
-            console.log(
-              "📊 Nombre de joueurs dans le classement:",
-              processedLeaderboard.length,
-              "Pays utilisateur:",
-              userCountry
-            );
           } catch (error) {
-            console.log("Erreur lors du chargement des données:", error);
           } finally {
             setStatsLoading(false);
             setLeaderboardLoading(false);
@@ -176,6 +159,43 @@ const GameDetailsScreen = ({ route, navigation }) => {
     }
     prevTab.current = activeTab;
   }, [activeTab]);
+
+  // Ajout de logs explicites pour debug leaderboard
+  useEffect(() => {
+    if (leaderboardType === "global") {
+      console.log("[LEADERBOARD] Calcul du classement MONDE");
+      leaderboardData.forEach((item, idx) => {
+        console.log(
+          `[MONDE] Rang #${item.rank} | ${item.username} | ${
+            item.score
+          } pts | country: ${item.country?.code || item.country}`
+        );
+      });
+    } else if (leaderboardType === "country") {
+      const countryCode = selectedCountry || "FR";
+      console.log(`[LEADERBOARD] Calcul du classement PAYS (${countryCode})`);
+
+      // Filtrer par pays, trier par score, et recalculer les rangs
+      const countryPlayers = leaderboardData
+        .filter((item) => (item.country?.code || item.country) === countryCode)
+        .sort((a, b) => b.score - a.score)
+        .map((item, index) => ({
+          ...item,
+          rank: index + 1, // Nouveau rang dans le pays
+        }));
+
+      countryPlayers.forEach((item, idx) => {
+        console.log(
+          `[PAYS ${countryCode}] Rang #${item.rank} | ${item.username} | ${
+            item.score
+          } pts | country: ${item.country?.code || item.country}`
+        );
+      });
+    }
+    console.log(
+      `[RENDER] leaderboardType: ${leaderboardType} | joueurs: ${leaderboardData.length}`
+    );
+  }, [leaderboardType, leaderboardData, selectedCountry]);
 
   // Fonction pour obtenir l'avatar selon le rang
   const getAvatarForRank = (rank) => {
@@ -226,9 +246,7 @@ const GameDetailsScreen = ({ route, navigation }) => {
               }}
               resizeMode='cover'
               defaultSource={require("../../assets/icon.png")}
-              onError={() => {
-                console.log("Erreur chargement avatar:", item.avatar);
-              }}
+              onError={() => {}}
             />
           ) : (
             <Text style={{ fontSize: 28 }}>{item.avatar || "👤"}</Text>
@@ -286,7 +304,17 @@ const GameDetailsScreen = ({ route, navigation }) => {
   const filteredLeaderboardData =
     leaderboardType === "global"
       ? leaderboardData
-      : leaderboardData.filter((item) => item.country?.code === userCountry);
+      : leaderboardData
+          .filter(
+            (item) =>
+              (item.country?.code || item.country) ===
+              (selectedCountry || userCountry)
+          )
+          .sort((a, b) => b.score - a.score)
+          .map((item, index) => ({
+            ...item,
+            rank: index + 1, // Recalculer les rangs pour le pays
+          }));
 
   // Calculer le rang de l'utilisateur dans le classement filtré
   const getUserRankInFilteredData = () => {

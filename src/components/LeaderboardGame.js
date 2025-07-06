@@ -20,6 +20,8 @@ import { countries } from "../constants/countries";
 import { getDoc, doc } from "firebase/firestore";
 import { db } from "../utils/firebaseConfig";
 
+// === LEADERBOARDGAME.JS REELLEMENT CHARGE ===
+
 // Fallback pour les pays en cas de problème d'import
 const FALLBACK_COUNTRIES = [
   { code: "FR", name: "France", flag: "🇫🇷" },
@@ -77,23 +79,16 @@ const LeaderboardGame = ({ style }) => {
       let data = [];
 
       if (activeTab === "global") {
+        console.log("[LEADERBOARD] Calcul du classement MONDE");
         const rawData = await getGlobalLeaderboard(50);
-        // Pour chaque joueur, récupère le vrai profil Firestore
         data = await Promise.all(
-          rawData.map(async (entry) => {
-            // Récupère le profil utilisateur
+          rawData.map(async (entry, index) => {
             let userData = {};
             try {
               const userDoc = await getDoc(doc(db, "users", entry.userId));
               userData = userDoc.exists() ? userDoc.data() : {};
             } catch (e) {}
-            console.log(
-              "[DEBUG] userId:",
-              entry.userId,
-              "| userData:",
-              userData
-            );
-            return {
+            const player = {
               ...entry,
               username: userData.username || "",
               avatar:
@@ -102,17 +97,20 @@ const LeaderboardGame = ({ style }) => {
                 userData.avatarUrl ||
                 "👤",
               country: userData.country ? userData.country.toUpperCase() : null,
+              rank: index + 1,
             };
+            console.log(
+              `[MONDE] Rang #${player.rank} | ${player.username} | ${player.totalPoints} pts | country: ${player.country}`
+            );
+            return player;
           })
         );
         const rankData = await getUserGlobalRank(user.id);
         setUserRank(rankData);
-      } else {
-        // Classement par pays
+      } else if (activeTab === "country") {
         const countryCode = selectedCountry;
-        const globalData = await getGlobalLeaderboard(1000); // Récupérer plus de données pour filtrer
-
-        // Récupérer les profils utilisateurs pour obtenir les pays
+        console.log(`[LEADERBOARD] Calcul du classement PAYS (${countryCode})`);
+        const globalData = await getGlobalLeaderboard(1000);
         const enrichedData = await Promise.all(
           globalData.map(async (entry) => {
             let userData = {};
@@ -120,7 +118,6 @@ const LeaderboardGame = ({ style }) => {
               const userDoc = await getDoc(doc(db, "users", entry.userId));
               userData = userDoc.exists() ? userDoc.data() : {};
             } catch (e) {}
-
             return {
               ...entry,
               username:
@@ -134,18 +131,22 @@ const LeaderboardGame = ({ style }) => {
             };
           })
         );
-
-        // Filtrer par pays et recalculer les rangs
-        data = enrichedData
-          .filter((player) => player.country === countryCode)
+        const filtered = enrichedData.filter(
+          (player) => player.country === countryCode
+        );
+        data = filtered
           .sort((a, b) => b.totalPoints - a.totalPoints)
-          .map((player, index) => ({
-            ...player,
-            rank: index + 1, // Recalculer le rang pour le classement par pays
-          }))
+          .map((player, index) => {
+            const rang = index + 1;
+            console.log(
+              `[TEST PAYS] Rang #${rang} | ${player.username} | ${player.totalPoints} pts | country: ${player.country}`
+            );
+            return {
+              ...player,
+              rank: rang,
+            };
+          })
           .slice(0, 50);
-
-        // Trouver le rang de l'utilisateur dans ce pays
         const userEntry = data.find((player) => player.userId === user.id);
         if (userEntry) {
           setUserRank({ rank: userEntry.rank, total: data.length });
@@ -308,6 +309,15 @@ const LeaderboardGame = ({ style }) => {
     );
   };
 
+  // Log à chaque rendu du composant
+  console.log("[DEBUG RENDER] activeTab:", activeTab);
+  console.log(
+    "=== TEST LOG PAYS ===",
+    activeTab,
+    selectedCountry,
+    leaderboard.length
+  );
+
   if (!user?.id) {
     return (
       <View style={[styles.container, style]}>
@@ -320,6 +330,7 @@ const LeaderboardGame = ({ style }) => {
 
   return (
     <View style={[styles.container, style]}>
+      {console.log("=== RENDER LEADERBOARDGAME ===")}
       {/* Onglets - Style identique à GameDetailsScreen */}
       <View
         style={{
@@ -356,14 +367,16 @@ const LeaderboardGame = ({ style }) => {
               paddingHorizontal: 18,
               marginHorizontal: 2,
             }}
-            onPress={() => setActiveTab("country")}>
+            onPress={() => {
+              console.log("[DEBUG UI] Switch pays cliqué");
+              setActiveTab("country");
+            }}>
             <Text
               style={{
                 color: activeTab === "country" ? "#fff" : "#667eea",
                 fontWeight: "bold",
                 fontSize: 15,
               }}>
-              {getCountryFlag(selectedCountry)}{" "}
               {getCountryName(selectedCountry)}
             </Text>
           </TouchableOpacity>

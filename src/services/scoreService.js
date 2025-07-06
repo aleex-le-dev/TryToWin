@@ -166,11 +166,8 @@ export async function getUserAllGameStats(userId) {
  * @returns {Promise<Array<{userId:string, username:string, win:number, draw:number, lose:number, totalPoints:number, totalGames:number, winRate:number}>>}
  */
 export async function getLeaderboard(game, topN = 10, currentUser = null) {
-  console.log("🔍 Récupération du classement pour le jeu:", game);
-
   try {
     if (!currentUser?.id) {
-      console.log("❌ Aucun utilisateur connecté");
       return [];
     }
 
@@ -181,10 +178,6 @@ export async function getLeaderboard(game, topN = 10, currentUser = null) {
     let userStats = {};
     if (userScoreDoc.exists()) {
       userStats = userScoreDoc.data();
-      console.log(
-        "👤 Points de l'utilisateur actuel:",
-        userStats.totalPoints || 0
-      );
     }
 
     // Récupérer le profil utilisateur pour obtenir le pays
@@ -203,10 +196,8 @@ export async function getLeaderboard(game, topN = 10, currentUser = null) {
 
     // Limiter au topN
     const sortedLeaderboard = leaderboard.slice(0, topN);
-    console.log("✅ Classement généré:", sortedLeaderboard.length, "joueurs");
     return sortedLeaderboard;
   } catch (error) {
-    console.log("❌ Erreur lors de la récupération du classement:", error);
     return [];
   }
 }
@@ -247,7 +238,6 @@ export async function getGlobalLeaderboard(topN = 10) {
   }
 
   leaderboard.sort((a, b) => b.totalPoints - a.totalPoints);
-  console.log("[DEBUG SERVICE] leaderboard:", leaderboard);
   return leaderboard.slice(0, topN);
 }
 
@@ -336,18 +326,8 @@ export async function getUserRankInLeaderboard(userId, game) {
     const myEntry = leaderboard.find((p) => p.isCurrentUser);
     const rank = myEntry ? myEntry.rank : null;
     const total = leaderboard.length;
-    console.log(
-      "🏆 Rang calculé:",
-      rank,
-      "/",
-      total,
-      "pour",
-      userStats.totalPoints,
-      "points"
-    );
     return { rank, total };
   } catch (error) {
-    console.log("❌ Erreur lors du calcul du rang:", error);
     return { rank: null, total: 0 };
   }
 }
@@ -422,18 +402,8 @@ export async function getUserGlobalRank(userId) {
       }
     }
 
-    console.log(
-      "🏆 Rang global calculé:",
-      rank,
-      "/",
-      leaderboard.length,
-      "pour l'utilisateur",
-      userId
-    );
-
     return { rank, total: leaderboard.length };
   } catch (error) {
-    console.log("❌ Erreur lors du calcul du rang global:", error);
     return { rank: null, total: 0 };
   }
 }

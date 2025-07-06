@@ -63,10 +63,6 @@ export function generateLeaderboard(
       player.rank = rank;
     }
     prevPoints = player.points;
-    // Log détaillé pour debug
-    console.log(
-      `[RANKING] ${player.name} | points: ${player.points} | rang: #${player.rank}`
-    );
   });
 
   // Mapping final pour compatibilité avec l'affichage
