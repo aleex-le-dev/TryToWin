@@ -160,6 +160,19 @@ const GameDetailsScreen = ({ route, navigation }) => {
     prevTab.current = activeTab;
   }, [activeTab]);
 
+  // Force l'onglet Mondial et le scroll vers l'utilisateur au chargement
+  useEffect(() => {
+    if (leaderboardData.length > 0 && user?.id) {
+      // Forcer l'onglet Mondial
+      setLeaderboardType("global");
+
+      // Scroll vers l'utilisateur après un délai pour laisser le temps au rendu
+      setTimeout(() => {
+        scrollToUserInWorld();
+      }, 500);
+    }
+  }, [leaderboardData, user?.id]);
+
   // Debug du classement (optionnel)
   useEffect(() => {
     // Logs de debug pour vérifier le fonctionnement du classement
@@ -323,12 +336,17 @@ const GameDetailsScreen = ({ route, navigation }) => {
     const userIndex = leaderboardData.findIndex((item) => item.isCurrentUser);
     if (userIndex !== -1 && flatListRef.current) {
       setTimeout(() => {
-        flatListRef.current.scrollToIndex({
-          index: userIndex,
-          animated: true,
-          viewPosition: 0.5,
-        });
-      }, 100);
+        try {
+          flatListRef.current.scrollToIndex({
+            index: userIndex,
+            animated: true,
+            viewPosition: 0.5,
+          });
+        } catch (error) {
+          // Fallback : scroll vers le haut si l'index n'est pas trouvé
+          flatListRef.current.scrollToOffset({ offset: 0, animated: true });
+        }
+      }, 200);
     }
   };
   // Fonction pour scroller vers l'utilisateur dans Pays
