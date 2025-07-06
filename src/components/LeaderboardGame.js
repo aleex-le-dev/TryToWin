@@ -8,31 +8,16 @@ import {
   ActivityIndicator,
   Image,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../hooks/useAuth";
 import {
   getGlobalLeaderboard,
-  getLeaderboard,
   getUserGlobalRank,
   initializeLeaderboardsForUser,
 } from "../services/scoreService";
-import { GAMES_DATA } from "../constants/gamesData";
-import { countries } from "../constants/countries";
-import { getDoc, doc } from "firebase/firestore";
+import { doc, getDoc } from "firebase/firestore";
 import { db } from "../utils/firebaseConfig";
-
-// === LEADERBOARDGAME.JS REELLEMENT CHARGE ===
-
-// Fallback pour les pays en cas de problème d'import
-const FALLBACK_COUNTRIES = [
-  { code: "FR", name: "France", flag: "🇫🇷" },
-  { code: "US", name: "États-Unis", flag: "🇺🇸" },
-  { code: "GB", name: "Royaume-Uni", flag: "🇬🇧" },
-  { code: "DE", name: "Allemagne", flag: "🇩🇪" },
-  { code: "ES", name: "Espagne", flag: "🇪🇸" },
-  { code: "IT", name: "Italie", flag: "🇮🇹" },
-  { code: "CA", name: "Canada", flag: "🇨🇦" },
-  { code: "AU", name: "Australie", flag: "🇦🇺" },
-];
+import { countries } from "../constants";
 
 /**
  * Composant de classement pour les jeux (GameDetailsScreen)
@@ -79,7 +64,6 @@ const LeaderboardGame = ({ style }) => {
       let data = [];
 
       if (activeTab === "global") {
-        console.log("[LEADERBOARD] Calcul du classement MONDE");
         const rawData = await getGlobalLeaderboard(50);
         data = await Promise.all(
           rawData.map(async (entry, index) => {
@@ -88,7 +72,8 @@ const LeaderboardGame = ({ style }) => {
               const userDoc = await getDoc(doc(db, "users", entry.userId));
               userData = userDoc.exists() ? userDoc.data() : {};
             } catch (e) {}
-            const player = {
+
+            return {
               ...entry,
               username: userData.username || "",
               avatar:
@@ -99,18 +84,15 @@ const LeaderboardGame = ({ style }) => {
               country: userData.country ? userData.country.toUpperCase() : null,
               rank: index + 1,
             };
-            console.log(
-              `[MONDE] Rang #${player.rank} | ${player.username} | ${player.totalPoints} pts | country: ${player.country}`
-            );
-            return player;
           })
         );
+
         const rankData = await getUserGlobalRank(user.id);
         setUserRank(rankData);
       } else if (activeTab === "country") {
         const countryCode = selectedCountry;
-        console.log(`[LEADERBOARD] Calcul du classement PAYS (${countryCode})`);
         const globalData = await getGlobalLeaderboard(1000);
+
         const enrichedData = await Promise.all(
           globalData.map(async (entry) => {
             let userData = {};
@@ -118,6 +100,7 @@ const LeaderboardGame = ({ style }) => {
               const userDoc = await getDoc(doc(db, "users", entry.userId));
               userData = userDoc.exists() ? userDoc.data() : {};
             } catch (e) {}
+
             return {
               ...entry,
               username:
@@ -131,22 +114,19 @@ const LeaderboardGame = ({ style }) => {
             };
           })
         );
+
         const filtered = enrichedData.filter(
           (player) => player.country === countryCode
         );
+
         data = filtered
           .sort((a, b) => b.totalPoints - a.totalPoints)
-          .map((player, index) => {
-            const rang = index + 1;
-            console.log(
-              `[TEST PAYS] Rang #${rang} | ${player.username} | ${player.totalPoints} pts | country: ${player.country}`
-            );
-            return {
-              ...player,
-              rank: rang,
-            };
-          })
+          .map((player, index) => ({
+            ...player,
+            rank: index + 1,
+          }))
           .slice(0, 50);
+
         const userEntry = data.find((player) => player.userId === user.id);
         if (userEntry) {
           setUserRank({ rank: userEntry.rank, total: data.length });
@@ -164,137 +144,103 @@ const LeaderboardGame = ({ style }) => {
     }
   };
 
-  const getCountryName = (code) => {
-    const countriesList = countries || FALLBACK_COUNTRIES;
-    if (!countriesList || !Array.isArray(countriesList)) {
-      return code;
-    }
-    return countriesList.find((country) => country.code === code)?.name || code;
+  const getCountryFlag = (countryCode) => {
+    const country = countries.find((c) => c.code === countryCode);
+    return country ? country.flag : "🌍";
   };
 
-  const getCountryFlag = (code) => {
-    const countriesList = countries || FALLBACK_COUNTRIES;
-    if (!countriesList || !Array.isArray(countriesList)) {
-      return "🏳️";
-    }
-    return countriesList.find((country) => country.code === code)?.flag || "🏳️";
+  const getCountryName = (countryCode) => {
+    const country = countries.find((c) => c.code === countryCode);
+    return country ? country.name : "Monde";
   };
 
-  const renderPlayer = ({ item, index }) => {
-    const isCurrentUser = item.userId === user?.id;
-    const rank = index + 1;
-
-    // Médaille pour les 3 premiers
-    let medal = null;
-    if (rank === 1) medal = "🥇";
-    else if (rank === 2) medal = "🥈";
-    else if (rank === 3) medal = "🥉";
-
-    const countryObj =
-      item.country && typeof item.country === "string"
-        ? countries.find((c) => c.code === item.country)
-        : null;
-    const flagToShow = countryObj && countryObj.flag ? countryObj.flag : "🌍";
-    const nameToShow =
-      countryObj && countryObj.name ? ` ${countryObj.name}` : "";
-
-    return (
-      <View
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-          backgroundColor: isCurrentUser ? "rgba(102,126,234,0.10)" : "#fff",
-          borderRadius: 18,
-          paddingVertical: 12,
-          paddingHorizontal: 16,
-          marginBottom: 12,
-          shadowColor: isCurrentUser ? "#667eea" : "#000",
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: isCurrentUser ? 0.18 : 0.08,
-          shadowRadius: isCurrentUser ? 8 : 3,
-          elevation: isCurrentUser ? 7 : 3,
-          borderWidth: isCurrentUser ? 2 : 0,
-          borderColor: isCurrentUser ? "#667eea" : "transparent",
-        }}>
+  const renderPlayer = ({ item, index }) => (
+    <View
+      style={[
+        styles.playerItem,
+        item.userId === user?.id && styles.currentUserItem,
+      ]}>
+      <View style={styles.rankContainer}>
         <Text
-          style={{
-            width: 48,
-            fontWeight: "bold",
-            color:
-              rank === 1
-                ? "#FFD700"
-                : rank === 2
-                ? "#C0C0C0"
-                : rank === 3
-                ? "#CD7F32"
-                : "#23272a",
-            fontSize: 18,
-            textAlign: "center",
-          }}>
-          {medal ? `${medal} #${rank}` : `#${rank}`}
+          style={[
+            styles.rankText,
+            item.userId === user?.id && styles.currentUserText,
+          ]}>
+          #{item.rank}
         </Text>
+        {item.rank <= 3 && (
+          <Ionicons
+            name='trophy'
+            size={16}
+            color={
+              item.rank === 1
+                ? "#FFD700"
+                : item.rank === 2
+                ? "#C0C0C0"
+                : "#CD7F32"
+            }
+          />
+        )}
+      </View>
 
-        <View
-          style={{
-            width: 44,
-            height: 44,
-            borderRadius: 22,
-            backgroundColor: "#f7faff",
-            alignItems: "center",
-            justifyContent: "center",
-            marginHorizontal: 8,
-            borderWidth: 2,
-            borderColor: isCurrentUser ? "#667eea" : "#e0e3ea",
-            overflow: "hidden",
-          }}>
+      <View style={styles.userInfo}>
+        <View style={styles.avatarContainer}>
           {item.avatar && item.avatar.startsWith("http") ? (
             <Image
               source={{ uri: item.avatar }}
-              style={{
-                width: 40,
-                height: 40,
-                borderRadius: 20,
-              }}
+              style={styles.avatarImage}
               resizeMode='cover'
               defaultSource={require("../../assets/icon.png")}
-              onError={() => {
-                console.log("Erreur chargement avatar:", item.avatar);
-              }}
+              onError={() => {}}
             />
           ) : (
-            <Text style={{ fontSize: 28 }}>{item.avatar || "👤"}</Text>
+            <Text style={styles.avatarText}>{item.avatar || "👤"}</Text>
           )}
         </View>
 
-        <View style={{ flex: 1 }}>
+        <View style={styles.userDetails}>
+          <View style={styles.usernameRow}>
+            <Text style={styles.countryFlag}>
+              {item.country
+                ? countries.find((c) => c.code === item.country)?.flag || "🌍"
+                : "🌍"}
+            </Text>
+            <Text
+              style={[
+                styles.username,
+                item.userId === user?.id && styles.currentUserText,
+              ]}>
+              {item.username}
+            </Text>
+          </View>
           <Text
-            style={{
-              fontWeight: "bold",
-              fontSize: 16,
-              color: isCurrentUser ? "#667eea" : "#23272a",
-            }}>
-            {item.username}
+            style={[
+              styles.userStats,
+              item.userId === user?.id && styles.currentUserText,
+            ]}>
+            {item.totalGames || 0} parties • {item.winRate || 0}% victoires
           </Text>
-          <Text style={{ fontSize: 12, color: "#6c757d" }}>
-            {flagToShow}
-            {nameToShow}
-          </Text>
-        </View>
-
-        <View style={{ alignItems: "flex-end" }}>
-          <Text
-            style={{
-              fontWeight: "bold",
-              fontSize: 16,
-              color: isCurrentUser ? "#667eea" : "#23272a",
-            }}>
-            {item.totalPoints}
-          </Text>
-          <Text style={{ fontSize: 12, color: "#6c757d" }}>points</Text>
         </View>
       </View>
-    );
-  };
+
+      <View style={styles.scoreContainer}>
+        <Text
+          style={[
+            styles.scoreText,
+            item.userId === user?.id && styles.currentUserText,
+          ]}>
+          {item.totalPoints}
+        </Text>
+        <Text
+          style={[
+            styles.scoreLabel,
+            item.userId === user?.id && styles.currentUserText,
+          ]}>
+          points
+        </Text>
+      </View>
+    </View>
+  );
 
   const renderUserRank = () => {
     if (!userRank || !user?.id) return null;
@@ -309,15 +255,6 @@ const LeaderboardGame = ({ style }) => {
     );
   };
 
-  // Log à chaque rendu du composant
-  console.log("[DEBUG RENDER] activeTab:", activeTab);
-  console.log(
-    "=== TEST LOG PAYS ===",
-    activeTab,
-    selectedCountry,
-    leaderboard.length
-  );
-
   if (!user?.id) {
     return (
       <View style={[styles.container, style]}>
@@ -330,15 +267,8 @@ const LeaderboardGame = ({ style }) => {
 
   return (
     <View style={[styles.container, style]}>
-      {console.log("=== RENDER LEADERBOARDGAME ===")}
       {/* Onglets - Style identique à GameDetailsScreen */}
-      <View
-        style={{
-          flexDirection: "row",
-          justifyContent: "center",
-          marginBottom: 12,
-          gap: 10,
-        }}>
+      <View style={styles.tabContainer}>
         <TouchableOpacity
           style={{
             backgroundColor: activeTab === "global" ? "#667eea" : "#f1f3f4",
@@ -352,7 +282,7 @@ const LeaderboardGame = ({ style }) => {
             style={{
               color: activeTab === "global" ? "#fff" : "#667eea",
               fontWeight: "bold",
-              fontSize: 15,
+              fontSize: 14,
             }}>
             Mondial
           </Text>
@@ -367,23 +297,20 @@ const LeaderboardGame = ({ style }) => {
               paddingHorizontal: 18,
               marginHorizontal: 2,
             }}
-            onPress={() => {
-              console.log("[DEBUG UI] Switch pays cliqué");
-              setActiveTab("country");
-            }}>
+            onPress={() => setActiveTab("country")}>
             <Text
               style={{
                 color: activeTab === "country" ? "#fff" : "#667eea",
                 fontWeight: "bold",
-                fontSize: 15,
+                fontSize: 14,
               }}>
+              {getCountryFlag(selectedCountry)}{" "}
               {getCountryName(selectedCountry)}
             </Text>
           </TouchableOpacity>
         )}
       </View>
 
-      {/* En-tête du classement - Style identique à GameDetailsScreen */}
       <View style={{ alignItems: "center", marginBottom: 20 }}>
         <Text
           style={{
@@ -456,23 +383,108 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#f8f9fa",
   },
-  userRankContainer: {
+  tabContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    paddingHorizontal: 20,
+    paddingVertical: 15,
     backgroundColor: "#fff",
-    marginHorizontal: 16,
-    marginBottom: 16,
-    padding: 16,
-    borderRadius: 12,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    marginBottom: 10,
   },
-  userRankText: {
+  playerItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#fff",
+    borderRadius: 15,
+    padding: 15,
+    marginBottom: 10,
+    marginHorizontal: 20,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  currentUserItem: {
+    backgroundColor: "#667eea",
+  },
+  rankContainer: {
+    width: 40,
+    alignItems: "center",
+    marginRight: 15,
+  },
+  rankText: {
     fontSize: 16,
     fontWeight: "bold",
+    color: "#333",
+  },
+  currentUserText: {
+    color: "#fff",
+  },
+  userInfo: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  avatarContainer: {
+    marginRight: 12,
+  },
+  avatarImage: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+  },
+  avatarText: {
+    fontSize: 28,
+  },
+  userDetails: {
+    flex: 1,
+  },
+  usernameRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 2,
+  },
+  countryFlag: {
+    fontSize: 18,
+    marginRight: 5,
+  },
+  username: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#333",
+  },
+  userStats: {
+    fontSize: 12,
+    color: "#6c757d",
+  },
+  scoreContainer: {
+    alignItems: "flex-end",
+  },
+  scoreText: {
+    fontSize: 18,
+    fontWeight: "bold",
     color: "#667eea",
+  },
+  scoreLabel: {
+    fontSize: 12,
+    color: "#6c757d",
+  },
+  userRankContainer: {
+    backgroundColor: "#667eea",
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    marginHorizontal: 20,
+    borderRadius: 10,
+    marginBottom: 15,
+  },
+  userRankText: {
+    color: "#fff",
     textAlign: "center",
+    fontWeight: "bold",
   },
   loadingContainer: {
     flex: 1,
@@ -480,36 +492,35 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   loadingText: {
-    marginTop: 16,
+    marginTop: 10,
     fontSize: 16,
-    color: "#666",
-  },
-  listContainer: {
-    paddingHorizontal: 16,
-    paddingBottom: 20,
+    color: "#6c757d",
   },
   emptyContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: 32,
+    paddingHorizontal: 40,
   },
   emptyText: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#666",
+    color: "#333",
     textAlign: "center",
-    marginBottom: 8,
+    marginBottom: 10,
   },
   emptySubtext: {
     fontSize: 14,
-    color: "#999",
+    color: "#6c757d",
     textAlign: "center",
   },
+  listContainer: {
+    paddingBottom: 20,
+  },
   errorText: {
-    fontSize: 16,
-    color: "#666",
     textAlign: "center",
+    fontSize: 16,
+    color: "#6c757d",
     marginTop: 50,
   },
 });

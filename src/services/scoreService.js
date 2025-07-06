@@ -1,5 +1,5 @@
 // Service d'enregistrement des scores par joueur et par jeu
-// Utilise Firestore pour la persistance (adapter si besoin)
+// Utilise Firestore pour la persistance
 import { db } from "../utils/firebaseConfig";
 import {
   doc,
@@ -27,12 +27,11 @@ import { DEMO_PLAYERS } from "../constants/demoLeaderboard";
 
 /**
  * Enregistre le résultat d'une partie pour un joueur et un jeu.
- * Incrémente win/draw/lose et met à jour le total de points.
  * @param {string} userId - ID du joueur
- * @param {string} game - Nom du jeu (ex: 'TicTacToe')
+ * @param {string} game - Nom du jeu
  * @param {'win'|'draw'|'lose'} result - Résultat de la partie
- * @param {number} score - Score spécifique de la partie (optionnel)
- * @param {number} duration - Durée de la partie en secondes (optionnel)
+ * @param {number} score - Score spécifique de la partie
+ * @param {number} duration - Durée de la partie en secondes
  */
 export async function recordGameResult(
   userId,
@@ -41,238 +40,94 @@ export async function recordGameResult(
   score = 0,
   duration = 0
 ) {
-  let points = GAME_POINTS[game]?.[result] ?? 0;
   if (!userId || !game || !["win", "draw", "lose"].includes(result)) return;
 
+  const points = GAME_POINTS[game]?.[result] ?? 0;
   const scoreRef = doc(db, "users", userId, "scores", game);
-  const docSnap = await getDoc(scoreRef);
 
-  let data = {
-    win: 0,
-    draw: 0,
-    lose: 0,
-    totalPoints: 0,
-    totalGames: 0,
-    totalDuration: 0,
-    winRate: 0,
-    lastUpdated: new Date().toISOString(),
-    lastPlayed: new Date().toISOString(),
-    currentStreak: 0,
-    bestTime: null,
-  };
+  try {
+    const docSnap = await getDoc(scoreRef);
+    const data = docSnap.exists()
+      ? docSnap.data()
+      : {
+          win: 0,
+          draw: 0,
+          lose: 0,
+          totalPoints: 0,
+          totalGames: 0,
+          totalDuration: 0,
+          winRate: 0,
+          lastUpdated: new Date().toISOString(),
+          lastPlayed: new Date().toISOString(),
+          currentStreak: 0,
+          bestTime: null,
+        };
 
-  if (docSnap.exists()) {
-    data = docSnap.data();
-    if (typeof data.currentStreak !== "number") data.currentStreak = 0;
-    if (typeof data.bestTime !== "number") data.bestTime = null;
-  }
+    // Mise à jour des statistiques
+    data[result] += 1;
+    data.totalGames += 1;
+    data.totalDuration += duration;
+    data.lastUpdated = new Date().toISOString();
+    data.lastPlayed = new Date().toISOString();
 
-  // Mise à jour des statistiques
-  data[result] += 1;
-  data.totalGames += 1;
-  data.totalDuration += duration;
-  data.lastUpdated = new Date().toISOString();
-  data.lastPlayed = new Date().toISOString();
-
-  // Calcul du taux de victoire
-  data.winRate =
-    data.totalGames > 0 ? Math.round((data.win / data.totalGames) * 100) : 0;
-
-  // Gestion de la série de victoires et du multiplicateur
-  if (result === "win") {
-    data.currentStreak = (data.currentStreak || 0) + 1;
-    // Appliquer le multiplicateur de série
-    const mult = getSerieMultiplier(data.currentStreak);
-    if (mult > 0) {
-      points = Math.round(points * (1 + mult));
+    // Gestion de la série de victoires
+    if (result === "win") {
+      data.currentStreak += 1;
+      const multiplier = getSerieMultiplier(data.currentStreak);
+      data.totalPoints += points * multiplier;
+    } else {
+      data.currentStreak = 0;
+      data.totalPoints += points;
     }
-    // Gestion du temps record (le plus bas)
+
+    // Mise à jour du meilleur temps
     if (duration > 0 && (data.bestTime === null || duration < data.bestTime)) {
       data.bestTime = duration;
     }
-  } else if (result === "lose" || result === "draw") {
-    data.currentStreak = 0;
+
+    // Calcul du taux de victoire
+    data.winRate =
+      data.totalGames > 0 ? Math.round((data.win / data.totalGames) * 100) : 0;
+
+    await setDoc(scoreRef, data);
+
+    // Affichage du toast de succès
+    const resultText =
+      result === "win"
+        ? "Victoire"
+        : result === "draw"
+        ? "Match nul"
+        : "Défaite";
+    Toast.show({
+      type: result === "win" ? "success" : "info",
+      text1: resultText,
+      text2: `+${
+        data.totalPoints -
+        (data.totalPoints -
+          points *
+            (result === "win" ? getSerieMultiplier(data.currentStreak) : 1))
+      } points`,
+      position: "top",
+    });
+  } catch (error) {
+    Toast.show({
+      type: "error",
+      text1: "Erreur",
+      text2: "Impossible d'enregistrer le score",
+      position: "top",
+    });
   }
-
-  // Ajout des points (après multiplicateur éventuel)
-  data.totalPoints += points;
-
-  await setDoc(scoreRef, data, { merge: true });
 }
 
 /**
- * Récupère le score cumulé d'un joueur pour un jeu donné.
- * @param {string} userId
- * @param {string} game
- * @returns {Promise<{win:number,draw:number,lose:number,totalPoints:number,totalGames:number,totalDuration:number,winRate:number,currentStreak:number,bestTime:number|null,lastUpdated:string|null,lastPlayed:string|null}>}
+ * Récupère les statistiques d'un utilisateur pour un jeu donné.
+ * @param {string} userId - ID de l'utilisateur
+ * @param {string} game - Nom du jeu
+ * @returns {Promise<Object>} Statistiques du joueur
  */
 export async function getUserGameScore(userId, game) {
-  const scoreRef = doc(db, "users", userId, "scores", game);
-  const docSnap = await getDoc(scoreRef);
-  if (docSnap.exists()) {
-    const d = docSnap.data();
-    // On ne retourne que les champs utiles
+  if (!userId || !game) {
     return {
-      win: d.win || 0,
-      draw: d.draw || 0,
-      lose: d.lose || 0,
-      totalPoints: d.totalPoints || 0,
-      totalGames: d.totalGames || 0,
-      totalDuration: d.totalDuration || 0,
-      winRate: d.winRate || 0,
-      currentStreak: d.currentStreak || 0,
-      bestTime: d.bestTime || null,
-      lastUpdated: d.lastUpdated || null,
-      lastPlayed: d.lastPlayed || null,
-    };
-  }
-  return {
-    win: 0,
-    draw: 0,
-    lose: 0,
-    totalPoints: 0,
-    totalGames: 0,
-    totalDuration: 0,
-    winRate: 0,
-    currentStreak: 0,
-    bestTime: null,
-    lastUpdated: null,
-    lastPlayed: null,
-  };
-}
-
-/**
- * Récupère toutes les statistiques d'un utilisateur pour tous les jeux.
- * @param {string} userId
- * @returns {Promise<Object>} Statistiques par jeu
- */
-export async function getUserAllGameStats(userId) {
-  const scoresRef = collection(db, "users", userId, "scores");
-  const snapshot = await getDocs(scoresRef);
-  const stats = {};
-
-  snapshot.forEach((doc) => {
-    stats[doc.id] = doc.data();
-  });
-
-  return stats;
-}
-
-/**
- * Récupère le classement global pour un jeu donné (top N joueurs).
- * @param {string} game - Nom du jeu (ex: 'TicTacToe')
- * @param {number} topN - Nombre de joueurs à afficher
- * @param {Object} currentUser - Utilisateur actuel (optionnel)
- * @returns {Promise<Array<{userId:string, username:string, win:number, draw:number, lose:number, totalPoints:number, totalGames:number, winRate:number}>>}
- */
-export async function getLeaderboard(game, topN = 10, currentUser = null) {
-  try {
-    if (!currentUser?.id) {
-      return [];
-    }
-
-    // Récupérer le score de l'utilisateur actuel
-    const userScoreDoc = await getDoc(
-      doc(db, "users", currentUser.id, "scores", game)
-    );
-    let userStats = {};
-    if (userScoreDoc.exists()) {
-      userStats = userScoreDoc.data();
-    }
-
-    // Récupérer le profil utilisateur pour obtenir le pays
-    const userProfileRef = doc(db, "users", currentUser.id);
-    const userProfileSnap = await getDoc(userProfileRef);
-    const userProfile = userProfileSnap.exists() ? userProfileSnap.data() : {};
-    const userCountry = userProfile.country || "FR"; // Pays par défaut
-
-    // Générer le classement avec les joueurs de démo
-    const leaderboard = generateLeaderboard(
-      DEMO_PLAYERS,
-      currentUser,
-      userStats,
-      userCountry
-    );
-
-    // Limiter au topN
-    const sortedLeaderboard = leaderboard.slice(0, topN);
-    return sortedLeaderboard;
-  } catch (error) {
-    return [];
-  }
-}
-
-/**
- * Récupère le classement global (tous jeux confondus) : somme des points de tous les jeux pour chaque joueur.
- * @param {number} topN - Nombre de joueurs à afficher
- * @returns {Promise<Array<{userId:string, totalPoints:number, totalGames:number, totalWins:number}>>}
- */
-export async function getGlobalLeaderboard(topN = 10) {
-  // On récupère tous les users
-  // Pour chaque user, on somme les totalPoints de tous ses scores
-  // On trie et on retourne le topN
-  const usersSnap = await getDocs(collection(db, "users"));
-  const leaderboard = [];
-
-  for (const userDoc of usersSnap.docs) {
-    const userId = userDoc.id;
-    const scoresSnap = await getDocs(collection(db, "users", userId, "scores"));
-    let totalPoints = 0;
-    let totalGames = 0;
-    let totalWins = 0;
-
-    scoresSnap.forEach((scoreDoc) => {
-      const data = scoreDoc.data();
-      totalPoints += data.totalPoints || 0;
-      totalGames += data.totalGames || 0;
-      totalWins += data.win || 0;
-    });
-
-    leaderboard.push({
-      userId,
-      totalPoints,
-      totalGames,
-      totalWins,
-      winRate: totalGames > 0 ? Math.round((totalWins / totalGames) * 100) : 0,
-    });
-  }
-
-  leaderboard.sort((a, b) => b.totalPoints - a.totalPoints);
-  return leaderboard.slice(0, topN);
-}
-
-/**
- * Réinitialise les statistiques d'un utilisateur pour un jeu spécifique.
- * @param {string} userId
- * @param {string} game
- */
-export async function resetUserGameStats(userId, game) {
-  const scoreRef = doc(db, "users", userId, "scores", game);
-  await setDoc(scoreRef, {
-    win: 0,
-    draw: 0,
-    lose: 0,
-    totalPoints: 0,
-    totalGames: 0,
-    totalDuration: 0,
-    winRate: 0,
-    lastUpdated: new Date().toISOString(),
-    lastPlayed: new Date().toISOString(),
-    currentStreak: 0,
-    bestTime: null,
-  });
-}
-
-/**
- * Réinitialise toutes les statistiques d'un utilisateur.
- * @param {string} userId
- */
-export async function resetAllUserStats(userId) {
-  const scoresRef = collection(db, "users", userId, "scores");
-  const snapshot = await getDocs(scoresRef);
-
-  const resetPromises = snapshot.docs.map((doc) => {
-    return setDoc(doc.ref, {
       win: 0,
       draw: 0,
       lose: 0,
@@ -280,39 +135,192 @@ export async function resetAllUserStats(userId) {
       totalGames: 0,
       totalDuration: 0,
       winRate: 0,
-      lastUpdated: new Date().toISOString(),
-      lastPlayed: new Date().toISOString(),
       currentStreak: 0,
       bestTime: null,
-    });
-  });
+      lastPlayed: null,
+    };
+  }
 
-  await Promise.all(resetPromises);
+  try {
+    const scoreRef = doc(db, "users", userId, "scores", game);
+    const docSnap = await getDoc(scoreRef);
+
+    if (docSnap.exists()) {
+      return docSnap.data();
+    }
+
+    return {
+      win: 0,
+      draw: 0,
+      lose: 0,
+      totalPoints: 0,
+      totalGames: 0,
+      totalDuration: 0,
+      winRate: 0,
+      currentStreak: 0,
+      bestTime: null,
+      lastPlayed: null,
+    };
+  } catch (error) {
+    return {
+      win: 0,
+      draw: 0,
+      lose: 0,
+      totalPoints: 0,
+      totalGames: 0,
+      totalDuration: 0,
+      winRate: 0,
+      currentStreak: 0,
+      bestTime: null,
+      lastPlayed: null,
+    };
+  }
 }
 
 /**
- * Récupère la position (rang) d'un utilisateur dans le classement d'un jeu donné.
- * @param {string} userId
- * @param {string} game
- * @returns {Promise<{rank:number, total:number}>}
+ * Récupère toutes les statistiques d'un utilisateur pour tous les jeux.
+ * @param {string} userId - ID de l'utilisateur
+ * @returns {Promise<Object>} Statistiques globales
+ */
+export async function getUserAllGameStats(userId) {
+  if (!userId) return {};
+
+  try {
+    const scoresSnap = await getDocs(collection(db, "users", userId, "scores"));
+    const stats = {
+      totalGames: 0,
+      totalWins: 0,
+      totalDraws: 0,
+      totalLosses: 0,
+      totalPoints: 0,
+      totalDuration: 0,
+      gamesPlayed: {},
+    };
+
+    scoresSnap.forEach((doc) => {
+      const data = doc.data();
+      const gameId = doc.id;
+
+      stats.totalGames += data.totalGames || 0;
+      stats.totalWins += data.win || 0;
+      stats.totalDraws += data.draw || 0;
+      stats.totalLosses += data.lose || 0;
+      stats.totalPoints += data.totalPoints || 0;
+      stats.totalDuration += data.totalDuration || 0;
+      stats.gamesPlayed[gameId] = data;
+    });
+
+    stats.winRate =
+      stats.totalGames > 0
+        ? Math.round((stats.totalWins / stats.totalGames) * 100)
+        : 0;
+
+    return stats;
+  } catch (error) {
+    return {};
+  }
+}
+
+/**
+ * Récupère le classement pour un jeu donné.
+ * @param {string} game - Nom du jeu
+ * @param {number} topN - Nombre de joueurs à afficher
+ * @param {Object} currentUser - Utilisateur actuel
+ * @returns {Promise<Array>} Classement
+ */
+export async function getLeaderboard(game, topN = 10, currentUser = null) {
+  if (!currentUser?.id) return [];
+
+  try {
+    const userScoreDoc = await getDoc(
+      doc(db, "users", currentUser.id, "scores", game)
+    );
+    const userStats = userScoreDoc.exists() ? userScoreDoc.data() : {};
+
+    const userProfileRef = doc(db, "users", currentUser.id);
+    const userProfileSnap = await getDoc(userProfileRef);
+    const userProfile = userProfileSnap.exists() ? userProfileSnap.data() : {};
+    const userCountry = userProfile.country || "FR";
+
+    const leaderboard = generateLeaderboard(
+      DEMO_PLAYERS,
+      currentUser,
+      userStats,
+      userCountry
+    );
+    return leaderboard.slice(0, topN);
+  } catch (error) {
+    return [];
+  }
+}
+
+/**
+ * Récupère le classement global (tous jeux confondus).
+ * @param {number} topN - Nombre de joueurs à afficher
+ * @returns {Promise<Array>} Classement global
+ */
+export async function getGlobalLeaderboard(topN = 10) {
+  try {
+    const usersSnap = await getDocs(collection(db, "users"));
+    const leaderboard = [];
+
+    for (const userDoc of usersSnap.docs) {
+      const userId = userDoc.id;
+      const scoresSnap = await getDocs(
+        collection(db, "users", userId, "scores")
+      );
+
+      let totalPoints = 0;
+      let totalGames = 0;
+      let totalWins = 0;
+
+      scoresSnap.forEach((scoreDoc) => {
+        const data = scoreDoc.data();
+        totalPoints += data.totalPoints || 0;
+        totalGames += data.totalGames || 0;
+        totalWins += data.win || 0;
+      });
+
+      if (totalPoints > 0) {
+        leaderboard.push({
+          userId,
+          totalPoints,
+          totalGames,
+          totalWins,
+          winRate:
+            totalGames > 0 ? Math.round((totalWins / totalGames) * 100) : 0,
+        });
+      }
+    }
+
+    leaderboard.sort((a, b) => b.totalPoints - a.totalPoints);
+    return leaderboard.slice(0, topN);
+  } catch (error) {
+    return [];
+  }
+}
+
+/**
+ * Récupère la position d'un utilisateur dans le classement d'un jeu.
+ * @param {string} userId - ID de l'utilisateur
+ * @param {string} game - Nom du jeu
+ * @returns {Promise<{rank: number, total: number}>} Rang et total
  */
 export async function getUserRankInLeaderboard(userId, game) {
+  if (!userId || !game) return { rank: null, total: 0 };
+
   try {
-    // Récupérer le score de l'utilisateur
     const userScoreDoc = await getDoc(doc(db, "users", userId, "scores", game));
-    if (!userScoreDoc.exists()) {
-      return { rank: null, total: 0 };
-    }
+    if (!userScoreDoc.exists()) return { rank: null, total: 0 };
+
     const userStats = userScoreDoc.data();
-    if (!userStats.totalPoints) {
-      return { rank: null, total: 0 };
-    }
-    // Récupérer le profil utilisateur pour obtenir le pays
+    if (!userStats.totalPoints) return { rank: null, total: 0 };
+
     const userProfileRef = doc(db, "users", userId);
     const userProfileSnap = await getDoc(userProfileRef);
     const userProfile = userProfileSnap.exists() ? userProfileSnap.data() : {};
     const userCountry = userProfile.country || "FR";
-    // Générer le leaderboard avec les joueurs de démo
+
     const leaderboard = generateLeaderboard(
       DEMO_PLAYERS,
       {
@@ -323,46 +331,26 @@ export async function getUserRankInLeaderboard(userId, game) {
       userStats,
       userCountry
     );
+
     const myEntry = leaderboard.find((p) => p.isCurrentUser);
-    const rank = myEntry ? myEntry.rank : null;
-    const total = leaderboard.length;
-    return { rank, total };
+    return {
+      rank: myEntry ? myEntry.rank : null,
+      total: leaderboard.length,
+    };
   } catch (error) {
     return { rank: null, total: 0 };
   }
 }
 
 /**
- * Réinitialise uniquement la série de victoires d'un utilisateur pour un jeu spécifique.
- * @param {string} userId
- * @param {string} game
- */
-export async function resetUserStreak(userId, game) {
-  const scoreRef = doc(db, "users", userId, "scores", game);
-  await setDoc(scoreRef, { currentStreak: 0 }, { merge: true });
-}
-
-/**
- * Réinitialise la série de victoires (currentStreak) pour tous les jeux d'un utilisateur.
- * @param {string} userId
- */
-export async function resetAllUserStreaks(userId) {
-  const scoresRef = collection(db, "users", userId, "scores");
-  const snapshot = await getDocs(scoresRef);
-  const resetPromises = snapshot.docs.map((doc) =>
-    setDoc(doc.ref, { currentStreak: 0 }, { merge: true })
-  );
-  await Promise.all(resetPromises);
-}
-
-/**
- * Récupère la position (rang) d'un utilisateur dans le classement global (tous jeux confondus).
- * @param {string} userId
- * @returns {Promise<{rank:number, total:number}>}
+ * Récupère la position d'un utilisateur dans le classement global.
+ * @param {string} userId - ID de l'utilisateur
+ * @returns {Promise<{rank: number, total: number}>} Rang et total
  */
 export async function getUserGlobalRank(userId) {
+  if (!userId) return { rank: null, total: 0 };
+
   try {
-    // Récupérer tous les utilisateurs et leurs points totaux
     const usersSnap = await getDocs(collection(db, "users"));
     const leaderboard = [];
 
@@ -371,30 +359,24 @@ export async function getUserGlobalRank(userId) {
       const scoresSnap = await getDocs(
         collection(db, "users", currentUserId, "scores")
       );
-      let totalPoints = 0;
 
+      let totalPoints = 0;
       scoresSnap.forEach((scoreDoc) => {
         const data = scoreDoc.data();
         totalPoints += data.totalPoints || 0;
       });
 
-      leaderboard.push({
-        userId: currentUserId,
-        totalPoints,
-      });
+      if (totalPoints > 0) {
+        leaderboard.push({ userId: currentUserId, totalPoints });
+      }
     }
 
-    // Trier par points décroissants
     leaderboard.sort((a, b) => b.totalPoints - a.totalPoints);
 
-    // Trouver le rang de l'utilisateur
     const userIndex = leaderboard.findIndex((entry) => entry.userId === userId);
+    if (userIndex === -1) return { rank: null, total: leaderboard.length };
 
-    if (userIndex === -1) {
-      return { rank: null, total: leaderboard.length };
-    }
-
-    // Gérer les égalités de rang (même rang pour même score)
+    // Gestion des égalités de rang
     let rank = 1;
     for (let i = 0; i < userIndex; i++) {
       if (leaderboard[i].totalPoints > leaderboard[i + 1].totalPoints) {
@@ -405,5 +387,40 @@ export async function getUserGlobalRank(userId) {
     return { rank, total: leaderboard.length };
   } catch (error) {
     return { rank: null, total: 0 };
+  }
+}
+
+/**
+ * Initialise les leaderboards pour un utilisateur.
+ * @param {string} userId - ID de l'utilisateur
+ */
+export async function initializeLeaderboardsForUser(userId) {
+  if (!userId) return;
+
+  try {
+    const games = ["Puissance4", "Othello", "Morpion", "Pong"];
+
+    for (const game of games) {
+      const scoreRef = doc(db, "users", userId, "scores", game);
+      const docSnap = await getDoc(scoreRef);
+
+      if (!docSnap.exists()) {
+        await setDoc(scoreRef, {
+          win: 0,
+          draw: 0,
+          lose: 0,
+          totalPoints: 0,
+          totalGames: 0,
+          totalDuration: 0,
+          winRate: 0,
+          lastUpdated: new Date().toISOString(),
+          lastPlayed: new Date().toISOString(),
+          currentStreak: 0,
+          bestTime: null,
+        });
+      }
+    }
+  } catch (error) {
+    // Erreur silencieuse pour ne pas bloquer l'initialisation
   }
 }

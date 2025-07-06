@@ -1,16 +1,12 @@
 /**
- * Génère un classement à partir d'une liste de joueurs (fictifs ou réels) et de l'utilisateur connecté
- * - Trie par points décroissants
- * - Gère les égalités de rang (classement 1,2,2,4…)
- * - Place l'utilisateur connecté dans le classement avec ses vraies données
- * - En cas d'égalité, l'utilisateur connecté est affiché en premier dans le groupe
- * - Tri secondaire par nom
+ * Génère un classement à partir d'une liste de joueurs et de l'utilisateur connecté.
+ * Trie par points décroissants, gère les égalités de rang et place l'utilisateur connecté.
  *
- * @param {Array} players - Liste des joueurs (objets {name, points, country, ...})
- * @param {Object} user - Utilisateur connecté (optionnel)
- * @param {Object} userStats - Statistiques utilisateur (optionnel)
- * @param {string} userCountry - Code pays utilisateur (optionnel)
- * @returns {Array} Classement complet avec rangs et égalités
+ * @param {Array} players - Liste des joueurs
+ * @param {Object} user - Utilisateur connecté
+ * @param {Object} userStats - Statistiques utilisateur
+ * @param {string} userCountry - Code pays utilisateur
+ * @returns {Array} Classement complet avec rangs
  */
 export function generateLeaderboard(
   players,
@@ -20,7 +16,7 @@ export function generateLeaderboard(
 ) {
   let allPlayers = [...players];
 
-  // Ajouter l'utilisateur connecté avec ses vraies données si fourni
+  // Ajouter l'utilisateur connecté avec ses vraies données
   if (user) {
     const userPlayer = {
       name: user.displayName || user.email || "Vous",
@@ -37,7 +33,8 @@ export function generateLeaderboard(
       currentStreak: userStats.currentStreak || 0,
       bestTime: userStats.bestTime || null,
     };
-    // Retirer tout doublon éventuel (même id)
+
+    // Retirer tout doublon éventuel
     allPlayers = allPlayers.filter((p) => p.userId !== user.id);
     allPlayers.push(userPlayer);
   }
@@ -50,18 +47,15 @@ export function generateLeaderboard(
     return (a.name || "").localeCompare(b.name || "");
   });
 
-  // Attribution des rangs pour classement dense strict (pas de saut)
+  // Attribution des rangs pour classement dense strict
   let prevPoints = null;
   let rank = 1;
-  allPlayers.forEach((player, i) => {
-    if (i === 0) {
-      player.rank = rank;
-    } else if (player.points !== prevPoints) {
-      rank++;
-      player.rank = rank;
-    } else {
-      player.rank = rank;
+
+  allPlayers.forEach((player) => {
+    if (player.points !== prevPoints) {
+      rank = allPlayers.indexOf(player) + 1;
     }
+    player.rank = rank;
     prevPoints = player.points;
   });
 

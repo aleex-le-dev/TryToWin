@@ -160,41 +160,26 @@ const GameDetailsScreen = ({ route, navigation }) => {
     prevTab.current = activeTab;
   }, [activeTab]);
 
-  // Ajout de logs explicites pour debug leaderboard
+  // Debug du classement (optionnel)
   useEffect(() => {
+    // Logs de debug pour vérifier le fonctionnement du classement
     if (leaderboardType === "global") {
-      console.log("[LEADERBOARD] Calcul du classement MONDE");
-      leaderboardData.forEach((item, idx) => {
-        console.log(
-          `[MONDE] Rang #${item.rank} | ${item.username} | ${
-            item.score
-          } pts | country: ${item.country?.code || item.country}`
-        );
-      });
+      console.log(
+        `[DEBUG] Classement mondial: ${leaderboardData.length} joueurs`
+      );
     } else if (leaderboardType === "country") {
       const countryCode = selectedCountry || "FR";
-      console.log(`[LEADERBOARD] Calcul du classement PAYS (${countryCode})`);
-
-      // Filtrer par pays, trier par score, et recalculer les rangs
       const countryPlayers = leaderboardData
         .filter((item) => (item.country?.code || item.country) === countryCode)
         .sort((a, b) => b.score - a.score)
         .map((item, index) => ({
           ...item,
-          rank: index + 1, // Nouveau rang dans le pays
+          rank: index + 1,
         }));
-
-      countryPlayers.forEach((item, idx) => {
-        console.log(
-          `[PAYS ${countryCode}] Rang #${item.rank} | ${item.username} | ${
-            item.score
-          } pts | country: ${item.country?.code || item.country}`
-        );
-      });
+      console.log(
+        `[DEBUG] Classement ${countryCode}: ${countryPlayers.length} joueurs`
+      );
     }
-    console.log(
-      `[RENDER] leaderboardType: ${leaderboardType} | joueurs: ${leaderboardData.length}`
-    );
   }, [leaderboardType, leaderboardData, selectedCountry]);
 
   // Fonction pour obtenir l'avatar selon le rang
