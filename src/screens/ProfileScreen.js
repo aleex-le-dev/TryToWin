@@ -33,6 +33,7 @@ import AvatarLibrary from "../components/AvatarLibrary";
 import ProfileHeaderAvatar from "../components/ProfileHeaderAvatar";
 import ProfileTab from "../components/ProfileTab";
 import StatsTab from "../components/StatsTab";
+import LeaderboardGame from "../components/LeaderboardGame";
 
 import GameStatsTab from "../components/GameStatsTab";
 import WheelColorPicker from "react-native-wheel-color-picker";
@@ -912,32 +913,56 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
             Statistique
           </Text>
         </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.tab, activeTab === "leaderboard" && styles.activeTab]}
+          onPress={() => setActiveTab("leaderboard")}>
+          <Text
+            style={[
+              styles.tabText,
+              activeTab === "leaderboard" && styles.activeTabText,
+            ]}>
+            Classement
+          </Text>
+        </TouchableOpacity>
       </View>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {activeTab === "profile" ? (
-          <ProfileTab
-            user={user}
-            profile={profile}
-            profilePhoto={profilePhoto}
-            profileBanner={profileBanner}
-            bannerColor={profile?.bannerColor}
-            countries={countries}
-            userStats={userStats}
-            openEditModal={openEditModal}
-            onLogout={handleLogout}
-          />
-        ) : (
-          <GameStatsTab
-            userStats={userStats}
-            statsByGame={userStatsByGame}
-            statsLoading={false}
-            gameColor='#667eea'
-            generateAllGamesTestData={generateAllGamesTestData}
-          />
-        )}
-        {/* Modal d'édition du profil */}
-        <Modal visible={editModalVisible} animationType='slide' transparent>
+      {activeTab === "leaderboard" ? (
+        <LeaderboardGame
+          userId={user?.id}
+          gameColor='#667eea'
+          showUserPosition={true}
+          isProfileView={true}
+          profile={profile}
+        />
+      ) : (
+        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+          {activeTab === "profile" ? (
+            <ProfileTab
+              user={user}
+              profile={profile}
+              profilePhoto={profilePhoto}
+              profileBanner={profileBanner}
+              bannerColor={profile?.bannerColor}
+              countries={countries}
+              userStats={userStats}
+              openEditModal={openEditModal}
+              onLogout={handleLogout}
+            />
+          ) : (
+            <GameStatsTab
+              userStats={userStats}
+              statsByGame={userStatsByGame}
+              statsLoading={false}
+              gameColor='#667eea'
+              generateAllGamesTestData={generateAllGamesTestData}
+            />
+          )}
+        </ScrollView>
+      )}
+
+      {/* Modal d'édition du profil */}
+      <Modal visible={editModalVisible} animationType='slide' transparent>
           <View
             style={{
               flex: 1,
@@ -1279,7 +1304,6 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
             </View>
           </View>
         </Modal>
-      </ScrollView>
     </View>
   );
 };

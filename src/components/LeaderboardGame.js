@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -14,16 +14,25 @@ import {
   getGlobalLeaderboard,
   getUserGlobalRank,
   initializeLeaderboardsForUser,
+  getUserAllGameStats,
 } from "../services/scoreService";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../utils/firebaseConfig";
 import { countries } from "../constants";
+import { DEMO_PLAYERS } from "../constants/demoLeaderboard";
 
 /**
  * Composant de classement pour les jeux (GameDetailsScreen)
  * Style identique à GameDetailsScreen
  */
-const LeaderboardGame = ({ style }) => {
+const LeaderboardGame = ({
+  style,
+  userId,
+  gameColor = "#667eea",
+  showUserPosition = false,
+  isProfileView = false,
+  profile = null,
+}) => {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("global");
   const [leaderboard, setLeaderboard] = useState([]);
@@ -31,107 +40,276 @@ const LeaderboardGame = ({ style }) => {
   const [userRank, setUserRank] = useState(null);
   const [selectedCountry, setSelectedCountry] = useState(null);
   const [initialized, setInitialized] = useState(false);
+  const flatListRef = useRef(null);
+
+  // Utiliser l'userId passé en prop ou celui de l'utilisateur connecté
+  const currentUserId = userId || user?.id;
 
   useEffect(() => {
-    if (user?.id) {
-      setSelectedCountry(user.country || "France");
+    if (currentUserId) {
+      setSelectedCountry(user?.country || "France");
       initializeLeaderboards();
     }
-  }, [user]);
+  }, [currentUserId, user]);
 
   useEffect(() => {
-    if (user?.id && initialized) {
+    if (currentUserId && initialized) {
       loadLeaderboard();
     }
-  }, [activeTab, selectedCountry, user, initialized]);
+  }, [activeTab, selectedCountry, currentUserId, initialized]);
+
+  // Scroll vers l'utilisateur quand le leaderboard est chargé
+  useEffect(() => {
+    if (leaderboard.length > 0 && isProfileView) {
+      const userIndex = leaderboard.findIndex(
+        (player) => player.userId === currentUserId
+      );
+      if (userIndex !== -1 && flatListRef.current) {
+        setTimeout(() => {
+          flatListRef.current?.scrollToIndex({
+            index: userIndex,
+            animated: true,
+            viewPosition: 0.3, // Positionne l'utilisateur à 30% du haut de l'écran
+          });
+        }, 500); // Délai pour laisser le temps au FlatList de se rendre
+      }
+    }
+  }, [leaderboard, currentUserId, isProfileView, activeTab]);
 
   const initializeLeaderboards = async () => {
-    if (!user?.id || initialized) return;
+    if (!currentUserId || initialized) return;
 
     try {
-      await initializeLeaderboardsForUser(user.id);
+      await initializeLeaderboardsForUser(currentUserId);
       setInitialized(true);
     } catch (error) {
       setInitialized(true); // Continuer même en cas d'erreur
     }
   };
 
+  // Récupérer les vraies statistiques de l'utilisateur
+  const getUserRealStats = async () => {
+    if (!currentUserId) return null;
+
+    try {
+      const allStats = await getUserAllGameStats(currentUserId);
+      let totalPoints = 0;
+      let totalGames = 0;
+      let totalWins = 0;
+
+      // Calculer les statistiques globales
+      Object.values(allStats.gamesPlayed || {}).forEach((gameStats) => {
+        totalPoints += gameStats.totalPoints || 0;
+        totalGames += gameStats.totalGames || 0;
+        totalWins += gameStats.win || 0;
+      });
+
+      const winRate =
+        totalGames > 0 ? Math.round((totalWins / totalGames) * 100) : 0;
+
+      return {
+        totalPoints,
+        totalGames,
+        winRate,
+      };
+    } catch (error) {
+      console.log("Erreur lors de la récupération des stats:", error);
+      return null;
+    }
+  };
+
   const loadLeaderboard = async () => {
-    if (!user?.id) return;
+    if (!currentUserId) return;
 
     setLoading(true);
     try {
       let data = [];
 
-      if (activeTab === "global") {
-        const rawData = await getGlobalLeaderboard(50);
-        data = await Promise.all(
-          rawData.map(async (entry, index) => {
-            let userData = {};
-            try {
-              const userDoc = await getDoc(doc(db, "users", entry.userId));
-              userData = userDoc.exists() ? userDoc.data() : {};
-            } catch (e) {}
-
-            return {
-              ...entry,
-              username: userData.username || "",
-              avatar:
-                userData.photoURL ||
-                userData.avatar ||
-                userData.avatarUrl ||
-                "👤",
-              country: userData.country ? userData.country.toUpperCase() : null,
-              rank: index + 1,
-            };
-          })
-        );
-
-        const rankData = await getUserGlobalRank(user.id);
-        setUserRank(rankData);
-      } else if (activeTab === "country") {
-        const countryCode = selectedCountry;
-        const globalData = await getGlobalLeaderboard(1000);
-
-        const enrichedData = await Promise.all(
-          globalData.map(async (entry) => {
-            let userData = {};
-            try {
-              const userDoc = await getDoc(doc(db, "users", entry.userId));
-              userData = userDoc.exists() ? userDoc.data() : {};
-            } catch (e) {}
-
-            return {
-              ...entry,
-              username:
-                userData.username || `Joueur ${entry.userId.slice(0, 6)}`,
-              avatar:
-                userData.photoURL ||
-                userData.avatar ||
-                userData.avatarUrl ||
-                "👤",
-              country: userData.country ? userData.country.toUpperCase() : null,
-            };
-          })
-        );
-
-        const filtered = enrichedData.filter(
-          (player) => player.country === countryCode
-        );
-
-        data = filtered
-          .sort((a, b) => b.totalPoints - a.totalPoints)
-          .map((player, index) => ({
-            ...player,
+      // Si c'est une vue de profil, utiliser les données de démo
+      if (isProfileView) {
+        if (activeTab === "global") {
+          // Utiliser les données de démo pour le classement mondial
+          data = DEMO_PLAYERS.map((player, index) => ({
+            userId: `demo_${index}`,
+            username: player.name,
+            avatar: "👤",
+            country: player.country,
+            totalPoints: player.points,
+            totalGames: Math.floor(Math.random() * 100) + 10,
+            winRate: Math.floor(Math.random() * 30) + 50,
             rank: index + 1,
-          }))
-          .slice(0, 50);
+          }));
 
-        const userEntry = data.find((player) => player.userId === user.id);
-        if (userEntry) {
-          setUserRank({ rank: userEntry.rank, total: data.length });
-        } else {
-          setUserRank(null);
+          // Ajouter l'utilisateur actuel s'il n'est pas dans la liste
+          const userExists = data.find(
+            (player) => player.userId === currentUserId
+          );
+          if (!userExists) {
+            // Récupérer les vraies statistiques de l'utilisateur
+            const realStats = await getUserRealStats();
+
+            data.push({
+              userId: currentUserId,
+              username: user?.username || profile?.username || "Vous",
+              avatar: user?.photoURL || user?.avatar || profile?.avatar || "👤",
+              country: user?.country || profile?.country || "FR",
+              totalPoints: realStats?.totalPoints || 0,
+              totalGames: realStats?.totalGames || 0,
+              winRate: realStats?.winRate || 0,
+              rank: data.length + 1,
+            });
+          }
+
+          // Trier par points et recalculer les rangs
+          data = data
+            .sort((a, b) => b.totalPoints - a.totalPoints)
+            .map((player, index) => ({
+              ...player,
+              rank: index + 1,
+            }));
+
+          const userRankData = data.find((p) => p.userId === currentUserId);
+          console.log("User in leaderboard:", userRankData);
+          setUserRank({
+            rank: userRankData?.rank || null,
+            total: data.length,
+          });
+        } else if (activeTab === "country") {
+          // Filtrer par pays pour le classement national
+          const countryCode = selectedCountry;
+          const countryPlayers = DEMO_PLAYERS.filter(
+            (player) => player.country === countryCode
+          );
+
+          data = countryPlayers.map((player, index) => ({
+            userId: `demo_${index}`,
+            username: player.name,
+            avatar: "👤",
+            country: player.country,
+            totalPoints: player.points,
+            totalGames: Math.floor(Math.random() * 100) + 10,
+            winRate: Math.floor(Math.random() * 30) + 50,
+            rank: index + 1,
+          }));
+
+          // Ajouter l'utilisateur actuel s'il est du bon pays
+          const userExists = data.find(
+            (player) => player.userId === currentUserId
+          );
+          if (
+            !userExists &&
+            (user?.country === countryCode || profile?.country === countryCode)
+          ) {
+            // Récupérer les vraies statistiques de l'utilisateur
+            const realStats = await getUserRealStats();
+
+            data.push({
+              userId: currentUserId,
+              username: user?.username || profile?.username || "Vous",
+              avatar: user?.photoURL || user?.avatar || profile?.avatar || "👤",
+              country: user?.country || profile?.country || countryCode,
+              totalPoints: realStats?.totalPoints || 0,
+              totalGames: realStats?.totalGames || 0,
+              winRate: realStats?.winRate || 0,
+              rank: data.length + 1,
+            });
+          }
+
+          // Trier par points et recalculer les rangs
+          data = data
+            .sort((a, b) => b.totalPoints - a.totalPoints)
+            .map((player, index) => ({
+              ...player,
+              rank: index + 1,
+            }));
+
+          const userEntry = data.find(
+            (player) => player.userId === currentUserId
+          );
+          if (userEntry) {
+            setUserRank({ rank: userEntry.rank, total: data.length });
+          } else {
+            setUserRank(null);
+          }
+        }
+      } else {
+        // Logique existante pour les vues de jeux
+        if (activeTab === "global") {
+          const rawData = await getGlobalLeaderboard(50);
+          data = await Promise.all(
+            rawData.map(async (entry, index) => {
+              let userData = {};
+              try {
+                const userDoc = await getDoc(doc(db, "users", entry.userId));
+                userData = userDoc.exists() ? userDoc.data() : {};
+              } catch (e) {}
+
+              return {
+                ...entry,
+                username: userData.username || "",
+                avatar:
+                  userData.photoURL ||
+                  userData.avatar ||
+                  userData.avatarUrl ||
+                  "👤",
+                country: userData.country
+                  ? userData.country.toUpperCase()
+                  : null,
+                rank: index + 1,
+              };
+            })
+          );
+
+          const rankData = await getUserGlobalRank(currentUserId);
+          setUserRank(rankData);
+        } else if (activeTab === "country") {
+          const countryCode = selectedCountry;
+          const globalData = await getGlobalLeaderboard(1000);
+
+          const enrichedData = await Promise.all(
+            globalData.map(async (entry) => {
+              let userData = {};
+              try {
+                const userDoc = await getDoc(doc(db, "users", entry.userId));
+                userData = userDoc.exists() ? userDoc.data() : {};
+              } catch (e) {}
+
+              return {
+                ...entry,
+                username:
+                  userData.username || `Joueur ${entry.userId.slice(0, 6)}`,
+                avatar:
+                  userData.photoURL ||
+                  userData.avatar ||
+                  userData.avatarUrl ||
+                  "👤",
+                country: userData.country
+                  ? userData.country.toUpperCase()
+                  : null,
+              };
+            })
+          );
+
+          const filtered = enrichedData.filter(
+            (player) => player.country === countryCode
+          );
+
+          data = filtered
+            .sort((a, b) => b.totalPoints - a.totalPoints)
+            .map((player, index) => ({
+              ...player,
+              rank: index + 1,
+            }))
+            .slice(0, 50);
+
+          const userEntry = data.find(
+            (player) => player.userId === currentUserId
+          );
+          if (userEntry) {
+            setUserRank({ rank: userEntry.rank, total: data.length });
+          } else {
+            setUserRank(null);
+          }
         }
       }
 
@@ -158,13 +336,13 @@ const LeaderboardGame = ({ style }) => {
     <View
       style={[
         styles.playerItem,
-        item.userId === user?.id && styles.currentUserItem,
+        item.userId === currentUserId && { backgroundColor: gameColor },
       ]}>
       <View style={styles.rankContainer}>
         <Text
           style={[
             styles.rankText,
-            item.userId === user?.id && styles.currentUserText,
+            item.userId === currentUserId && styles.currentUserText,
           ]}>
           #{item.rank}
         </Text>
@@ -208,7 +386,7 @@ const LeaderboardGame = ({ style }) => {
             <Text
               style={[
                 styles.username,
-                item.userId === user?.id && styles.currentUserText,
+                item.userId === currentUserId && styles.currentUserText,
               ]}>
               {item.username}
             </Text>
@@ -216,7 +394,7 @@ const LeaderboardGame = ({ style }) => {
           <Text
             style={[
               styles.userStats,
-              item.userId === user?.id && styles.currentUserText,
+              item.userId === currentUserId && styles.currentUserText,
             ]}>
             {item.totalGames || 0} parties • {item.winRate || 0}% victoires
           </Text>
@@ -227,14 +405,15 @@ const LeaderboardGame = ({ style }) => {
         <Text
           style={[
             styles.scoreText,
-            item.userId === user?.id && styles.currentUserText,
+            item.userId === currentUserId && styles.currentUserText,
+            { color: item.userId === currentUserId ? "#fff" : gameColor },
           ]}>
           {item.totalPoints}
         </Text>
         <Text
           style={[
             styles.scoreLabel,
-            item.userId === user?.id && styles.currentUserText,
+            item.userId === currentUserId && styles.currentUserText,
           ]}>
           points
         </Text>
@@ -243,10 +422,10 @@ const LeaderboardGame = ({ style }) => {
   );
 
   const renderUserRank = () => {
-    if (!userRank || !user?.id) return null;
+    if (!userRank || !currentUserId) return null;
 
     return (
-      <View style={styles.userRankContainer}>
+      <View style={[styles.userRankContainer, { backgroundColor: gameColor }]}>
         <Text style={styles.userRankText}>
           Votre position : {userRank.rank ? `#${userRank.rank}` : "Non classé"}
           {userRank.total > 0 && ` sur ${userRank.total} joueurs`}
@@ -255,7 +434,7 @@ const LeaderboardGame = ({ style }) => {
     );
   };
 
-  if (!user?.id) {
+  if (!currentUserId) {
     return (
       <View style={[styles.container, style]}>
         <Text style={styles.errorText}>
@@ -271,7 +450,7 @@ const LeaderboardGame = ({ style }) => {
       <View style={styles.tabContainer}>
         <TouchableOpacity
           style={{
-            backgroundColor: activeTab === "global" ? "#667eea" : "#f1f3f4",
+            backgroundColor: activeTab === "global" ? gameColor : "#f1f3f4",
             borderRadius: 16,
             paddingVertical: 7,
             paddingHorizontal: 18,
@@ -280,7 +459,7 @@ const LeaderboardGame = ({ style }) => {
           onPress={() => setActiveTab("global")}>
           <Text
             style={{
-              color: activeTab === "global" ? "#fff" : "#667eea",
+              color: activeTab === "global" ? "#fff" : gameColor,
               fontWeight: "bold",
               fontSize: 14,
             }}>
@@ -291,7 +470,7 @@ const LeaderboardGame = ({ style }) => {
         {user?.country && (
           <TouchableOpacity
             style={{
-              backgroundColor: activeTab === "country" ? "#667eea" : "#f1f3f4",
+              backgroundColor: activeTab === "country" ? gameColor : "#f1f3f4",
               borderRadius: 16,
               paddingVertical: 7,
               paddingHorizontal: 18,
@@ -300,7 +479,7 @@ const LeaderboardGame = ({ style }) => {
             onPress={() => setActiveTab("country")}>
             <Text
               style={{
-                color: activeTab === "country" ? "#fff" : "#667eea",
+                color: activeTab === "country" ? "#fff" : gameColor,
                 fontWeight: "bold",
                 fontSize: 14,
               }}>
@@ -332,35 +511,27 @@ const LeaderboardGame = ({ style }) => {
                 selectedCountry
               )}`}
         </Text>
-        {/* Rang de l'utilisateur connecté */}
-        {userRank && (
-          <Text
-            style={{
-              marginTop: 8,
-              color: "#667eea",
-              fontWeight: "bold",
-            }}>
-            Ton rang : #{userRank.rank}
-          </Text>
-        )}
       </View>
-
-      {/* Position de l'utilisateur */}
-      {renderUserRank()}
 
       {/* Liste du classement */}
       {loading ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size='large' color='#007AFF' />
+          <ActivityIndicator size='large' color={gameColor} />
           <Text style={styles.loadingText}>Chargement du classement...</Text>
         </View>
       ) : leaderboard.length > 0 ? (
         <FlatList
+          ref={flatListRef}
           data={leaderboard}
           renderItem={renderPlayer}
           keyExtractor={(item) => item.userId}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.listContainer}
+          onScrollToIndexFailed={(info) => {
+            console.log("Scroll to index failed:", info);
+            // Fallback: scroll vers le haut
+            flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
+          }}
         />
       ) : (
         <View style={styles.emptyContainer}>
@@ -409,7 +580,7 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   currentUserItem: {
-    backgroundColor: "#667eea",
+    backgroundColor: "#667eea", // Sera remplacé dynamiquement
   },
   rankContainer: {
     width: 40,
@@ -467,7 +638,7 @@ const styles = StyleSheet.create({
   scoreText: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#667eea",
+    color: "#667eea", // Sera remplacé dynamiquement
   },
   scoreLabel: {
     fontSize: 12,
