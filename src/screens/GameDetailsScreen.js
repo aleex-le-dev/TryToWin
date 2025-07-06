@@ -102,29 +102,53 @@ const GameDetailsScreen = ({ route, navigation }) => {
 
             // Charger le classement
             const leaderboard = await getLeaderboard(gameId, 51, user);
-            const processedLeaderboard = leaderboard.map((item, index) => ({
-              id: item.userId,
-              username: item.isCurrentUser
-                ? userUsername
-                : item.username || `Joueur ${item.userId.slice(0, 6)}`,
-              rank: item.rank,
-              score: item.totalPoints || 0,
-              winRate: item.winRate || 0,
-              gamesPlayed: item.totalGames || 0,
-              avatar: getAvatarForRank(item.rank),
-              isCurrentUser: item.userId === user.id,
-              country: item.isCurrentUser
-                ? countries.find((c) => c.code === userCountry) || {
-                    code: "",
-                    name: "Monde",
-                    flag: "🌍",
+
+            // Récupérer les avatars des utilisateurs depuis Firestore
+            const processedLeaderboard = await Promise.all(
+              leaderboard.map(async (item, index) => {
+                let userAvatar = "👤";
+
+                // Récupérer l'avatar depuis le profil utilisateur
+                if (item.userId) {
+                  try {
+                    const userDoc = await getDoc(doc(db, "users", item.userId));
+                    if (userDoc.exists()) {
+                      const userData = userDoc.data();
+                      userAvatar = userData.photoURL || userData.avatar || "👤";
+                      console.log(
+                        `[AVATAR DEBUG] userId: ${item.userId}, photoURL: ${userData.photoURL}, finalAvatar: ${userAvatar}`
+                      );
+                    }
+                  } catch (e) {
+                    console.log("Erreur récupération avatar:", e);
                   }
-                : item.country && typeof item.country === "string"
-                ? countries.find(
-                    (c) => c.code === item.country.toUpperCase()
-                  ) || { code: "", name: "Monde", flag: "🌍" }
-                : countries[index % countries.length],
-            }));
+                }
+
+                return {
+                  id: item.userId,
+                  username: item.isCurrentUser
+                    ? userUsername
+                    : item.username || `Joueur ${item.userId.slice(0, 6)}`,
+                  rank: item.rank,
+                  score: item.totalPoints || 0,
+                  winRate: item.winRate || 0,
+                  gamesPlayed: item.totalGames || 0,
+                  avatar: userAvatar,
+                  isCurrentUser: item.userId === user.id,
+                  country: item.isCurrentUser
+                    ? countries.find((c) => c.code === userCountry) || {
+                        code: "",
+                        name: "Monde",
+                        flag: "🌍",
+                      }
+                    : item.country && typeof item.country === "string"
+                    ? countries.find(
+                        (c) => c.code === item.country.toUpperCase()
+                      ) || { code: "", name: "Monde", flag: "🌍" }
+                    : countries[index % countries.length],
+                };
+              })
+            );
             setLeaderboardData(processedLeaderboard);
             console.log(
               "📊 Nombre de joueurs dans le classement:",
@@ -193,7 +217,25 @@ const GameDetailsScreen = ({ route, navigation }) => {
         )}
       </View>
       <View style={styles.userInfo}>
-        <Text style={styles.userAvatar}>{item.avatar}</Text>
+        <View style={styles.userAvatar}>
+          {item.avatar && item.avatar.startsWith("http") ? (
+            <Image
+              source={{ uri: item.avatar }}
+              style={{
+                width: 40,
+                height: 40,
+                borderRadius: 20,
+              }}
+              resizeMode='cover'
+              defaultSource={require("../../assets/icon.png")}
+              onError={() => {
+                console.log("Erreur chargement avatar:", item.avatar);
+              }}
+            />
+          ) : (
+            <Text style={{ fontSize: 28 }}>{item.avatar || "👤"}</Text>
+          )}
+        </View>
         <View style={styles.userDetails}>
           <View style={{ flexDirection: "row", alignItems: "center" }}>
             {/* Affiche le drapeau du pays dans le classement mondial, ou 🌍 si non renseigné */}
@@ -277,6 +319,11 @@ const GameDetailsScreen = ({ route, navigation }) => {
         });
       }, 100);
     }
+  };
+
+  // Fonction pour gérer l'échec du scrollToIndex
+  const handleScrollToIndexFailed = (info) => {
+    console.log("Échec du scrollToIndex:", info);
   };
 
   return (
@@ -425,265 +472,131 @@ const GameDetailsScreen = ({ route, navigation }) => {
                         </Text>
                       </View>
                       <View style={styles.personalStatRow}>
-                        <Ionicons name='flame' size={20} color='#FF5722' />
+                        <Ionicons name='flash' size={20} color='#FF9800' />
                         <Text style={styles.personalStatLabel}>
                           Série actuelle
                         </Text>
                         <Text style={styles.personalStatValue}>
-                          {userStats.currentStreak} victoire
-                          {userStats.currentStreak > 1 ? "s" : ""}
-                        </Text>
-                      </View>
-                      <View style={styles.personalStatRow}>
-                        <Ionicons
-                          name='game-controller'
-                          size={20}
-                          color='#9C27B0'
-                        />
-                        <Text style={styles.personalStatLabel}>Points</Text>
-                        <Text style={styles.personalStatValue}>
-                          {userStats.totalPoints} points
-                        </Text>
-                      </View>
-                      <View style={styles.personalStatRow}>
-                        <Ionicons
-                          name='time-outline'
-                          size={20}
-                          color='#607D8B'
-                        />
-                        <Text style={styles.personalStatLabel}>
-                          Durée de jeu
-                        </Text>
-                        <Text style={styles.personalStatValue}>
-                          {userStats.totalDuration
-                            ? `${Math.floor(userStats.totalDuration / 60)}:${(
-                                userStats.totalDuration % 60
-                              )
-                                .toString()
-                                .padStart(2, "0")}`
-                            : "0:00"}
+                          {userStats.currentStreak} victoires
                         </Text>
                       </View>
                     </View>
                   )}
                 </View>
+
+                {/* Conseils et astuces */}
+                <View style={styles.section}>
+                  <Text style={styles.sectionTitle}>Conseils</Text>
+                  <View style={styles.tipsContainer}>
+                    <View style={styles.tipItem}>
+                      <Ionicons
+                        name='bulb'
+                        size={20}
+                        color={game.color}
+                        style={{ marginTop: 2 }}
+                      />
+                      <Text style={styles.tipText}>
+                        Pratiquez régulièrement pour améliorer votre temps de
+                        réaction
+                      </Text>
+                    </View>
+                    <View style={styles.tipItem}>
+                      <Ionicons
+                        name='trending-up'
+                        size={20}
+                        color={game.color}
+                        style={{ marginTop: 2 }}
+                      />
+                      <Text style={styles.tipText}>
+                        Analysez vos parties pour identifier vos points
+                        d'amélioration
+                      </Text>
+                    </View>
+                    <View style={styles.tipItem}>
+                      <Ionicons
+                        name='trophy'
+                        size={20}
+                        color={game.color}
+                        style={{ marginTop: 2 }}
+                      />
+                      <Text style={styles.tipText}>
+                        Battez vos records personnels pour grimper dans le
+                        classement
+                      </Text>
+                    </View>
+                  </View>
+                </View>
               </View>
             </ScrollView>
           ) : (
             <View style={styles.leaderboardContent}>
-              {/* En-tête du classement */}
-              <View
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "center",
-                  marginBottom: 12,
-                  gap: 10,
-                }}>
+              <View style={styles.leaderboardHeader}>
+                <Text style={styles.leaderboardTitle}>
+                  Classement {game.title}
+                </Text>
+                <Text style={styles.leaderboardSubtitle}>
+                  {userRank ? `Votre position : #${userRank}` : "Non classé"}
+                </Text>
+              </View>
+
+              {/* Onglets de classement */}
+              <View style={styles.leaderboardSwitchRow}>
                 <TouchableOpacity
-                  style={{
-                    backgroundColor:
-                      leaderboardType === "global" ? "#667eea" : "#f1f3f4",
-                    borderRadius: 16,
-                    paddingVertical: 7,
-                    paddingHorizontal: 18,
-                    marginHorizontal: 2,
-                  }}
-                  onPress={() => {
-                    setLeaderboardType("global");
-                    setTimeout(scrollToUserInWorld, 400);
-                  }}>
+                  style={[
+                    styles.leaderboardSwitchBtn,
+                    leaderboardType === "global" &&
+                      styles.leaderboardSwitchActive,
+                  ]}
+                  onPress={() => setLeaderboardType("global")}>
                   <Text
-                    style={{
-                      color: leaderboardType === "global" ? "#fff" : "#667eea",
-                      fontWeight: "bold",
-                      fontSize: 15,
-                    }}>
+                    style={[
+                      styles.leaderboardSwitchText,
+                      leaderboardType === "global" &&
+                        styles.leaderboardSwitchTextActive,
+                    ]}>
                     Mondial
                   </Text>
                 </TouchableOpacity>
                 {userCountry && (
                   <TouchableOpacity
-                    style={{
-                      backgroundColor:
-                        leaderboardType === "country" ? "#667eea" : "#f1f3f4",
-                      borderRadius: 16,
-                      paddingVertical: 7,
-                      paddingHorizontal: 18,
-                      marginHorizontal: 2,
-                    }}
+                    style={[
+                      styles.leaderboardSwitchBtn,
+                      leaderboardType === "country" &&
+                        styles.leaderboardSwitchActive,
+                    ]}
                     onPress={() => {
                       setLeaderboardType("country");
                       setTimeout(scrollToUserInCountry, 400);
                     }}>
                     <Text
-                      style={{
-                        color:
-                          leaderboardType === "country" ? "#fff" : "#667eea",
-                        fontWeight: "bold",
-                        fontSize: 15,
-                      }}>
-                      {(countries.find((c) => c.code === userCountry)?.flag ||
-                        "🌍") +
-                        " " +
-                        (countries.find((c) => c.code === userCountry)?.name ||
-                          userCountry)}
+                      style={[
+                        styles.leaderboardSwitchText,
+                        leaderboardType === "country" &&
+                          styles.leaderboardSwitchTextActive,
+                      ]}>
+                      {countries.find((c) => c.code === userCountry)?.flag ||
+                        "🌍"}{" "}
+                      {countries.find((c) => c.code === userCountry)?.name ||
+                        userCountry}
                     </Text>
                   </TouchableOpacity>
                 )}
               </View>
-              <View style={{ alignItems: "center", marginBottom: 20 }}>
-                <Text
-                  style={{
-                    fontSize: 24,
-                    fontWeight: "bold",
-                    color: "#333",
-                    marginBottom: 5,
-                  }}>
-                  {leaderboardType === "global"
-                    ? `Classement ${game.title} (Mondial)`
-                    : `Classement ${game.title} - ${
-                        userCountry
-                          ? (countries.find((c) => c.code === userCountry)
-                              ?.flag || "🌍") +
-                            " " +
-                            (countries.find((c) => c.code === userCountry)
-                              ?.name || userCountry)
-                          : null
-                      }`}
-                </Text>
-                <Text style={{ fontSize: 14, color: "#6c757d" }}>
-                  {leaderboardType === "global"
-                    ? `Top des meilleurs joueurs tous pays`
-                    : userCountry
-                    ? (countries.find((c) => c.code === userCountry)?.flag ||
-                        "🌍") +
-                      " " +
-                      (countries.find((c) => c.code === userCountry)?.name ||
-                        userCountry)
-                    : null}
-                </Text>
-                {/* Rang de l'utilisateur connecté */}
-                {userRank && (
-                  <Text
-                    style={{
-                      marginTop: 8,
-                      color: "#667eea",
-                      fontWeight: "bold",
-                    }}>
-                    Ton rang : #{userRank}
-                  </Text>
-                )}
+
+              {/* Liste du classement */}
+              <View style={styles.leaderboardList}>
+                <FlatList
+                  ref={flatListRef}
+                  data={filteredLeaderboardData}
+                  renderItem={renderLeaderboardItem}
+                  keyExtractor={(item) =>
+                    item.userId || item.id || `player_${item.rank}`
+                  }
+                  showsVerticalScrollIndicator={false}
+                  contentContainerStyle={{ paddingBottom: 20 }}
+                  onScrollToIndexFailed={handleScrollToIndexFailed}
+                />
               </View>
-              {/* Liste du classement harmonisée */}
-              <FlatList
-                ref={flatListRef}
-                data={
-                  leaderboardType === "global"
-                    ? leaderboardData
-                    : leaderboardData.filter(
-                        (item) => item.country?.code === userCountry
-                      )
-                }
-                renderItem={({ item, index }) => {
-                  let medal = null;
-                  if (index === 0) medal = "🥇";
-                  else if (index === 1) medal = "🥈";
-                  else if (index === 2) medal = "🥉";
-                  const isCurrentUser = item.isCurrentUser;
-                  return (
-                    <Animated.View
-                      style={{
-                        opacity: 1,
-                        transform: [{ translateY: 0 }],
-                        marginBottom: 12,
-                      }}>
-                      <View
-                        style={{
-                          flexDirection: "row",
-                          alignItems: "center",
-                          backgroundColor: isCurrentUser
-                            ? "rgba(102,126,234,0.10)"
-                            : "#fff",
-                          borderRadius: 18,
-                          paddingVertical: 12,
-                          paddingHorizontal: 16,
-                          shadowColor: isCurrentUser ? "#667eea" : "#000",
-                          shadowOffset: { width: 0, height: 2 },
-                          shadowOpacity: isCurrentUser ? 0.18 : 0.08,
-                          shadowRadius: isCurrentUser ? 8 : 3,
-                          elevation: isCurrentUser ? 7 : 3,
-                          borderWidth: isCurrentUser ? 2 : 0,
-                          borderColor: isCurrentUser
-                            ? "#667eea"
-                            : "transparent",
-                        }}>
-                        <Text
-                          style={{
-                            width: 48,
-                            fontWeight: "bold",
-                            color:
-                              index === 0
-                                ? "#FFD700"
-                                : index === 1
-                                ? "#C0C0C0"
-                                : index === 2
-                                ? "#CD7F32"
-                                : "#23272a",
-                            fontSize: 18,
-                            textAlign: "center",
-                          }}>
-                          {medal ? `${medal} #${index + 1}` : `#${index + 1}`}
-                        </Text>
-                        <View
-                          style={{
-                            width: 44,
-                            height: 44,
-                            borderRadius: 22,
-                            backgroundColor: "#f7faff",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            marginHorizontal: 8,
-                            borderWidth: 2,
-                            borderColor: isCurrentUser ? "#667eea" : "#e0e3ea",
-                          }}>
-                          <Text style={{ fontSize: 28 }}>{item.avatar}</Text>
-                        </View>
-                        <View style={{ flex: 1 }}>
-                          <Text
-                            style={{
-                              fontWeight: "bold",
-                              fontSize: 16,
-                              color: isCurrentUser ? "#667eea" : "#23272a",
-                            }}>
-                            {item.username}
-                          </Text>
-                          <Text style={{ fontSize: 12, color: "#6c757d" }}>
-                            {item.country?.flag || "🌍"}
-                          </Text>
-                        </View>
-                        <View style={{ alignItems: "flex-end" }}>
-                          <Text
-                            style={{
-                              fontWeight: "bold",
-                              fontSize: 16,
-                              color: isCurrentUser ? "#667eea" : "#23272a",
-                            }}>
-                            {item.score}
-                          </Text>
-                          <Text style={{ fontSize: 12, color: "#6c757d" }}>
-                            points
-                          </Text>
-                        </View>
-                      </View>
-                    </Animated.View>
-                  );
-                }}
-                keyExtractor={(item) =>
-                  item.userId || item.id || `player_${item.rank}`
-                }
-                showsVerticalScrollIndicator={true}
-                contentContainerStyle={{ paddingBottom: 200 }}
-              />
             </View>
           )}
         </View>
@@ -769,20 +682,25 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   playButtonContainer: {
-    paddingHorizontal: 20,
-    marginTop: -20,
-    marginBottom: 20,
+    alignItems: "center",
+    marginVertical: 20,
   },
   playButton: {
     borderRadius: 25,
-    overflow: "hidden",
+    paddingVertical: 15,
+    paddingHorizontal: 40,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 4.65,
+    elevation: 8,
   },
   playButtonGradientFake: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 18,
-    paddingHorizontal: 30,
   },
   playButtonText: {
     color: "#fff",
@@ -792,33 +710,38 @@ const styles = StyleSheet.create({
   },
   tabsContainer: {
     flexDirection: "row",
-    backgroundColor: "#fff",
-    borderBottomWidth: 1,
-    borderBottomColor: "#e9ecef",
+    justifyContent: "center",
+    marginBottom: 20,
+    paddingHorizontal: 20,
   },
   tab: {
-    flex: 1,
-    paddingVertical: 15,
-    alignItems: "center",
-  },
-  activeTab: {
-    borderBottomWidth: 2,
-    borderBottomColor: "#667eea",
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    marginHorizontal: 5,
+    borderRadius: 20,
+    backgroundColor: "#f8f9fa",
   },
   tabText: {
     fontSize: 16,
     color: "#6c757d",
     fontWeight: "500",
   },
-  activeTabText: {
-    color: "#667eea",
-    fontWeight: "bold",
-  },
   statsContent: {
     padding: 20,
   },
   section: {
+    backgroundColor: "#fff",
+    borderRadius: 15,
+    padding: 20,
     marginBottom: 20,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
   sectionTitle: {
     fontSize: 20,
@@ -827,48 +750,26 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   personalStats: {
-    backgroundColor: "#fff",
-    borderRadius: 15,
-    padding: 20,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
+    gap: 15,
   },
   personalStatRow: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "#f1f3f4",
+    justifyContent: "space-between",
   },
   personalStatLabel: {
     flex: 1,
     fontSize: 16,
     color: "#333",
-    marginLeft: 15,
+    marginLeft: 10,
   },
   personalStatValue: {
     fontSize: 16,
-    fontWeight: "600",
-    color: "#000",
+    fontWeight: "bold",
+    color: "#667eea",
   },
-  tipsList: {
-    backgroundColor: "#fff",
-    borderRadius: 15,
-    padding: 20,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
+  tipsContainer: {
+    gap: 15,
   },
   tipItem: {
     flexDirection: "row",
@@ -1057,6 +958,69 @@ const styles = StyleSheet.create({
   },
   scopeButtonTextActive: {
     color: "#fff",
+  },
+  leaderboardSwitchRow: {
+    flexDirection: "row",
+    justifyContent: "center",
+    marginBottom: 20,
+    gap: 10,
+  },
+  leaderboardSwitchBtn: {
+    paddingHorizontal: 18,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: "#f8f9fa",
+    borderWidth: 1,
+    borderColor: "#e9ecef",
+  },
+  leaderboardSwitchActive: {
+    backgroundColor: "#667eea",
+    borderColor: "#667eea",
+  },
+  leaderboardSwitchText: {
+    fontSize: 14,
+    color: "#6c757d",
+    fontWeight: "bold",
+  },
+  leaderboardSwitchTextActive: {
+    color: "#fff",
+  },
+  statCard: {
+    backgroundColor: "#fff",
+    borderRadius: 15,
+    padding: 20,
+    marginBottom: 15,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  statIcon: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 10,
+  },
+  statValue: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "#333",
+    marginBottom: 5,
+  },
+  statLabel: {
+    fontSize: 14,
+    color: "#6c757d",
+  },
+  statSubtitle: {
+    fontSize: 12,
+    color: "#999",
+    marginTop: 5,
   },
 });
 

@@ -33,7 +33,7 @@ import AvatarLibrary from "../components/AvatarLibrary";
 import ProfileHeaderAvatar from "../components/ProfileHeaderAvatar";
 import ProfileTab from "../components/ProfileTab";
 import StatsTab from "../components/StatsTab";
-import GlobalLeaderboard from "../components/GlobalLeaderboard";
+import LeaderboardProfil from "../components/LeaderboardProfil";
 import GameStatsTab from "../components/GameStatsTab";
 import WheelColorPicker from "react-native-wheel-color-picker";
 import SettingsScreen from "./SettingsScreen";
@@ -1058,7 +1058,7 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
             onLogout={handleLogout}
           />
         ) : activeTab === "leaderboard" ? (
-          <GlobalLeaderboard />
+          <LeaderboardProfil />
         ) : (
           <GameStatsTab
             userStats={userStats}

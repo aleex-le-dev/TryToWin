@@ -6,6 +6,7 @@ import {
   FlatList,
   TouchableOpacity,
   ActivityIndicator,
+  Image,
 } from "react-native";
 import { useAuth } from "../hooks/useAuth";
 import {
@@ -32,10 +33,10 @@ const FALLBACK_COUNTRIES = [
 ];
 
 /**
- * Composant de classement global réutilisable
+ * Composant de classement pour les jeux (GameDetailsScreen)
  * Style identique à GameDetailsScreen
  */
-const GlobalLeaderboard = ({ style }) => {
+const LeaderboardGame = ({ style }) => {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("global");
   const [leaderboard, setLeaderboard] = useState([]);
@@ -95,7 +96,7 @@ const GlobalLeaderboard = ({ style }) => {
             return {
               ...entry,
               username: userData.username || "",
-              avatar: userData.avatar || "👤",
+              avatar: userData.photoURL || userData.avatar || userData.avatarUrl || "👤",
               country: userData.country ? userData.country.toUpperCase() : null,
             };
           })
@@ -209,8 +210,25 @@ const GlobalLeaderboard = ({ style }) => {
             marginHorizontal: 8,
             borderWidth: 2,
             borderColor: isCurrentUser ? "#667eea" : "#e0e3ea",
+            overflow: "hidden",
           }}>
-          <Text style={{ fontSize: 28 }}>{item.avatar || "👤"}</Text>
+          {item.avatar && item.avatar.startsWith("http") ? (
+            <Image
+              source={{ uri: item.avatar }}
+              style={{
+                width: 40,
+                height: 40,
+                borderRadius: 20,
+              }}
+              resizeMode='cover'
+              defaultSource={require("../../assets/icon.png")}
+              onError={() => {
+                console.log("Erreur chargement avatar:", item.avatar);
+              }}
+            />
+          ) : (
+            <Text style={{ fontSize: 28 }}>{item.avatar || "👤"}</Text>
+          )}
         </View>
 
         <View style={{ flex: 1 }}>
@@ -405,8 +423,8 @@ const styles = StyleSheet.create({
   },
   userRankText: {
     fontSize: 16,
-    fontWeight: "600",
-    color: "#007AFF",
+    fontWeight: "bold",
+    color: "#667eea",
     textAlign: "center",
   },
   loadingContainer: {
@@ -431,7 +449,7 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 18,
-    fontWeight: "600",
+    fontWeight: "bold",
     color: "#666",
     textAlign: "center",
     marginBottom: 8,
@@ -449,4 +467,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default GlobalLeaderboard;
+export default LeaderboardGame;
