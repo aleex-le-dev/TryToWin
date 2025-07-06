@@ -96,7 +96,11 @@ const LeaderboardGame = ({ style }) => {
             return {
               ...entry,
               username: userData.username || "",
-              avatar: userData.photoURL || userData.avatar || userData.avatarUrl || "👤",
+              avatar:
+                userData.photoURL ||
+                userData.avatar ||
+                userData.avatarUrl ||
+                "👤",
               country: userData.country ? userData.country.toUpperCase() : null,
             };
           })
@@ -107,8 +111,38 @@ const LeaderboardGame = ({ style }) => {
         // Classement par pays
         const countryCode = selectedCountry;
         const globalData = await getGlobalLeaderboard(1000); // Récupérer plus de données pour filtrer
-        data = globalData
+
+        // Récupérer les profils utilisateurs pour obtenir les pays
+        const enrichedData = await Promise.all(
+          globalData.map(async (entry) => {
+            let userData = {};
+            try {
+              const userDoc = await getDoc(doc(db, "users", entry.userId));
+              userData = userDoc.exists() ? userDoc.data() : {};
+            } catch (e) {}
+
+            return {
+              ...entry,
+              username:
+                userData.username || `Joueur ${entry.userId.slice(0, 6)}`,
+              avatar:
+                userData.photoURL ||
+                userData.avatar ||
+                userData.avatarUrl ||
+                "👤",
+              country: userData.country ? userData.country.toUpperCase() : null,
+            };
+          })
+        );
+
+        // Filtrer par pays et recalculer les rangs
+        data = enrichedData
           .filter((player) => player.country === countryCode)
+          .sort((a, b) => b.totalPoints - a.totalPoints)
+          .map((player, index) => ({
+            ...player,
+            rank: index + 1, // Recalculer le rang pour le classement par pays
+          }))
           .slice(0, 50);
 
         // Trouver le rang de l'utilisateur dans ce pays

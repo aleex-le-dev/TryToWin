@@ -23,6 +23,7 @@ import {
 
 import { generateLeaderboard } from "../utils/leaderboardUtils";
 import Toast from "react-native-toast-message";
+import { DEMO_PLAYERS } from "../constants/demoLeaderboard";
 
 /**
  * Enregistre le résultat d'une partie pour un joueur et un jeu.
@@ -192,9 +193,9 @@ export async function getLeaderboard(game, topN = 10, currentUser = null) {
     const userProfile = userProfileSnap.exists() ? userProfileSnap.data() : {};
     const userCountry = userProfile.country || "FR"; // Pays par défaut
 
-    // Générer le classement avec la logique utilitaire (sans données de démo)
+    // Générer le classement avec les joueurs de démo
     const leaderboard = generateLeaderboard(
-      [],
+      DEMO_PLAYERS,
       currentUser,
       userStats,
       userCountry
@@ -321,9 +322,9 @@ export async function getUserRankInLeaderboard(userId, game) {
     const userProfileSnap = await getDoc(userProfileRef);
     const userProfile = userProfileSnap.exists() ? userProfileSnap.data() : {};
     const userCountry = userProfile.country || "FR";
-    // Générer le leaderboard avec la logique utilitaire (sans données de démo)
+    // Générer le leaderboard avec les joueurs de démo
     const leaderboard = generateLeaderboard(
-      [],
+      DEMO_PLAYERS,
       {
         id: userId,
         displayName: userProfile.username || userProfile.displayName || "Vous",
@@ -372,4 +373,67 @@ export async function resetAllUserStreaks(userId) {
     setDoc(doc.ref, { currentStreak: 0 }, { merge: true })
   );
   await Promise.all(resetPromises);
+}
+
+/**
+ * Récupère la position (rang) d'un utilisateur dans le classement global (tous jeux confondus).
+ * @param {string} userId
+ * @returns {Promise<{rank:number, total:number}>}
+ */
+export async function getUserGlobalRank(userId) {
+  try {
+    // Récupérer tous les utilisateurs et leurs points totaux
+    const usersSnap = await getDocs(collection(db, "users"));
+    const leaderboard = [];
+
+    for (const userDoc of usersSnap.docs) {
+      const currentUserId = userDoc.id;
+      const scoresSnap = await getDocs(
+        collection(db, "users", currentUserId, "scores")
+      );
+      let totalPoints = 0;
+
+      scoresSnap.forEach((scoreDoc) => {
+        const data = scoreDoc.data();
+        totalPoints += data.totalPoints || 0;
+      });
+
+      leaderboard.push({
+        userId: currentUserId,
+        totalPoints,
+      });
+    }
+
+    // Trier par points décroissants
+    leaderboard.sort((a, b) => b.totalPoints - a.totalPoints);
+
+    // Trouver le rang de l'utilisateur
+    const userIndex = leaderboard.findIndex((entry) => entry.userId === userId);
+
+    if (userIndex === -1) {
+      return { rank: null, total: leaderboard.length };
+    }
+
+    // Gérer les égalités de rang (même rang pour même score)
+    let rank = 1;
+    for (let i = 0; i < userIndex; i++) {
+      if (leaderboard[i].totalPoints > leaderboard[i + 1].totalPoints) {
+        rank = i + 2;
+      }
+    }
+
+    console.log(
+      "🏆 Rang global calculé:",
+      rank,
+      "/",
+      leaderboard.length,
+      "pour l'utilisateur",
+      userId
+    );
+
+    return { rank, total: leaderboard.length };
+  } catch (error) {
+    console.log("❌ Erreur lors du calcul du rang global:", error);
+    return { rank: null, total: 0 };
+  }
 }

@@ -33,15 +33,13 @@ import AvatarLibrary from "../components/AvatarLibrary";
 import ProfileHeaderAvatar from "../components/ProfileHeaderAvatar";
 import ProfileTab from "../components/ProfileTab";
 import StatsTab from "../components/StatsTab";
-import LeaderboardProfil from "../components/LeaderboardProfil";
+
 import GameStatsTab from "../components/GameStatsTab";
 import WheelColorPicker from "react-native-wheel-color-picker";
 import SettingsScreen from "./SettingsScreen";
 import {
   getUserGameScore,
   getUserAllGameStats,
-  getLeaderboard,
-  getGlobalLeaderboard,
   recordGameResult,
   initializeLeaderboardsForUser,
 } from "../services/scoreService";
@@ -235,7 +233,6 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
   const [bannerColor, setBannerColor] = useState("#fff");
   const [bannerModalVisible, setBannerModalVisible] = useState(false);
   const [showColorPicker, setShowColorPicker] = useState(false);
-  const [leaderboardType, setLeaderboardType] = useState("global");
   const [profile, setProfile] = useState(null);
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [editData, setEditData] = useState({
@@ -256,9 +253,6 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
     useState(false);
   const [profileLocal, setProfileLocal] = useState(null);
   const [userScores, setUserScores] = useState({});
-  const [top10Global, setTop10Global] = useState([]);
-  const [selectedGame, setSelectedGame] = useState("TicTacToe");
-  const [userRank, setUserRank] = useState(null);
   const [userStatsGlobal, setUserStatsGlobal] = useState({
     totalGames: 0,
     wins: 0,
@@ -396,12 +390,10 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
       fetchProfile();
       // Récupération des scores Firestore réels pour chaque jeu
       fetchScores();
-      // Récupération du vrai classement général (tous jeux)
-      fetchLeaderboard();
       // Calcul des stats globales et par jeu
       fetchStats();
     }
-  }, [user, loading, leaderboardType, selectedCountry]);
+  }, [user, loading]);
 
   // Fonction fetchScores déplacée en dehors du useEffect pour être accessible
   const fetchScores = async () => {
@@ -426,53 +418,12 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
     setUserScores(scores);
   };
 
-  // Fonction fetchLeaderboard déplacée en dehors du useEffect pour être accessible
-  const fetchLeaderboard = async () => {
-    if (!user?.id) return;
-    const leaderboard = await getGlobalLeaderboard(100);
-    // Récupère les profils utilisateurs pour enrichir chaque entrée
-    const enriched = await Promise.all(
-      leaderboard.map(async (entry) => {
-        const userDoc = await getDoc(doc(db, "users", entry.userId));
-        const userData = userDoc.exists() ? userDoc.data() : {};
-        return {
-          ...entry,
-          username: userData.username || entry.userId,
-          avatar: userData.avatar || "👤",
-          // Log pour debug pays
-          // eslint-disable-next-line no-console
-          ...(console.log(
-            `[LEADERBOARD] userId: ${entry.userId}, userData.country: ${userData.country}, mapped:`,
-            countries.find(
-              (c) => c.code === (userData.country || "").toUpperCase()
-            )
-          ),
-          {}),
-          country:
-            countries.find(
-              (c) => c.code === (userData.country || "").toUpperCase()
-            ) || countries[0],
-        };
-      })
-    );
-    // Filtrage pays si besoin
-    let filtered = enriched;
-    if (leaderboardType === "country") {
-      filtered = enriched.filter((e) => e.country === selectedCountry.code);
-    }
-    // Calcul du rang de l'utilisateur connecté
-    const userIndex = enriched.findIndex((e) => e.userId === user.id);
-    setUserRank(userIndex >= 0 ? userIndex + 1 : null);
-    setTop10Global(filtered.slice(0, 10));
-  };
-
   // Rafraîchissement automatique des stats quand on revient sur l'écran
   useFocusEffect(
     React.useCallback(() => {
       if (user?.id) {
         fetchStats();
         fetchScores();
-        fetchLeaderboard();
       }
     }, [user?.id])
   );
@@ -595,77 +546,6 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
       setProfile((prev) => ({ ...prev, country: countryCode }));
     }
   };
-
-  const renderLeaderboardItem = ({ item, index }) => (
-    <View
-      style={[
-        styles.leaderboardItem,
-        item.isCurrentUser && styles.currentUserItem,
-      ]}>
-      <View style={styles.rankContainer}>
-        <Text style={styles.rankText}>#{item.rank}</Text>
-        {item.rank <= 3 && (
-          <Ionicons
-            name='trophy'
-            size={16}
-            color={
-              item.rank === 1
-                ? "#FFD700"
-                : item.rank === 2
-                ? "#C0C0C0"
-                : "#CD7F32"
-            }
-          />
-        )}
-      </View>
-
-      <View style={styles.userInfo}>
-        <Text style={styles.userAvatar}>{item.avatar}</Text>
-        <View style={styles.userDetails}>
-          <View style={{ flexDirection: "row", alignItems: "center" }}>
-            {/* Affiche le drapeau du pays dans le classement mondial */}
-            {leaderboardType === "global" && item.country && (
-              <>
-                <Text style={{ fontSize: 18, marginRight: 5 }}>
-                  {/* Gestion robuste du drapeau : code pays ou objet pays, forçage en majuscules */}
-                  {typeof item.country === "string"
-                    ? countries.find(
-                        (c) => c.code === item.country.toUpperCase()
-                      )?.flag || "🌍"
-                    : item.country?.flag || "🌍"}
-                </Text>
-                {/* Debug temporaire : affiche la valeur brute du code pays */}
-                <Text style={{ fontSize: 12, color: "#aaa" }}>
-                  {JSON.stringify(item.country)}
-                </Text>
-              </>
-            )}
-            <Text
-              style={[
-                styles.username,
-                item.isCurrentUser && styles.currentUsername,
-              ]}>
-              {item.username}
-            </Text>
-          </View>
-          <Text style={styles.userStats}>
-            {item.gamesPlayed} parties • {item.score} pts
-          </Text>
-        </View>
-      </View>
-
-      <View style={styles.scoreContainer}>
-        <Text
-          style={[styles.scoreText, item.isCurrentUser && { color: "#fff" }]}>
-          {item.score}
-        </Text>
-        <Text
-          style={[styles.scoreLabel, item.isCurrentUser && { color: "#fff" }]}>
-          points
-        </Text>
-      </View>
-    </View>
-  );
 
   const renderStatCard = (icon, value, label, color) => (
     <View style={[styles.statCard, { backgroundColor: color + "22" }]}>
@@ -1020,17 +900,7 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
             Profil
           </Text>
         </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.tab, activeTab === "leaderboard" && styles.activeTab]}
-          onPress={() => setActiveTab("leaderboard")}>
-          <Text
-            style={[
-              styles.tabText,
-              activeTab === "leaderboard" && styles.activeTabText,
-            ]}>
-            Classement
-          </Text>
-        </TouchableOpacity>
+
         <TouchableOpacity
           style={[styles.tab, activeTab === "stat" && styles.activeTab]}
           onPress={() => setActiveTab("stat")}>
@@ -1057,8 +927,6 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
             openEditModal={openEditModal}
             onLogout={handleLogout}
           />
-        ) : activeTab === "leaderboard" ? (
-          <LeaderboardProfil />
         ) : (
           <GameStatsTab
             userStats={userStats}
@@ -1651,102 +1519,7 @@ const styles = StyleSheet.create({
     color: "#333",
     marginBottom: 5,
   },
-  leaderboardSubtitle: {
-    fontSize: 14,
-    color: "#6c757d",
-  },
-  leaderboardList: {
-    marginBottom: 20,
-  },
-  leaderboardItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#fff",
-    borderRadius: 15,
-    padding: 15,
-    marginBottom: 10,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  currentUserItem: {
-    backgroundColor: "#667eea",
-  },
-  rankContainer: {
-    width: 40,
-    alignItems: "center",
-    marginRight: 15,
-  },
-  rankText: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#333",
-  },
-  userInfo: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  userAvatar: {
-    fontSize: 24,
-    marginRight: 10,
-  },
-  userDetails: {
-    flex: 1,
-  },
-  username: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#333",
-    marginBottom: 2,
-  },
-  currentUsername: {
-    color: "#fff",
-  },
-  userStats: {
-    fontSize: 12,
-    color: "#6c757d",
-  },
-  scoreContainer: {
-    alignItems: "center",
-  },
-  scoreText: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#667eea",
-  },
-  scoreLabel: {
-    fontSize: 10,
-    color: "#6c757d",
-  },
-  leaderboardInfo: {
-    backgroundColor: "#fff",
-    borderRadius: 15,
-    padding: 20,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  infoItem: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  infoText: {
-    fontSize: 14,
-    color: "#6c757d",
-    marginLeft: 10,
-    flex: 1,
-  },
+
   customProfileContent: {
     backgroundColor: "#18191c",
     flex: 1,
