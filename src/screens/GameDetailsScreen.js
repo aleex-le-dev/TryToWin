@@ -60,6 +60,8 @@ const GameDetailsScreen = ({ route, navigation }) => {
   const flatListRef = useRef(null);
   const [userCountry, setUserCountry] = useState(null);
   const prevTab = useRef(activeTab);
+  const [pendingScrollToUserCountry, setPendingScrollToUserCountry] =
+    useState(false);
 
   // Utiliser l'identifiant technique Firestore du jeu
   const gameId = game.id || game.title;
@@ -191,7 +193,7 @@ const GameDetailsScreen = ({ route, navigation }) => {
     }, 1500);
   };
 
-  const renderLeaderboardItem = ({ item }) => (
+  const renderLeaderboardItem = ({ item, index }) => (
     <View
       style={[
         styles.leaderboardItem,
@@ -200,18 +202,14 @@ const GameDetailsScreen = ({ route, navigation }) => {
       <View style={styles.rankContainer}>
         <Text
           style={[styles.rankText, item.isCurrentUser && { color: "#fff" }]}>
-          #{item.rank}
+          #{index + 1}
         </Text>
-        {item.rank <= 3 && (
+        {index < 3 && (
           <Ionicons
             name='trophy'
             size={16}
             color={
-              item.rank === 1
-                ? "#FFD700"
-                : item.rank === 2
-                ? "#C0C0C0"
-                : "#CD7F32"
+              index === 0 ? "#FFD700" : index === 1 ? "#C0C0C0" : "#CD7F32"
             }
           />
         )}
@@ -290,10 +288,26 @@ const GameDetailsScreen = ({ route, navigation }) => {
       ? leaderboardData
       : leaderboardData.filter((item) => item.country?.code === userCountry);
 
+  // Calculer le rang de l'utilisateur dans le classement filtré
+  const getUserRankInFilteredData = () => {
+    if (!user?.id) return null;
+
+    if (leaderboardType === "global") {
+      return userRank;
+    } else {
+      // Pour le classement par pays, calculer le rang dans les données filtrées
+      const userIndex = filteredLeaderboardData.findIndex(
+        (item) => item.isCurrentUser
+      );
+      return userIndex !== -1 ? userIndex + 1 : null;
+    }
+  };
+
+  const currentUserRank = getUserRankInFilteredData();
+
   // Fonction pour scroller vers l'utilisateur dans Monde
   const scrollToUserInWorld = () => {
-    const data = leaderboardData;
-    const userIndex = data.findIndex((item) => item.isCurrentUser);
+    const userIndex = leaderboardData.findIndex((item) => item.isCurrentUser);
     if (userIndex !== -1 && flatListRef.current) {
       setTimeout(() => {
         flatListRef.current.scrollToIndex({
@@ -306,10 +320,9 @@ const GameDetailsScreen = ({ route, navigation }) => {
   };
   // Fonction pour scroller vers l'utilisateur dans Pays
   const scrollToUserInCountry = () => {
-    const data = leaderboardData.filter(
-      (item) => item.country?.code === userCountry
+    const userIndex = filteredLeaderboardData.findIndex(
+      (item) => item.isCurrentUser
     );
-    const userIndex = data.findIndex((item) => item.isCurrentUser);
     if (userIndex !== -1 && flatListRef.current) {
       setTimeout(() => {
         flatListRef.current.scrollToIndex({
@@ -317,13 +330,52 @@ const GameDetailsScreen = ({ route, navigation }) => {
           animated: true,
           viewPosition: 0.5,
         });
-      }, 100);
+      }, 500);
     }
   };
 
   // Fonction pour gérer l'échec du scrollToIndex
   const handleScrollToIndexFailed = (info) => {
-    console.log("Échec du scrollToIndex:", info);
+    // Si l'index demandé est trop grand, scroll au dernier élément
+    if (flatListRef.current && info.highestMeasuredFrameIndex >= 0) {
+      flatListRef.current.scrollToIndex({
+        index: info.highestMeasuredFrameIndex,
+        animated: true,
+        viewPosition: 0.5,
+      });
+    }
+  };
+
+  // Génère une liste avec placeholders pour centrage parfait
+  const getCenteredLeaderboardData = () => {
+    const minItemsToFill = 7; // nombre d'items pour remplir l'écran (ajustable)
+    const data = filteredLeaderboardData;
+    if (data.length >= minItemsToFill) return data;
+    const userIndex = data.findIndex((item) => item.isCurrentUser);
+    // On veut que l'utilisateur soit au centre
+    const before = Math.max(0, Math.floor(minItemsToFill / 2) - userIndex);
+    const after = Math.max(0, minItemsToFill - (data.length + before));
+    const placeholdersTop = Array.from({ length: before }, (_, i) => ({
+      placeholder: true,
+      key: `top_${i}`,
+    }));
+    const placeholdersBottom = Array.from({ length: after }, (_, i) => ({
+      placeholder: true,
+      key: `bottom_${i}`,
+    }));
+    return [...placeholdersTop, ...data, ...placeholdersBottom];
+  };
+  const centeredLeaderboardData = getCenteredLeaderboardData();
+
+  // Décalage d'index pour le scroll automatique
+  const getUserIndexWithPlaceholders = () => {
+    const userIndex = filteredLeaderboardData.findIndex(
+      (item) => item.isCurrentUser
+    );
+    const minItemsToFill = 7;
+    if (filteredLeaderboardData.length >= minItemsToFill) return userIndex;
+    const before = Math.max(0, Math.floor(minItemsToFill / 2) - userIndex);
+    return userIndex + before;
   };
 
   return (
@@ -535,7 +587,9 @@ const GameDetailsScreen = ({ route, navigation }) => {
                   Classement {game.title}
                 </Text>
                 <Text style={styles.leaderboardSubtitle}>
-                  {userRank ? `Votre position : #${userRank}` : "Non classé"}
+                  {currentUserRank
+                    ? `Votre position : #${currentUserRank}`
+                    : "Non classé"}
                 </Text>
               </View>
 
@@ -547,7 +601,10 @@ const GameDetailsScreen = ({ route, navigation }) => {
                     leaderboardType === "global" &&
                       styles.leaderboardSwitchActive,
                   ]}
-                  onPress={() => setLeaderboardType("global")}>
+                  onPress={() => {
+                    setLeaderboardType("global");
+                    setTimeout(scrollToUserInWorld, 400);
+                  }}>
                   <Text
                     style={[
                       styles.leaderboardSwitchText,
@@ -566,7 +623,7 @@ const GameDetailsScreen = ({ route, navigation }) => {
                     ]}
                     onPress={() => {
                       setLeaderboardType("country");
-                      setTimeout(scrollToUserInCountry, 400);
+                      setPendingScrollToUserCountry(true);
                     }}>
                     <Text
                       style={[
@@ -587,14 +644,37 @@ const GameDetailsScreen = ({ route, navigation }) => {
               <View style={styles.leaderboardList}>
                 <FlatList
                   ref={flatListRef}
-                  data={filteredLeaderboardData}
-                  renderItem={renderLeaderboardItem}
-                  keyExtractor={(item) =>
-                    item.userId || item.id || `player_${item.rank}`
+                  data={centeredLeaderboardData}
+                  renderItem={({ item, index }) =>
+                    item.placeholder ? (
+                      <View key={item.key} style={{ height: 40 }} />
+                    ) : (
+                      renderLeaderboardItem({ item, index })
+                    )
+                  }
+                  keyExtractor={(item, index) =>
+                    item.key ||
+                    item.userId ||
+                    item.id ||
+                    `player_${item.rank}` ||
+                    `item_${index}`
                   }
                   showsVerticalScrollIndicator={false}
                   contentContainerStyle={{ paddingBottom: 20 }}
                   onScrollToIndexFailed={handleScrollToIndexFailed}
+                  onContentSizeChange={() => {
+                    if (pendingScrollToUserCountry) {
+                      const userIndex = getUserIndexWithPlaceholders();
+                      if (userIndex !== -1 && flatListRef.current) {
+                        flatListRef.current.scrollToIndex({
+                          index: userIndex,
+                          animated: true,
+                          viewPosition: 0.5,
+                        });
+                      }
+                      setPendingScrollToUserCountry(false);
+                    }
+                  }}
                 />
               </View>
             </View>
