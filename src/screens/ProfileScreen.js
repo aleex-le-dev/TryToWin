@@ -266,12 +266,12 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
       userStatsByGame && Object.keys(userStatsByGame).length > 0
         ? Object.entries(userStatsByGame).reduce(
             (best, [game, stats]) =>
-              stats.totalPoints > (best ? userStatsByGame[best].totalPoints : 0)
+              stats.points > (best ? userStatsByGame[best].points : 0)
                 ? game
                 : best,
             null
           )
-        : "Aucun jeu",
+        : null,
     currentStreak: userStatsGlobal.streak || 0,
     totalTime: (() => {
       // Estimation : 5 minutes par partie en moyenne

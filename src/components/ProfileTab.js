@@ -220,43 +220,39 @@ const ProfileTab = ({
             <View style={{ height: 8 }} />
             {/* Affichage conditionnel emoji ou image pour le meilleur jeu */}
             {(() => {
-              const img = gamesData.find(
-                (g) => g.id === userStats.bestGame
-              )?.image;
-              if (!img)
-                return (
-                  <Text
-                    style={{
-                      fontSize: 24,
-                      fontWeight: "bold",
-                      color: "#23272a",
-                      marginBottom: 10,
-                    }}>
-                    ?
-                  </Text>
-                );
-              if (typeof img === "string") {
-                return (
-                  <Text
-                    style={{
-                      fontSize: 24,
-                      fontWeight: "bold",
-                      color: "#23272a",
-                      marginBottom: 10,
-                    }}>
-                    {img}
-                  </Text>
-                );
+              // Si l'utilisateur a des points, il a forcément un meilleur jeu
+              if (userStats.totalScore > 0 && userStats.bestGame) {
+                const gameData = gamesData.find((g) => g.id === userStats.bestGame);
+                if (gameData) {
+                  const img = gameData.image;
+                  if (typeof img === "string") {
+                    return (
+                      <Text
+                        style={{
+                          fontSize: 24,
+                          fontWeight: "bold",
+                          color: "#23272a",
+                          marginBottom: 10,
+                        }}>
+                        {img}
+                      </Text>
+                    );
+                  }
+                  return (
+                    <Image
+                      source={img}
+                      style={{ width: 32, height: 32, marginBottom: 10 }}
+                      resizeMode='contain'
+                    />
+                  );
+                }
               }
-              return (
-                <Image
-                  source={img}
-                  style={{ width: 32, height: 32, marginBottom: 10 }}
-                  resizeMode='contain'
-                />
-              );
+              // Si pas de points ou pas de meilleur jeu, ne rien afficher
+              return null;
             })()}
-            <Text style={{ fontSize: 11, color: "#6c757d" }}>Meilleur jeu</Text>
+            <Text style={{ fontSize: 11, color: "#6c757d" }}>
+              {userStats.totalScore > 0 && userStats.bestGame ? "Meilleur jeu" : ""}
+            </Text>
           </View>
 
           {/* Victoire */}

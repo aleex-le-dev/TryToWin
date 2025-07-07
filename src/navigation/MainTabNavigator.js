@@ -108,7 +108,7 @@ const MainTabNavigator = () => {
       />
       <Tab.Screen
         name='Profile'
-        children={() => <ProfileScreen key={profileTabResetKey} />}
+        children={(props) => <ProfileScreen {...props} key={profileTabResetKey} />}
         options={{
           title: "Profil",
           unmountOnBlur: true,
