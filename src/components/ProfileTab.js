@@ -123,7 +123,11 @@ const ProfileTab = ({
             zIndex: 3,
           }}>
           <ProfileHeaderAvatar
-            photoURL={profilePhoto}
+            photoURL={
+              profile?.avatar && profile.avatar.startsWith("http")
+                ? profile.avatar
+                : null
+            }
             size={100}
             displayName={profile?.username || user?.displayName}
             email={user?.email}

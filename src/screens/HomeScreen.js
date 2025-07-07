@@ -73,9 +73,9 @@ const HomeScreen = ({ navigation, resetCategoryTrigger, forceHomeReset }) => {
   // Récupération du profil utilisateur depuis Firestore
   useEffect(() => {
     const fetchProfile = async () => {
-      if (user?.uid) {
+      if (user?.id) {
         try {
-          const docRef = doc(db, "users", user.uid);
+          const docRef = doc(db, "users", user.id);
           const docSnap = await getDoc(docRef);
           if (docSnap.exists()) {
             setProfile(docSnap.data());
@@ -93,13 +93,11 @@ const HomeScreen = ({ navigation, resetCategoryTrigger, forceHomeReset }) => {
   // Récupération du total de points utilisateur
   useEffect(() => {
     const fetchPoints = async () => {
-      if (user?.uid) {
-        const stats = await getUserAllGameStats(user.uid);
-        let sum = 0;
-        Object.values(stats).forEach((s) => {
-          sum += s.totalPoints || 0;
-        });
-        setTotalPoints(sum);
+      if (user?.id) {
+        console.log("ID utilisé pour les stats:", user.id);
+        const stats = await getUserAllGameStats(user.id);
+        console.log("Stats récupérées:", stats);
+        setTotalPoints(stats.totalPoints || 0);
       }
     };
     fetchPoints();

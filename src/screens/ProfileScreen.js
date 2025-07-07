@@ -259,7 +259,7 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
     wins: 0,
     draws: 0,
     loses: 0,
-    points: 0,
+    totalPoints: 0,
     winrate: 0,
     streak: 0,
   });
@@ -268,7 +268,7 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
 
   // Calcul des vraies statistiques utilisateur basées sur les données Firestore
   const userStats = {
-    totalScore: userStatsGlobal.points || 0,
+    totalScore: userStatsGlobal.totalPoints || userStatsGlobal.totalPoints || 0,
     gamesPlayed: userStatsGlobal.totalGames || 0,
     gamesWon: userStatsGlobal.wins || 0,
     winRate: userStatsGlobal.winrate || 0,
@@ -276,7 +276,7 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
       userStatsByGame && Object.keys(userStatsByGame).length > 0
         ? Object.entries(userStatsByGame).reduce(
             (best, [game, stats]) =>
-              stats.points > (best ? userStatsByGame[best].points : 0)
+              stats.totalPoints > (best ? userStatsByGame[best].totalPoints : 0)
                 ? game
                 : best,
             null
@@ -439,7 +439,7 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
       wins = 0,
       draws = 0,
       loses = 0,
-      points = 0,
+      totalPoints = 0,
       streak = 0;
 
     for (const game of Object.keys(GAME_POINTS)) {
@@ -473,7 +473,7 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
       wins += scores[game].wins;
       draws += scores[game].draws;
       loses += scores[game].loses;
-      points += scores[game].points;
+      totalPoints += scores[game].points;
     }
     // Calcul du streak (série de victoires, simple : max win d'un jeu)
     streak = Math.max(...Object.values(scores).map((s) => s.wins));
@@ -483,7 +483,7 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
       wins,
       draws,
       loses,
-      points,
+      totalPoints,
       winrate: totalGames ? Math.round(100 * (wins / totalGames)) : 0,
       streak,
     });
@@ -787,13 +787,13 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
         wins = 0,
         draws = 0,
         loses = 0,
-        points = 0;
+        totalPoints = 0;
       Object.values(localStats).forEach((stats) => {
         totalGames += stats.totalGames;
         wins += stats.wins;
         draws += stats.draws;
         loses += stats.loses;
-        points += stats.points;
+        totalPoints += stats.points;
       });
 
       setUserStatsGlobal({
@@ -801,7 +801,7 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
         wins,
         draws,
         loses,
-        points,
+        totalPoints,
         winrate: totalGames ? Math.round(100 * (wins / totalGames)) : 0,
         streak: Math.max(...Object.values(localStats).map((s) => s.wins)),
       });
@@ -847,7 +847,11 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
           <View style={{ flexDirection: "row", alignItems: "center" }}>
             <View style={{ position: "relative", width: 48, height: 48 }}>
               <ProfileHeaderAvatar
-                photoURL={profilePhoto}
+                photoURL={
+                  profile?.avatar && profile.avatar.startsWith("http")
+                    ? profile.avatar
+                    : null
+                }
                 size={48}
                 displayName={profile?.username}
                 email={user?.email}
