@@ -153,7 +153,12 @@ const LeaderboardGame = ({
             data.push({
               userId: currentUserId,
               username: user?.username || profile?.username || "Vous",
-              avatar: user?.photoURL || user?.avatar || profile?.avatar || "👤",
+              avatar:
+                profile?.photoURL ||
+                user?.photoURL ||
+                profile?.avatar ||
+                user?.avatar ||
+                "👤",
               country: user?.country || profile?.country || "FR",
               totalPoints: realStats?.totalPoints || 0,
               totalGames: realStats?.totalGames || 0,
@@ -208,7 +213,12 @@ const LeaderboardGame = ({
             data.push({
               userId: currentUserId,
               username: user?.username || profile?.username || "Vous",
-              avatar: user?.photoURL || user?.avatar || profile?.avatar || "👤",
+              avatar:
+                profile?.photoURL ||
+                user?.photoURL ||
+                profile?.avatar ||
+                user?.avatar ||
+                "👤",
               country: user?.country || profile?.country || countryCode,
               totalPoints: realStats?.totalPoints || 0,
               totalGames: realStats?.totalGames || 0,
@@ -363,44 +373,50 @@ const LeaderboardGame = ({
         )}
       </View>
 
-      <View style={styles.userInfo}>
-        <View style={styles.avatarContainer}>
-          {item.avatar && item.avatar.startsWith("http") ? (
-            <Image
-              source={{ uri: item.avatar }}
-              style={styles.avatarImage}
-              resizeMode='cover'
-              defaultSource={require("../../assets/icon.png")}
-              onError={() => {}}
-            />
-          ) : (
-            <Text style={styles.avatarText}>{item.avatar || "👤"}</Text>
-          )}
-        </View>
+      {/* Avatar du joueur (jamais de couronne ici) */}
+      <View style={styles.avatarContainer}>
+        {item.avatar &&
+        typeof item.avatar === "string" &&
+        item.avatar.startsWith("http") ? (
+          <Image
+            source={{ uri: item.avatar }}
+            style={styles.avatarImage}
+            resizeMode='cover'
+            defaultSource={require("../../assets/icon.png")}
+            onError={() => {}}
+          />
+        ) : item.avatar &&
+          typeof item.avatar === "string" &&
+          item.avatar !== "" &&
+          item.avatar !== "👑" ? (
+          <Text style={styles.avatarText}>{item.avatar}</Text>
+        ) : (
+          <Text style={styles.avatarText}>👤</Text>
+        )}
+      </View>
 
-        <View style={styles.userDetails}>
-          <View style={styles.usernameRow}>
-            <Text style={styles.countryFlag}>
-              {item.country
-                ? countries.find((c) => c.code === item.country)?.flag || "🌍"
-                : "🌍"}
-            </Text>
-            <Text
-              style={[
-                styles.username,
-                item.userId === currentUserId && styles.currentUserText,
-              ]}>
-              {item.username}
-            </Text>
-          </View>
+      <View style={styles.userDetails}>
+        <View style={styles.usernameRow}>
+          <Text style={styles.countryFlag}>
+            {item.country
+              ? countries.find((c) => c.code === item.country)?.flag || "🌍"
+              : "🌍"}
+          </Text>
           <Text
             style={[
-              styles.userStats,
+              styles.username,
               item.userId === currentUserId && styles.currentUserText,
             ]}>
-            {item.totalGames || 0} parties • {item.winRate || 0}% victoires
+            {item.username}
           </Text>
         </View>
+        <Text
+          style={[
+            styles.userStats,
+            item.userId === currentUserId && styles.currentUserText,
+          ]}>
+          {item.totalGames || 0} parties • {item.winRate || 0}% victoires
+        </Text>
       </View>
 
       <View style={styles.scoreContainer}>
@@ -593,6 +609,22 @@ const styles = StyleSheet.create({
   },
   currentUserText: {
     color: "#fff",
+  },
+  userAvatarContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+  },
+  userAvatarImage: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+  },
+  userAvatarText: {
+    fontSize: 20,
   },
   userInfo: {
     flex: 1,

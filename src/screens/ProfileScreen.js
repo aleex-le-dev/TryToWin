@@ -936,33 +936,33 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
           profile={profile}
         />
       ) : (
-        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-          {activeTab === "profile" ? (
-            <ProfileTab
-              user={user}
-              profile={profile}
-              profilePhoto={profilePhoto}
-              profileBanner={profileBanner}
-              bannerColor={profile?.bannerColor}
-              countries={countries}
-              userStats={userStats}
-              openEditModal={openEditModal}
-              onLogout={handleLogout}
-            />
-          ) : (
-            <GameStatsTab
-              userStats={userStats}
-              statsByGame={userStatsByGame}
-              statsLoading={false}
-              gameColor='#667eea'
-              generateAllGamesTestData={generateAllGamesTestData}
-            />
-          )}
+      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        {activeTab === "profile" ? (
+          <ProfileTab
+            user={user}
+            profile={profile}
+            profilePhoto={profilePhoto}
+            profileBanner={profileBanner}
+            bannerColor={profile?.bannerColor}
+            countries={countries}
+            userStats={userStats}
+            openEditModal={openEditModal}
+            onLogout={handleLogout}
+          />
+        ) : (
+          <GameStatsTab
+            userStats={userStats}
+            statsByGame={userStatsByGame}
+            statsLoading={false}
+            gameColor='#667eea'
+            generateAllGamesTestData={generateAllGamesTestData}
+          />
+        )}
         </ScrollView>
       )}
 
-      {/* Modal d'édition du profil */}
-      <Modal visible={editModalVisible} animationType='slide' transparent>
+        {/* Modal d'édition du profil */}
+        <Modal visible={editModalVisible} animationType='slide' transparent>
           <View
             style={{
               flex: 1,
