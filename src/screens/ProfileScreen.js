@@ -27,8 +27,7 @@ import { doc, getDoc, updateDoc, setDoc, collection } from "firebase/firestore";
 import { db } from "../utils/firebaseConfig";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import ProfileAvatar from "../components/ProfileAvatar";
-import * as ImagePicker from "expo-image-picker";
-import { uploadProfilePhoto } from "../services/storageService";
+import * as DocumentPicker from "expo-document-picker";
 import AvatarLibrary from "../components/AvatarLibrary";
 import ProfileHeaderAvatar from "../components/ProfileHeaderAvatar";
 import ProfileTab from "../components/ProfileTab";
@@ -602,6 +601,7 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
         ...prev,
         ...editData,
         photoURL: photoURL || profilePhoto || "",
+        bannerImage: editData.bannerImage || null,
       }));
       setProfilePhoto(photoURL || profilePhoto || "");
       const docSnap = await getDoc(userRef);
@@ -781,19 +781,12 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
   // Handler pour uploader une image avec demande de permission
   const pickImage = async () => {
     console.log("pickImage called");
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    console.log("Permission status:", status);
-    if (status !== "granted") {
-      alert("La permission d'accéder à la galerie est requise !");
-      return;
-    }
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaType.IMAGE,
-      allowsEditing: true,
-      aspect: [3, 1],
-      quality: 0.7,
+    const result = await DocumentPicker.getDocumentAsync({
+      type: "image/*",
+      copyToCacheDirectory: true,
+      multiple: false,
     });
-    console.log("ImagePicker result:", result);
+    console.log("DocumentPicker result:", result);
     if (!result.canceled && result.assets && result.assets[0].uri) {
       setEditData((d) => ({
         ...d,
@@ -928,7 +921,7 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
               user={user}
               profile={profile}
               profilePhoto={profilePhoto}
-              profileBanner={profileBanner}
+              profileBanner={profile?.bannerImage}
               bannerColor={profile?.bannerColor}
               countries={countries}
               userStats={userStats}
@@ -1212,20 +1205,15 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
                 }
                 onPress={async () => {
                   setShowAvatarLibrary(false);
-                  const result = await ImagePicker.launchImageLibraryAsync({
-                    mediaTypes: ImagePicker.MediaType.IMAGE,
-                    allowsEditing: true,
-                    aspect: [1, 1],
-                    quality: 0.7,
+                  const result = await DocumentPicker.getDocumentAsync({
+                    type: "image/*",
+                    copyToCacheDirectory: true,
+                    multiple: false,
                   });
-                  if (
-                    !result.canceled &&
-                    result.assets &&
-                    result.assets[0].uri
-                  ) {
+                  if (result.type === "success" && result.uri) {
                     setEditData((d) => ({
                       ...d,
-                      photoURL: result.assets[0].uri,
+                      photoURL: result.uri,
                     }));
                   }
                 }}

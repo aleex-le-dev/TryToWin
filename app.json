@@ -14,7 +14,10 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSPhotoLibraryUsageDescription": "Cette application a besoin d'accéder à votre galerie pour choisir une image de profil."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -23,7 +26,8 @@
       },
       "edgeToEdgeEnabled": true,
       "package": "com.diiablex62.TryToWin",
-      "googleServicesFile": "./google-services.json"
+      "googleServicesFile": "./google-services.json",
+      "permissions": ["READ_EXTERNAL_STORAGE", "WRITE_EXTERNAL_STORAGE"]
     },
     "web": {
       "favicon": "./assets/favicon.png"
