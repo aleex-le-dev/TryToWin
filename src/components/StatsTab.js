@@ -104,37 +104,52 @@ const StatsTab = ({ userStats, statsByGame }) => {
           />
         ))}
       </View>
-      {/* Statistiques par jeu si fourni (debug) */}
+      {/* Nouvelle section stats par jeu (simple grille) */}
       {statsByGame && Object.keys(statsByGame).length > 0 && (
-        <View style={styles.detailedStats}>
-          <Text style={styles.sectionTitle}>Par jeu</Text>
-          {Object.entries(statsByGame).map(([jeu, stats]) => {
-            return (
-              <View key={String(jeu)} style={styles.gameBlock}>
-                <Text style={styles.gameTitle}>{String(jeu ?? "")}</Text>
-                <View style={styles.statsRow}>
-                  <MiniStat
-                    label='Parties'
-                    value={String(stats?.totalGames ?? 0)}
-                  />
-                  <MiniStat
-                    label='Victoires'
-                    value={String(stats?.wins ?? 0)}
-                  />
-                  <MiniStat label='Nuls' value={String(stats?.draws ?? 0)} />
-                  <MiniStat
-                    label='Défaites'
-                    value={String(stats?.loses ?? 0)}
-                  />
-                  <MiniStat label='Points' value={String(stats?.points ?? 0)} />
-                  <MiniStat
-                    label='Winrate'
-                    value={String(stats?.winrate ?? 0) + "%"}
-                  />
-                </View>
-              </View>
-            );
-          })}
+        <View style={{ width: "100%", marginTop: 24 }}>
+          <Text
+            style={{
+              fontSize: 18,
+              fontWeight: "bold",
+              color: "#333",
+              marginBottom: 10,
+            }}>
+            Statistiques par jeu
+          </Text>
+          {Object.entries(statsByGame).map(([jeu, stats]) => (
+            <View
+              key={jeu}
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                alignItems: "center",
+                paddingVertical: 8,
+                borderBottomWidth: 1,
+                borderBottomColor: "#eee",
+              }}>
+              <Text style={{ flex: 2, fontWeight: "bold", color: "#667eea" }}>
+                {jeu}
+              </Text>
+              <Text style={{ flex: 1, textAlign: "center" }}>
+                {stats.totalGames ?? 0} parties
+              </Text>
+              <Text style={{ flex: 1, textAlign: "center", color: "#4CAF50" }}>
+                {stats.wins ?? 0} V
+              </Text>
+              <Text style={{ flex: 1, textAlign: "center", color: "#FF6B6B" }}>
+                {stats.loses ?? 0} D
+              </Text>
+              <Text style={{ flex: 1, textAlign: "center", color: "#A3A3A3" }}>
+                {stats.draws ?? 0} N
+              </Text>
+              <Text style={{ flex: 1, textAlign: "center", color: "#FFD700" }}>
+                {stats.points ?? 0} pts
+              </Text>
+              <Text style={{ flex: 1, textAlign: "center", color: "#2196F3" }}>
+                {stats.winrate ?? 0}%
+              </Text>
+            </View>
+          ))}
         </View>
       )}
       {/* Actions rapides */}

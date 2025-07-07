@@ -573,48 +573,7 @@ const GameDetailsScreen = ({ route, navigation }) => {
                   )}
                 </View>
 
-                {/* Conseils et astuces */}
-                <View style={styles.section}>
-                  <Text style={styles.sectionTitle}>Conseils</Text>
-                  <View style={styles.tipsContainer}>
-                    <View style={styles.tipItem}>
-                      <Ionicons
-                        name='bulb'
-                        size={20}
-                        color={game.color}
-                        style={{ marginTop: 2 }}
-                      />
-                      <Text style={styles.tipText}>
-                        Pratiquez régulièrement pour améliorer votre temps de
-                        réaction
-                      </Text>
-                    </View>
-                    <View style={styles.tipItem}>
-                      <Ionicons
-                        name='trending-up'
-                        size={20}
-                        color={game.color}
-                        style={{ marginTop: 2 }}
-                      />
-                      <Text style={styles.tipText}>
-                        Analysez vos parties pour identifier vos points
-                        d'amélioration
-                      </Text>
-                    </View>
-                    <View style={styles.tipItem}>
-                      <Ionicons
-                        name='trophy'
-                        size={20}
-                        color={game.color}
-                        style={{ marginTop: 2 }}
-                      />
-                      <Text style={styles.tipText}>
-                        Battez vos records personnels pour grimper dans le
-                        classement
-                      </Text>
-                    </View>
-                  </View>
-                </View>
+       
               </View>
             </ScrollView>
           ) : (

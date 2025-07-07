@@ -253,6 +253,9 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
     streak: 0,
   });
   const [userStatsByGame, setUserStatsByGame] = useState({});
+  const [userStatsByGameForStatsTab, setUserStatsByGameForStatsTab] = useState(
+    {}
+  );
   const nav = useNavigation();
 
   // Calcul des vraies statistiques utilisateur basées sur les données Firestore
@@ -432,13 +435,13 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
     if (!user?.id) return;
 
     const allStats = await getUserAllGameStats(user.id);
-    const scores = {};
+    const statsByGameForStatsTab = {};
+    const statsByGameRaw = {};
     let totalGames = 0,
       wins = 0,
       draws = 0,
       loses = 0,
-      totalPoints = 0,
-      streak = 0;
+      totalPoints = 0;
 
     for (const game of Object.keys(GAME_POINTS)) {
       const s = allStats.gamesPlayed[game] || {
@@ -454,7 +457,7 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
         lastUpdated: null,
         lastPlayed: null,
       };
-      scores[game] = {
+      statsByGameForStatsTab[game] = {
         totalGames: s.totalGames || 0,
         wins: s.win || 0,
         draws: s.draw || 0,
@@ -462,15 +465,15 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
         points: s.totalPoints || 0,
         winrate: s.winRate || 0,
       };
-      totalGames += scores[game].totalGames;
-      wins += scores[game].wins;
-      draws += scores[game].draws;
-      loses += scores[game].loses;
-      totalPoints += scores[game].points;
+      statsByGameRaw[game] = s;
+      totalGames += s.totalGames || 0;
+      wins += s.win || 0;
+      draws += s.draw || 0;
+      loses += s.lose || 0;
+      totalPoints += s.totalPoints || 0;
     }
-    // Calcul du streak (série de victoires, simple : max win d'un jeu)
-    streak = Math.max(...Object.values(scores).map((s) => s.wins));
-    setUserStatsByGame(scores);
+    setUserStatsByGame(statsByGameRaw);
+    setUserStatsByGameForStatsTab(statsByGameForStatsTab);
     setUserStatsGlobal({
       totalGames,
       wins,
@@ -478,7 +481,9 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
       loses,
       totalPoints,
       winrate: totalGames ? Math.round(100 * (wins / totalGames)) : 0,
-      streak,
+      streak: Math.max(
+        ...Object.values(statsByGameForStatsTab).map((s) => s.wins)
+      ),
     });
   };
 
@@ -945,13 +950,15 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
               onLogout={handleLogout}
             />
           ) : (
-            <GameStatsTab
-              userStats={userStats}
-              statsByGame={userStatsByGame}
-              statsLoading={false}
-              gameColor='#667eea'
-              generateAllGamesTestData={generateAllGamesTestData}
-            />
+            <>
+              <GameStatsTab
+                userStats={userStats}
+                statsByGame={userStatsByGameForStatsTab}
+                statsLoading={false}
+                gameColor='#667eea'
+                generateAllGamesTestData={generateAllGamesTestData}
+              />
+            </>
           )}
         </ScrollView>
       )}
