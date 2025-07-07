@@ -977,70 +977,82 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
                   />
                 )}
               </View>
-              {/* Bouton upload image */}
-              <Button
-                title='Télécharger une image'
-                onPress={async () => {
-                  const result = await ImagePicker.launchImageLibraryAsync({
-                    mediaTypes: ImagePicker.MediaTypeOptions.Images,
-                    allowsEditing: true,
-                    aspect: [3, 1],
-                    quality: 0.7,
-                  });
-                  if (
-                    !result.canceled &&
-                    result.assets &&
-                    result.assets[0].uri
-                  ) {
-                    setEditData((d) => ({
-                      ...d,
-                      bannerImage: result.assets[0].uri,
-                      bannerColor: null,
-                    }));
-                  }
-                }}
-                color='#667eea'
-              />
+              {/* Ligne image + couleur */}
               <View
                 style={{
                   flexDirection: "row",
                   alignItems: "center",
-                  marginTop: 12,
+                  justifyContent: "center",
+                  width: "100%",
                   marginBottom: 8,
                 }}>
-                <TextInput
-                  value={bannerHex}
-                  onChangeText={(v) => {
-                    setBannerHex(v);
-                    if (/^#([0-9A-Fa-f]{6})$/.test(v)) {
-                      setEditData((d) => ({
-                        ...d,
-                        bannerColor: v,
-                        bannerImage: null,
-                      }));
-                    }
-                  }}
-                  maxLength={7}
+                {/* Bouton upload image */}
+                <View style={{ marginRight: 15 }}>
+                  <Button
+                    title='Uploader une image'
+                    onPress={async () => {
+                      const result = await ImagePicker.launchImageLibraryAsync({
+                        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                        allowsEditing: true,
+                        aspect: [3, 1],
+                        quality: 0.7,
+                      });
+                      if (
+                        !result.canceled &&
+                        result.assets &&
+                        result.assets[0].uri
+                      ) {
+                        setEditData((d) => ({
+                          ...d,
+                          bannerImage: result.assets[0].uri,
+                          bannerColor: null,
+                        }));
+                      }
+                    }}
+                    color='#667eea'
+                  />
+                </View>
+                {/* Champ couleur + palette */}
+                <View
                   style={{
-                    borderWidth: 1,
-                    borderColor: /^#([0-9A-Fa-f]{6})$/.test(bannerHex)
-                      ? "#667eea"
-                      : "#ccc",
-                    borderRadius: 8,
-                    padding: 6,
-                    width: 100,
-                    textAlign: "center",
-                    fontSize: 15,
-                    marginRight: 8,
-                    backgroundColor: "#fff",
-                  }}
-                  autoCapitalize='none'
-                  autoCorrect={false}
-                  placeholder='#RRGGBB'
-                />
-                <TouchableOpacity onPress={() => setShowColorWheel((v) => !v)}>
-                  <Ionicons name='color-palette' size={24} color='#667eea' />
-                </TouchableOpacity>
+                    flexDirection: "row",
+                    alignItems: "center",
+                  }}>
+                  <TextInput
+                    value={bannerHex}
+                    onChangeText={(v) => {
+                      setBannerHex(v);
+                      if (/^#([0-9A-Fa-f]{6})$/.test(v)) {
+                        setEditData((d) => ({
+                          ...d,
+                          bannerColor: v,
+                          bannerImage: null,
+                        }));
+                      }
+                    }}
+                    maxLength={7}
+                    style={{
+                      borderWidth: 1,
+                      borderColor: /^#([0-9A-Fa-f]{6})$/.test(bannerHex)
+                        ? "#667eea"
+                        : "#ccc",
+                      borderRadius: 8,
+                      padding: 6,
+                      width: 100,
+                      textAlign: "center",
+                      fontSize: 15,
+                      backgroundColor: "#fff",
+                    }}
+                    autoCapitalize='none'
+                    autoCorrect={false}
+                    placeholder='#RRGGBB'
+                  />
+                  <TouchableOpacity
+                    onPress={() => setShowColorWheel((v) => !v)}
+                    style={{ marginLeft: 4 }}>
+                    <Ionicons name='color-palette' size={24} color='#667eea' />
+                  </TouchableOpacity>
+                </View>
               </View>
               {showColorWheel && (
                 <Modal visible transparent animationType='fade'>
