@@ -778,6 +778,31 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
     } catch (error) {}
   };
 
+  // Handler pour uploader une image avec demande de permission
+  const pickImage = async () => {
+    console.log("pickImage called");
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    console.log("Permission status:", status);
+    if (status !== "granted") {
+      alert("La permission d'accéder à la galerie est requise !");
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaType.IMAGE,
+      allowsEditing: true,
+      aspect: [3, 1],
+      quality: 0.7,
+    });
+    console.log("ImagePicker result:", result);
+    if (!result.canceled && result.assets && result.assets[0].uri) {
+      setEditData((d) => ({
+        ...d,
+        bannerImage: result.assets[0].uri,
+        bannerColor: null,
+      }));
+    }
+  };
+
   if (!profileFromFirestoreLoaded || !profile?.username) {
     return (
       <View
@@ -990,25 +1015,7 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
                 <View style={{ marginRight: 15 }}>
                   <Button
                     title='Uploader une image'
-                    onPress={async () => {
-                      const result = await ImagePicker.launchImageLibraryAsync({
-                        mediaTypes: ImagePicker.MediaType.IMAGE,
-                        allowsEditing: true,
-                        aspect: [3, 1],
-                        quality: 0.7,
-                      });
-                      if (
-                        !result.canceled &&
-                        result.assets &&
-                        result.assets[0].uri
-                      ) {
-                        setEditData((d) => ({
-                          ...d,
-                          bannerImage: result.assets[0].uri,
-                          bannerColor: null,
-                        }));
-                      }
-                    }}
+                    onPress={pickImage}
                     color='#667eea'
                   />
                 </View>
