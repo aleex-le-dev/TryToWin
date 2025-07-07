@@ -47,10 +47,12 @@ const LeaderboardGame = ({
 
   useEffect(() => {
     if (currentUserId) {
-      setSelectedCountry(user?.country || "France");
+      // Utiliser le pays du profil en priorité, sinon celui de l'utilisateur connecté, sinon France par défaut
+      const userCountry = profile?.country || user?.country || "FR";
+      setSelectedCountry(userCountry);
       initializeLeaderboards();
     }
-  }, [currentUserId, user]);
+  }, [currentUserId, user, profile]);
 
   useEffect(() => {
     if (currentUserId && initialized) {
@@ -463,31 +465,28 @@ const LeaderboardGame = ({
               fontWeight: "bold",
               fontSize: 14,
             }}>
-            Mondial
+            🌍 Mondial
           </Text>
         </TouchableOpacity>
 
-        {user?.country && (
-          <TouchableOpacity
+        <TouchableOpacity
+          style={{
+            backgroundColor: activeTab === "country" ? gameColor : "#f1f3f4",
+            borderRadius: 16,
+            paddingVertical: 7,
+            paddingHorizontal: 18,
+            marginHorizontal: 2,
+          }}
+          onPress={() => setActiveTab("country")}>
+          <Text
             style={{
-              backgroundColor: activeTab === "country" ? gameColor : "#f1f3f4",
-              borderRadius: 16,
-              paddingVertical: 7,
-              paddingHorizontal: 18,
-              marginHorizontal: 2,
-            }}
-            onPress={() => setActiveTab("country")}>
-            <Text
-              style={{
-                color: activeTab === "country" ? "#fff" : gameColor,
-                fontWeight: "bold",
-                fontSize: 14,
-              }}>
-              {getCountryFlag(selectedCountry)}{" "}
-              {getCountryName(selectedCountry)}
-            </Text>
-          </TouchableOpacity>
-        )}
+              color: activeTab === "country" ? "#fff" : gameColor,
+              fontWeight: "bold",
+              fontSize: 14,
+            }}>
+            {getCountryFlag(selectedCountry)} {getCountryName(selectedCountry)}
+          </Text>
+        </TouchableOpacity>
       </View>
 
       <View style={{ alignItems: "center", marginBottom: 20 }}>
