@@ -73,16 +73,15 @@ const HomeScreen = ({ navigation, resetCategoryTrigger, forceHomeReset }) => {
   // Récupération du profil utilisateur depuis Firestore
   useEffect(() => {
     const fetchProfile = async () => {
-      if (user?.id) {
+      if (user?.uid) {
         try {
-          const docRef = doc(db, "users", user.id);
+          const docRef = doc(db, "users", user.uid);
           const docSnap = await getDoc(docRef);
           if (docSnap.exists()) {
             setProfile(docSnap.data());
-            console.log("Profil Firestore:", docSnap.data());
           }
         } catch (error) {
-          console.log("Erreur lors de la récupération du profil:", error);
+          // Erreur lors de la récupération du profil: errorr
         }
       }
     };
@@ -93,10 +92,8 @@ const HomeScreen = ({ navigation, resetCategoryTrigger, forceHomeReset }) => {
   // Récupération du total de points utilisateur
   useEffect(() => {
     const fetchPoints = async () => {
-      if (user?.id) {
-        console.log("ID utilisé pour les stats:", user.id);
-        const stats = await getUserAllGameStats(user.id);
-        console.log("Stats récupérées:", stats);
+      if (user?.uid) {
+        const stats = await getUserAllGameStats(user.uid);
         setTotalPoints(stats.totalPoints || 0);
       }
     };
@@ -199,7 +196,7 @@ const HomeScreen = ({ navigation, resetCategoryTrigger, forceHomeReset }) => {
               </View>
               <View style={styles.statDivider} />
               <View style={styles.statItem}>
-                <Text style={styles.statNumber}>15</Text>
+                <Text style={styles.statNumber}>?</Text>
                 <Text style={styles.statLabel}>Niveau</Text>
               </View>
             </View>

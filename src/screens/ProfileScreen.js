@@ -72,10 +72,7 @@ const saveProfileLocally = async (userId, profileData) => {
       `profile_${userId}`,
       JSON.stringify(profileData)
     );
-    console.log("Profil sauvegardé localement");
-  } catch (e) {
-    console.log("Erreur lors de la sauvegarde locale du profil", e);
-  }
+  } catch (e) {}
 };
 
 // Fonction utilitaire pour charger le profil local
@@ -83,12 +80,9 @@ const loadProfileLocally = async (userId) => {
   try {
     const data = await AsyncStorage.getItem(`profile_${userId}`);
     if (data) {
-      console.log("Profil chargé depuis le cache local");
       return JSON.parse(data);
     }
-  } catch (e) {
-    console.log("Erreur lors du chargement du profil local", e);
-  }
+  } catch (e) {}
   return null;
 };
 
@@ -100,17 +94,13 @@ const addToProfileQueue = async (userId, modif) => {
     const queue = JSON.parse(await AsyncStorage.getItem(key)) || [];
     queue.push(modif);
     await AsyncStorage.setItem(key, JSON.stringify(queue));
-    console.log("Modification ajoutée à la queue de synchronisation");
-  } catch (e) {
-    console.log("Erreur lors de l'ajout à la queue", e);
-  }
+  } catch (e) {}
 };
 
 // Vide la queue locale (après synchro réussie)
 const clearProfileQueue = async (userId) => {
   try {
     await AsyncStorage.removeItem(`profile_queue_${userId}`);
-    console.log("Queue de synchronisation vidée");
   } catch (e) {}
 };
 
@@ -302,11 +292,6 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
 
   // Récupération du profil Firestore à l'ouverture
   useEffect(() => {
-    console.log("ProfileScreen - Loading:", loading);
-    console.log("ProfileScreen - User state:", user);
-    console.log("ProfileScreen - User ID:", user?.id);
-    console.log("ProfileScreen - User email:", user?.email);
-
     if (user?.id) {
       const fetchProfile = async () => {
         setProfileLoading(true);
@@ -327,17 +312,12 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
             if (!data.tag) {
               // Génère un tag localement
               const newTag = generateTag();
-              console.log("Tag généré localement :", newTag);
               setProfile({ ...data, tag: newTag });
               saveProfileLocally(user.id, { ...data, tag: newTag });
               // Tente de le sauvegarder en BDD (en arrière-plan)
               try {
                 await updateDoc(docRef, { tag: newTag });
-                console.log("Tag sauvegardé en BDD :", newTag);
               } catch (e) {
-                console.log(
-                  "Impossible de sauvegarder le tag en BDD (mode hors-ligne ou erreur Firestore)"
-                );
                 // Ajoute à la queue
                 addToProfileQueue(user.id, { tag: newTag });
                 setSyncPending(true);
@@ -359,7 +339,6 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
             setProfileFromFirestoreLoaded(true);
           }
         } catch (e) {
-          console.log("Firestore inaccessible, profil local utilisé si dispo");
           setProfileFromFirestoreLoaded(true);
         }
         // 3. Tente de synchroniser la queue si Firestore est dispo
@@ -559,10 +538,6 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
   // Ouvre le modal avec les valeurs actuelles
   const openEditModal = () => {
     setShowAvatarLibrary(false);
-    console.log("Ouverture modal - User:", user);
-    console.log("Ouverture modal - User ID:", user?.id);
-    console.log("Ouverture modal - Profile:", profile);
-
     setEditData({
       username: profile?.username || user?.displayName || "",
       avatar: profile?.avatar || "👑",
@@ -643,7 +618,6 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
         visibilityTime: 2000,
       });
     } catch (error) {
-      console.error("Erreur lors de la sauvegarde du profil:", error);
       Toast.show({
         type: "error",
         text1: "Erreur de sauvegarde",
@@ -661,10 +635,8 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
 
   // Fonction pour générer des données de test pour tous les jeux
   const generateAllGamesTestData = async () => {
-    console.log("generateAllGamesTestData appelée");
     if (user?.id) {
       try {
-        console.log("Début de la génération des données de test...");
         // Liste des jeux définis dans GAME_POINTS
         const games = Object.keys(GAME_POINTS);
 
@@ -700,13 +672,7 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
                 score,
                 duration
               );
-            } catch (error) {
-              console.log(
-                `Erreur lors de l'enregistrement pour ${gameName}:`,
-                error
-              );
-              // Continue avec le jeu suivant même en cas d'erreur
-            }
+            } catch (error) {}
           }
         }
 
@@ -722,8 +688,6 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
           visibilityTime: 2000,
         });
       } catch (error) {
-        console.log("Erreur lors de la génération des données de test:", error);
-
         // Si c'est une erreur de permissions, proposer une alternative
         if (error.message && error.message.includes("permissions")) {
           Toast.show({
@@ -735,9 +699,6 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
             topOffset: 40,
             visibilityTime: 4000,
           });
-
-          // Générer des données locales temporaires
-          generateLocalTestData();
         } else {
           Toast.show({
             type: "error",
@@ -814,9 +775,7 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
         topOffset: 40,
         visibilityTime: 3000,
       });
-    } catch (error) {
-      console.log("Erreur lors de la génération des données locales:", error);
-    }
+    } catch (error) {}
   };
 
   if (!profileFromFirestoreLoaded || !profile?.username) {
