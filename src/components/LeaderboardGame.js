@@ -20,6 +20,7 @@ import { doc, getDoc } from "firebase/firestore";
 import { db } from "../utils/firebaseConfig";
 import { countries } from "../constants";
 import { DEMO_PLAYERS } from "../constants/demoLeaderboard";
+import { AVATAR_COLLECTIONS } from "../constants/avatars";
 
 /**
  * Composant de classement pour les jeux (GameDetailsScreen)
@@ -45,12 +46,37 @@ const LeaderboardGame = ({
   // Utiliser l'userId passé en prop ou celui de l'utilisateur connecté
   const currentUserId = userId || user?.id;
 
+  // Fonction pour récupérer l'URL de l'avatar à partir de sa clé
+  const getAvatarUrl = (avatarKey) => {
+    if (!avatarKey || typeof avatarKey !== "string") return null;
+
+    // Si c'est déjà une URL, la retourner directement
+    if (avatarKey.startsWith("http")) return avatarKey;
+
+    // Chercher dans toutes les collections d'avatars
+    for (const collection of AVATAR_COLLECTIONS) {
+      const avatar = collection.avatars.find((av) => av.key === avatarKey);
+      if (avatar) return avatar.url;
+    }
+
+    return null;
+  };
+
   useEffect(() => {
     if (currentUserId) {
       // Utiliser le pays du profil en priorité, sinon celui de l'utilisateur connecté, sinon France par défaut
       const userCountry = profile?.country || user?.country || "FR";
       setSelectedCountry(userCountry);
       initializeLeaderboards();
+
+      // Debug: afficher les informations du profil
+      console.log("LeaderboardGame - Profile info:", {
+        profileAvatar: profile?.avatar,
+        profilePhotoURL: profile?.photoURL,
+        userAvatar: user?.avatar,
+        profileUsername: profile?.username,
+        userUsername: user?.username,
+      });
     }
   }, [currentUserId, user, profile]);
 
@@ -153,7 +179,11 @@ const LeaderboardGame = ({
             data.push({
               userId: currentUserId,
               username: user?.username || profile?.username || "Vous",
-              avatar: profile?.avatar || user?.avatar || "👤",
+              avatar:
+                getAvatarUrl(profile?.avatar) ||
+                profile?.photoURL ||
+                getAvatarUrl(user?.avatar) ||
+                "👤",
               country: user?.country || profile?.country || "FR",
               totalPoints: realStats?.totalPoints || 0,
               totalGames: realStats?.totalGames || 0,
@@ -208,7 +238,11 @@ const LeaderboardGame = ({
             data.push({
               userId: currentUserId,
               username: user?.username || profile?.username || "Vous",
-              avatar: profile?.avatar || user?.avatar || "👤",
+              avatar:
+                getAvatarUrl(profile?.avatar) ||
+                profile?.photoURL ||
+                getAvatarUrl(user?.avatar) ||
+                "👤",
               country: user?.country || profile?.country || countryCode,
               totalPoints: realStats?.totalPoints || 0,
               totalGames: realStats?.totalGames || 0,
@@ -249,7 +283,12 @@ const LeaderboardGame = ({
               return {
                 ...entry,
                 username: userData.username || "",
-                avatar: profile?.avatar || user?.avatar || "👤",
+                avatar:
+                  getAvatarUrl(userData.avatar) ||
+                  userData.photoURL ||
+                  getAvatarUrl(profile?.avatar) ||
+                  getAvatarUrl(user?.avatar) ||
+                  "👤",
                 country: userData.country
                   ? userData.country.toUpperCase()
                   : null,
@@ -276,7 +315,12 @@ const LeaderboardGame = ({
                 ...entry,
                 username:
                   userData.username || `Joueur ${entry.userId.slice(0, 6)}`,
-                avatar: profile?.avatar || user?.avatar || "👤",
+                avatar:
+                  getAvatarUrl(userData.avatar) ||
+                  userData.photoURL ||
+                  getAvatarUrl(profile?.avatar) ||
+                  getAvatarUrl(user?.avatar) ||
+                  "👤",
                 country: userData.country
                   ? userData.country.toUpperCase()
                   : null,
@@ -331,7 +375,9 @@ const LeaderboardGame = ({
       "Leaderboard avatar:",
       item.avatar,
       typeof item.avatar,
-      item.username
+      item.username,
+      "Profile avatar:",
+      profile?.avatar
     );
     return (
       <View
@@ -371,7 +417,9 @@ const LeaderboardGame = ({
               onError={() => {}}
             />
           ) : (
-            <Text style={styles.avatarText}>👤</Text>
+            <View style={styles.avatarFallback}>
+              <Text style={styles.avatarText}>{item.avatar || "👤"}</Text>
+            </View>
           )}
         </View>
         <View style={styles.userDetails}>
@@ -620,6 +668,16 @@ const styles = StyleSheet.create({
   },
   avatarText: {
     fontSize: 28,
+  },
+  avatarFallback: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#f8f9fa",
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#e9ecef",
   },
   userDetails: {
     flex: 1,

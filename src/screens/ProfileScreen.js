@@ -586,7 +586,7 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
         userRef,
         {
           username: editData.username.trim(),
-          avatar: editData.avatar,
+          avatar: editData.avatar || profile?.avatar || "",
           bio: editData.bio,
           country: editData.country,
           photoURL: photoURL || profilePhoto || "",
@@ -600,6 +600,7 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
       setProfile((prev) => ({
         ...prev,
         ...editData,
+        avatar: editData.avatar || prev?.avatar || "",
         photoURL: photoURL || profilePhoto || "",
         bannerImage: editData.bannerImage || null,
       }));
@@ -1143,7 +1144,11 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
                       bannerColor: null,
                     }))
                   }
-                  style={{ marginTop: 8, marginBottom: 12 }}>
+                  style={{
+                    marginTop: 8,
+                    marginBottom: 12,
+                    alignSelf: "flex-start",
+                  }}>
                   <Text style={{ color: "#FF6B6B", fontSize: 13 }}>
                     Supprimer la bannière
                   </Text>
@@ -1224,10 +1229,36 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
                 color='#667eea'
               />
             </View>
+            {editData.avatar && editData.avatar !== "👤" && (
+              <TouchableOpacity
+                onPress={() => {
+                  setEditData((d) => ({
+                    ...d,
+                    avatar: "👤",
+                    photoURL: null,
+                  }));
+                }}
+                style={{
+                  marginTop: 8,
+                  marginBottom: 12,
+                  alignSelf: "flex-start",
+                }}>
+                <Text style={{ color: "#FF6B6B", fontSize: 13 }}>
+                  Réinitialiser l'avatar
+                </Text>
+              </TouchableOpacity>
+            )}
             {showAvatarLibrary && (
               <AvatarLibrary
                 onSelect={(url) => {
-                  setEditData((d) => ({ ...d, photoURL: url }));
+                  // Si c'est une URL de drapeau, extraire la clé
+                  if (url.includes("flagcdn.com")) {
+                    const flagKey = url.split("/").pop().replace(".png", "");
+                    setEditData((d) => ({ ...d, avatar: `flag-${flagKey}` }));
+                  } else {
+                    // Pour les autres avatars, stocker l'URL directement
+                    setEditData((d) => ({ ...d, avatar: url }));
+                  }
                   setShowAvatarLibrary(false);
                 }}
               />
