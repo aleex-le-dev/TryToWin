@@ -25,6 +25,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../utils/firebaseConfig";
 import { countries } from "../constants";
+import { AVATAR_COLLECTIONS } from "../constants/avatars";
 
 const { width } = Dimensions.get("window");
 
@@ -63,6 +64,22 @@ const GameDetailsScreen = ({ route, navigation }) => {
   const [pendingScrollToUserCountry, setPendingScrollToUserCountry] =
     useState(false);
   const [selectedCountry, setSelectedCountry] = useState(null);
+
+  // Fonction pour récupérer l'URL de l'avatar à partir de sa clé
+  const getAvatarUrl = (avatarKey) => {
+    if (!avatarKey || typeof avatarKey !== "string") return null;
+
+    // Si c'est déjà une URL, la retourner directement
+    if (avatarKey.startsWith("http")) return avatarKey;
+
+    // Chercher dans toutes les collections d'avatars
+    for (const collection of AVATAR_COLLECTIONS) {
+      const avatar = collection.avatars.find((av) => av.key === avatarKey);
+      if (avatar) return avatar.url;
+    }
+
+    return null;
+  };
 
   // Utiliser l'identifiant technique Firestore du jeu
   const gameId = game.id || game.title;
@@ -111,7 +128,10 @@ const GameDetailsScreen = ({ route, navigation }) => {
                     const userDoc = await getDoc(doc(db, "users", item.userId));
                     if (userDoc.exists()) {
                       const userData = userDoc.data();
-                      userAvatar = userData.photoURL || userData.avatar || "👤";
+                      userAvatar =
+                        getAvatarUrl(userData.avatar) ||
+                        userData.photoURL ||
+                        "👤";
                     }
                   } catch (e) {}
                 }
