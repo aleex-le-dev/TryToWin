@@ -634,8 +634,6 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
         setProfile(docSnap.data());
         setProfilePhoto(docSnap.data().photoURL || "");
       }
-      // Recharge le classement global après modification du profil
-      await fetchLeaderboard();
       setEditModalVisible(false);
       Toast.show({
         type: "success",
@@ -936,374 +934,369 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
           profile={profile}
         />
       ) : (
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {activeTab === "profile" ? (
-          <ProfileTab
-            user={user}
-            profile={profile}
-            profilePhoto={profilePhoto}
-            profileBanner={profileBanner}
-            bannerColor={profile?.bannerColor}
-            countries={countries}
-            userStats={userStats}
-            openEditModal={openEditModal}
-            onLogout={handleLogout}
-          />
-        ) : (
-          <GameStatsTab
-            userStats={userStats}
-            statsByGame={userStatsByGame}
-            statsLoading={false}
-            gameColor='#667eea'
-            generateAllGamesTestData={generateAllGamesTestData}
-          />
-        )}
+        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+          {activeTab === "profile" ? (
+            <ProfileTab
+              user={user}
+              profile={profile}
+              profilePhoto={profilePhoto}
+              profileBanner={profileBanner}
+              bannerColor={profile?.bannerColor}
+              countries={countries}
+              userStats={userStats}
+              openEditModal={openEditModal}
+              onLogout={handleLogout}
+            />
+          ) : (
+            <GameStatsTab
+              userStats={userStats}
+              statsByGame={userStatsByGame}
+              statsLoading={false}
+              gameColor='#667eea'
+              generateAllGamesTestData={generateAllGamesTestData}
+            />
+          )}
         </ScrollView>
       )}
 
-        {/* Modal d'édition du profil */}
-        <Modal visible={editModalVisible} animationType='slide' transparent>
+      {/* Modal d'édition du profil */}
+      <Modal visible={editModalVisible} animationType='slide' transparent>
+        <View
+          style={{
+            flex: 1,
+            backgroundColor: "rgba(0,0,0,0.3)",
+            justifyContent: "center",
+            alignItems: "center",
+          }}>
           <View
             style={{
-              flex: 1,
-              backgroundColor: "rgba(0,0,0,0.3)",
-              justifyContent: "center",
-              alignItems: "center",
+              backgroundColor: "#fff",
+              borderRadius: 18,
+              padding: 24,
+              width: "85%",
             }}>
+            <Text
+              style={{ fontWeight: "bold", fontSize: 18, marginBottom: 12 }}>
+              Modifier le profil
+            </Text>
             <View
               style={{
-                backgroundColor: "#fff",
-                borderRadius: 18,
-                padding: 24,
-                width: "85%",
+                alignItems: "center",
+                marginBottom: 18,
+                width: "100%",
               }}>
+              {/* Titre bannière */}
               <Text
-                style={{ fontWeight: "bold", fontSize: 18, marginBottom: 12 }}>
-                Modifier le profil
+                style={{
+                  fontWeight: "bold",
+                  fontSize: 16,
+                  marginBottom: 8,
+                  alignSelf: "flex-start",
+                }}>
+                Bannière
               </Text>
+              {/* Aperçu de la bannière */}
               <View
                 style={{
-                  alignItems: "center",
-                  marginBottom: 18,
                   width: "100%",
+                  height: 80,
+                  borderRadius: 12,
+                  marginBottom: 12,
+                  backgroundColor: editData.bannerColor || "#fff",
+                  overflow: "hidden",
+                  justifyContent: "center",
+                  alignItems: "center",
                 }}>
-                {/* Titre bannière */}
-                <Text
-                  style={{
-                    fontWeight: "bold",
-                    fontSize: 16,
-                    marginBottom: 8,
-                    alignSelf: "flex-start",
-                  }}>
-                  Bannière
-                </Text>
-                {/* Aperçu de la bannière */}
-                <View
-                  style={{
-                    width: "100%",
-                    height: 80,
-                    borderRadius: 12,
-                    marginBottom: 12,
-                    backgroundColor: editData.bannerColor || "#fff",
-                    overflow: "hidden",
-                    justifyContent: "center",
-                    alignItems: "center",
-                  }}>
-                  {editData.bannerImage && (
-                    <Image
-                      source={{ uri: editData.bannerImage }}
-                      style={{ width: "100%", height: 80, resizeMode: "cover" }}
-                    />
-                  )}
-                </View>
-                {/* Bouton upload image */}
-                <Button
-                  title='Télécharger une image'
-                  onPress={async () => {
-                    const result = await ImagePicker.launchImageLibraryAsync({
-                      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-                      allowsEditing: true,
-                      aspect: [3, 1],
-                      quality: 0.7,
-                    });
-                    if (
-                      !result.canceled &&
-                      result.assets &&
-                      result.assets[0].uri
-                    ) {
+                {editData.bannerImage && (
+                  <Image
+                    source={{ uri: editData.bannerImage }}
+                    style={{ width: "100%", height: 80, resizeMode: "cover" }}
+                  />
+                )}
+              </View>
+              {/* Bouton upload image */}
+              <Button
+                title='Télécharger une image'
+                onPress={async () => {
+                  const result = await ImagePicker.launchImageLibraryAsync({
+                    mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                    allowsEditing: true,
+                    aspect: [3, 1],
+                    quality: 0.7,
+                  });
+                  if (
+                    !result.canceled &&
+                    result.assets &&
+                    result.assets[0].uri
+                  ) {
+                    setEditData((d) => ({
+                      ...d,
+                      bannerImage: result.assets[0].uri,
+                      bannerColor: null,
+                    }));
+                  }
+                }}
+                color='#667eea'
+              />
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  marginTop: 12,
+                  marginBottom: 8,
+                }}>
+                <TextInput
+                  value={bannerHex}
+                  onChangeText={(v) => {
+                    setBannerHex(v);
+                    if (/^#([0-9A-Fa-f]{6})$/.test(v)) {
                       setEditData((d) => ({
                         ...d,
-                        bannerImage: result.assets[0].uri,
-                        bannerColor: null,
+                        bannerColor: v,
+                        bannerImage: null,
                       }));
                     }
                   }}
-                  color='#667eea'
-                />
-                <View
+                  maxLength={7}
                   style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    marginTop: 12,
-                    marginBottom: 8,
-                  }}>
-                  <TextInput
-                    value={bannerHex}
-                    onChangeText={(v) => {
-                      setBannerHex(v);
-                      if (/^#([0-9A-Fa-f]{6})$/.test(v)) {
-                        setEditData((d) => ({
-                          ...d,
-                          bannerColor: v,
-                          bannerImage: null,
-                        }));
-                      }
-                    }}
-                    maxLength={7}
-                    style={{
-                      borderWidth: 1,
-                      borderColor: /^#([0-9A-Fa-f]{6})$/.test(bannerHex)
-                        ? "#667eea"
-                        : "#ccc",
-                      borderRadius: 8,
-                      padding: 6,
-                      width: 100,
-                      textAlign: "center",
-                      fontSize: 15,
-                      marginRight: 8,
-                      backgroundColor: "#fff",
-                    }}
-                    autoCapitalize='none'
-                    autoCorrect={false}
-                    placeholder='#RRGGBB'
-                  />
-                  <TouchableOpacity
-                    onPress={() => setShowColorWheel((v) => !v)}>
-                    <Ionicons name='color-palette' size={24} color='#667eea' />
-                  </TouchableOpacity>
-                </View>
-                {showColorWheel && (
-                  <Modal visible transparent animationType='fade'>
-                    <TouchableWithoutFeedback
-                      onPress={() => setShowColorWheel(false)}>
-                      <View
-                        style={{
-                          flex: 1,
-                          backgroundColor: "rgba(0,0,0,0.25)",
-                          justifyContent: "center",
-                          alignItems: "center",
-                        }}>
-                        <TouchableWithoutFeedback>
+                    borderWidth: 1,
+                    borderColor: /^#([0-9A-Fa-f]{6})$/.test(bannerHex)
+                      ? "#667eea"
+                      : "#ccc",
+                    borderRadius: 8,
+                    padding: 6,
+                    width: 100,
+                    textAlign: "center",
+                    fontSize: 15,
+                    marginRight: 8,
+                    backgroundColor: "#fff",
+                  }}
+                  autoCapitalize='none'
+                  autoCorrect={false}
+                  placeholder='#RRGGBB'
+                />
+                <TouchableOpacity onPress={() => setShowColorWheel((v) => !v)}>
+                  <Ionicons name='color-palette' size={24} color='#667eea' />
+                </TouchableOpacity>
+              </View>
+              {showColorWheel && (
+                <Modal visible transparent animationType='fade'>
+                  <TouchableWithoutFeedback
+                    onPress={() => setShowColorWheel(false)}>
+                    <View
+                      style={{
+                        flex: 1,
+                        backgroundColor: "rgba(0,0,0,0.25)",
+                        justifyContent: "center",
+                        alignItems: "center",
+                      }}>
+                      <TouchableWithoutFeedback>
+                        <View
+                          style={{
+                            backgroundColor: "#fff",
+                            borderRadius: 22,
+                            padding: 16,
+                            alignItems: "center",
+                            elevation: 10,
+                            maxWidth: 260,
+                            width: "92%",
+                            aspectRatio: 1,
+                            minHeight: 260,
+                            shadowColor: "#000",
+                            shadowOpacity: 0.15,
+                            shadowRadius: 16,
+                            shadowOffset: { width: 0, height: 4 },
+                          }}>
                           <View
                             style={{
-                              backgroundColor: "#fff",
-                              borderRadius: 22,
-                              padding: 16,
-                              alignItems: "center",
-                              elevation: 10,
-                              maxWidth: 260,
-                              width: "92%",
-                              aspectRatio: 1,
-                              minHeight: 260,
-                              shadowColor: "#000",
-                              shadowOpacity: 0.15,
-                              shadowRadius: 16,
-                              shadowOffset: { width: 0, height: 4 },
+                              width: "100%",
+                              flexDirection: "row",
+                              justifyContent: "flex-end",
                             }}>
-                            <View
-                              style={{
-                                width: "100%",
-                                flexDirection: "row",
-                                justifyContent: "flex-end",
-                              }}>
-                              <TouchableOpacity
-                                onPress={() => setShowColorWheel(false)}>
-                                <Ionicons
-                                  name='close'
-                                  size={26}
-                                  color='#667eea'
-                                />
-                              </TouchableOpacity>
-                            </View>
-                            <View
-                              style={{
-                                flex: 1,
-                                justifyContent: "center",
-                                alignItems: "center",
-                                width: "100%",
-                              }}>
-                              <WheelColorPicker
-                                color={editData.bannerColor || "#fff"}
-                                onColorChangeComplete={(color) => {
-                                  setEditData((d) => ({
-                                    ...d,
-                                    bannerColor: color,
-                                    bannerImage: null,
-                                  }));
-                                  setBannerHex(color);
-                                }}
-                                thumbStyle={{
-                                  borderWidth: 2,
-                                  borderColor: "#667eea",
-                                }}
-                                sliderHidden={false}
-                                style={{
-                                  width: 180,
-                                  height: 180,
-                                  marginTop: 8,
-                                  marginBottom: 8,
-                                }}
+                            <TouchableOpacity
+                              onPress={() => setShowColorWheel(false)}>
+                              <Ionicons
+                                name='close'
+                                size={26}
+                                color='#667eea'
                               />
-                            </View>
+                            </TouchableOpacity>
                           </View>
-                        </TouchableWithoutFeedback>
-                      </View>
-                    </TouchableWithoutFeedback>
-                  </Modal>
-                )}
-                {/* Bouton supprimer la bannière */}
-                {(editData.bannerImage || editData.bannerColor) && (
-                  <TouchableOpacity
-                    onPress={() =>
-                      setEditData((d) => ({
-                        ...d,
-                        bannerImage: null,
-                        bannerColor: null,
-                      }))
-                    }
-                    style={{ marginTop: 8, marginBottom: 12 }}>
-                    <Text style={{ color: "#FF6B6B", fontSize: 13 }}>
-                      Supprimer la bannière
-                    </Text>
-                  </TouchableOpacity>
-                )}
-              </View>
-              <TextInput
-                placeholder="Nom d'utilisateur"
-                value={editData.username}
-                onChangeText={(v) =>
-                  setEditData((d) => ({ ...d, username: v }))
-                }
-                style={{
-                  borderBottomWidth: 1,
-                  borderColor: "#ccc",
-                  marginBottom: 12,
-                  fontSize: 16,
-                }}
-              />
-              <TextInput
-                placeholder='Bio'
-                value={editData.bio}
-                onChangeText={(v) => setEditData((d) => ({ ...d, bio: v }))}
-                style={{
-                  borderBottomWidth: 1,
-                  borderColor: "#ccc",
-                  marginBottom: 12,
-                  fontSize: 16,
-                }}
-                multiline
-              />
-              <Text style={{ marginBottom: 4, fontWeight: "bold" }}>Pays</Text>
-              <Picker
-                selectedValue={editData.country}
-                onValueChange={(v) =>
-                  setEditData((d) => ({ ...d, country: v }))
-                }
-                style={{
-                  backgroundColor: "#f3f3f3",
-                  borderRadius: 12,
-                  marginBottom: 16,
-                }}>
-                <Picker.Item label='Choisir un pays...' value='' />
-                {countries.map((c) => (
-                  <Picker.Item
-                    key={c.code}
-                    label={`${c.flag} ${c.name}`}
-                    value={c.code}
-                  />
-                ))}
-              </Picker>
-              <View
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                  marginBottom: 12,
-                }}>
-                <Button
-                  title={
-                    editData.photoURL && editData.photoURL.startsWith("http")
-                      ? "Changer la photo"
-                      : "Choisir une photo"
+                          <View
+                            style={{
+                              flex: 1,
+                              justifyContent: "center",
+                              alignItems: "center",
+                              width: "100%",
+                            }}>
+                            <WheelColorPicker
+                              color={editData.bannerColor || "#fff"}
+                              onColorChangeComplete={(color) => {
+                                setEditData((d) => ({
+                                  ...d,
+                                  bannerColor: color,
+                                  bannerImage: null,
+                                }));
+                                setBannerHex(color);
+                              }}
+                              thumbStyle={{
+                                borderWidth: 2,
+                                borderColor: "#667eea",
+                              }}
+                              sliderHidden={false}
+                              style={{
+                                width: 180,
+                                height: 180,
+                                marginTop: 8,
+                                marginBottom: 8,
+                              }}
+                            />
+                          </View>
+                        </View>
+                      </TouchableWithoutFeedback>
+                    </View>
+                  </TouchableWithoutFeedback>
+                </Modal>
+              )}
+              {/* Bouton supprimer la bannière */}
+              {(editData.bannerImage || editData.bannerColor) && (
+                <TouchableOpacity
+                  onPress={() =>
+                    setEditData((d) => ({
+                      ...d,
+                      bannerImage: null,
+                      bannerColor: null,
+                    }))
                   }
-                  onPress={async () => {
-                    setShowAvatarLibrary(false);
-                    const result = await ImagePicker.launchImageLibraryAsync({
-                      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-                      allowsEditing: true,
-                      aspect: [1, 1],
-                      quality: 0.7,
-                    });
-                    if (
-                      !result.canceled &&
-                      result.assets &&
-                      result.assets[0].uri
-                    ) {
-                      setEditData((d) => ({
-                        ...d,
-                        photoURL: result.assets[0].uri,
-                      }));
-                    }
-                  }}
-                />
-                <Button
-                  title='Choisir un avatar'
-                  onPress={() => setShowAvatarLibrary((v) => !v)}
-                  color='#667eea'
-                />
-              </View>
-              {showAvatarLibrary && (
-                <AvatarLibrary
-                  onSelect={(url) => {
-                    setEditData((d) => ({ ...d, photoURL: url }));
-                    setShowAvatarLibrary(false);
-                  }}
-                />
+                  style={{ marginTop: 8, marginBottom: 12 }}>
+                  <Text style={{ color: "#FF6B6B", fontSize: 13 }}>
+                    Supprimer la bannière
+                  </Text>
+                </TouchableOpacity>
               )}
-              {editData.photoURL && (
-                <Image
-                  source={{ uri: editData.photoURL }}
-                  style={{
-                    width: 80,
-                    height: 80,
-                    borderRadius: 40,
-                    alignSelf: "center",
-                    marginVertical: 8,
-                  }}
+            </View>
+            <TextInput
+              placeholder="Nom d'utilisateur"
+              value={editData.username}
+              onChangeText={(v) => setEditData((d) => ({ ...d, username: v }))}
+              style={{
+                borderBottomWidth: 1,
+                borderColor: "#ccc",
+                marginBottom: 12,
+                fontSize: 16,
+              }}
+            />
+            <TextInput
+              placeholder='Bio'
+              value={editData.bio}
+              onChangeText={(v) => setEditData((d) => ({ ...d, bio: v }))}
+              style={{
+                borderBottomWidth: 1,
+                borderColor: "#ccc",
+                marginBottom: 12,
+                fontSize: 16,
+              }}
+              multiline
+            />
+            <Text style={{ marginBottom: 4, fontWeight: "bold" }}>Pays</Text>
+            <Picker
+              selectedValue={editData.country}
+              onValueChange={(v) => setEditData((d) => ({ ...d, country: v }))}
+              style={{
+                backgroundColor: "#f3f3f3",
+                borderRadius: 12,
+                marginBottom: 16,
+              }}>
+              <Picker.Item label='Choisir un pays...' value='' />
+              {countries.map((c) => (
+                <Picker.Item
+                  key={c.code}
+                  label={`${c.flag} ${c.name}`}
+                  value={c.code}
                 />
-              )}
-              <View
+              ))}
+            </Picker>
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                marginBottom: 12,
+              }}>
+              <Button
+                title={
+                  editData.photoURL && editData.photoURL.startsWith("http")
+                    ? "Changer la photo"
+                    : "Choisir une photo"
+                }
+                onPress={async () => {
+                  setShowAvatarLibrary(false);
+                  const result = await ImagePicker.launchImageLibraryAsync({
+                    mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                    allowsEditing: true,
+                    aspect: [1, 1],
+                    quality: 0.7,
+                  });
+                  if (
+                    !result.canceled &&
+                    result.assets &&
+                    result.assets[0].uri
+                  ) {
+                    setEditData((d) => ({
+                      ...d,
+                      photoURL: result.assets[0].uri,
+                    }));
+                  }
+                }}
+              />
+              <Button
+                title='Choisir un avatar'
+                onPress={() => setShowAvatarLibrary((v) => !v)}
+                color='#667eea'
+              />
+            </View>
+            {showAvatarLibrary && (
+              <AvatarLibrary
+                onSelect={(url) => {
+                  setEditData((d) => ({ ...d, photoURL: url }));
+                  setShowAvatarLibrary(false);
+                }}
+              />
+            )}
+            {editData.photoURL && (
+              <Image
+                source={{ uri: editData.photoURL }}
                 style={{
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                  marginTop: 10,
-                }}>
-                <Button
-                  title='Annuler'
-                  color='#aaa'
-                  onPress={() => {
-                    setEditModalVisible(false);
-                    setShowAvatarLibrary(false);
-                  }}
-                />
-                <Button
-                  title='Enregistrer'
-                  color='#667eea'
-                  onPress={handleSaveProfile}
-                />
-              </View>
+                  width: 80,
+                  height: 80,
+                  borderRadius: 40,
+                  alignSelf: "center",
+                  marginVertical: 8,
+                }}
+              />
+            )}
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                marginTop: 10,
+              }}>
+              <Button
+                title='Annuler'
+                color='#aaa'
+                onPress={() => {
+                  setEditModalVisible(false);
+                  setShowAvatarLibrary(false);
+                }}
+              />
+              <Button
+                title='Enregistrer'
+                color='#667eea'
+                onPress={handleSaveProfile}
+              />
             </View>
           </View>
-        </Modal>
+        </View>
+      </Modal>
     </View>
   );
 };
