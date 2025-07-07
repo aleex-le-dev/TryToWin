@@ -184,20 +184,11 @@ export async function getUserGameScore(userId, game) {
  */
 export async function getUserAllGameStats(userId) {
   if (!userId) {
-    console.log("[DEBUG] getUserAllGameStats: userId manquant");
     return {};
   }
 
   try {
-    console.log(
-      "[DEBUG] getUserAllGameStats: Récupération des scores pour userId:",
-      userId
-    );
     const scoresSnap = await getDocs(collection(db, "users", userId, "scores"));
-    console.log(
-      "[DEBUG] getUserAllGameStats: Nombre de documents récupérés:",
-      scoresSnap.size
-    );
 
     const stats = {
       totalGames: 0,
@@ -212,12 +203,6 @@ export async function getUserAllGameStats(userId) {
     scoresSnap.forEach((doc) => {
       const data = doc.data();
       const gameId = doc.id;
-      console.log(
-        "[DEBUG] getUserAllGameStats: Données pour",
-        gameId,
-        ":",
-        data
-      );
 
       stats.totalGames += data.totalGames || 0;
       stats.totalWins += data.win || 0;
@@ -233,7 +218,6 @@ export async function getUserAllGameStats(userId) {
         ? Math.round((stats.totalWins / stats.totalGames) * 100)
         : 0;
 
-    console.log("[DEBUG] getUserAllGameStats: Statistiques finales:", stats);
     return stats;
   } catch (error) {
     console.error(

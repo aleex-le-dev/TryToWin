@@ -379,6 +379,12 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
     if (!user?.id) return;
     const allStats = await getUserAllGameStats(user.id);
     const scores = {};
+    let totalGames = 0,
+      wins = 0,
+      draws = 0,
+      loses = 0,
+      totalPoints = 0;
+
     for (const game of Object.keys(GAME_POINTS)) {
       scores[game] = allStats.gamesPlayed[game] || {
         win: 0,
@@ -393,8 +399,22 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
         lastUpdated: null,
         lastPlayed: null,
       };
+      totalGames += scores[game].totalGames;
+      wins += scores[game].win;
+      draws += scores[game].draw;
+      loses += scores[game].lose;
+      totalPoints += scores[game].totalPoints;
     }
     setUserScores(scores);
+    setUserStatsGlobal({
+      totalGames,
+      wins,
+      draws,
+      loses,
+      totalPoints,
+      winrate: totalGames ? Math.round(100 * (wins / totalGames)) : 0,
+      streak: Math.max(...Object.values(scores).map((s) => s.wins)),
+    });
   };
 
   // Rafraîchissement automatique des stats quand on revient sur l'écran
@@ -435,17 +455,12 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
         lastPlayed: null,
       };
       scores[game] = {
-        totalGames: (s.win || 0) + (s.draw || 0) + (s.lose || 0),
+        totalGames: s.totalGames || 0,
         wins: s.win || 0,
         draws: s.draw || 0,
         loses: s.lose || 0,
         points: s.totalPoints || 0,
-        winrate: s.win
-          ? Math.round(
-              100 *
-                (s.win / ((s.win || 0) + (s.draw || 0) + (s.lose || 0) || 1))
-            )
-          : 0,
+        winrate: s.winRate || 0,
       };
       totalGames += scores[game].totalGames;
       wins += scores[game].wins;
