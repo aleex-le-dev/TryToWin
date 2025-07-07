@@ -992,7 +992,7 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
                     title='Uploader une image'
                     onPress={async () => {
                       const result = await ImagePicker.launchImageLibraryAsync({
-                        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                        mediaTypes: ImagePicker.MediaType.IMAGE,
                         allowsEditing: true,
                         aspect: [3, 1],
                         quality: 0.7,
@@ -1206,7 +1206,7 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
                 onPress={async () => {
                   setShowAvatarLibrary(false);
                   const result = await ImagePicker.launchImageLibraryAsync({
-                    mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                    mediaTypes: ImagePicker.MediaType.IMAGE,
                     allowsEditing: true,
                     aspect: [1, 1],
                     quality: 0.7,
