@@ -17,6 +17,7 @@ const GameLayout = ({
   currentTurnLabel,
   timerLabel,
   currentSymbol,
+  renderMainActionButton, // Ajout d'une prop pour le bouton principal
 }) => {
   // Tableau de stats
   const rendreStatistiques = () => {
@@ -43,7 +44,7 @@ const GameLayout = ({
           <Text style={styles.valeurStat}>{totalParties}</Text>
           <Text style={styles.labelStat}>Total</Text>
         </View>
-        <View style={styles.elementStat}>
+        <View style={[styles.elementStat, styles.elementStatLast]}>
           <Text style={styles.valeurStat}>{tauxVictoire.toFixed(1)}%</Text>
           <Text style={styles.labelStat}>Taux Victoire</Text>
         </View>
@@ -99,6 +100,12 @@ const GameLayout = ({
       )}
       {/* Contenu spécifique au jeu */}
       <View style={{ flex: 1 }}>{children}</View>
+      {/* Bouton principal d'action juste au-dessus des statistiques */}
+      {renderMainActionButton && (
+        <View style={{ marginHorizontal: 20, marginBottom: 12 }}>
+          {renderMainActionButton()}
+        </View>
+      )}
       {/* Statistiques sous le jeu */}
       {
         <View
@@ -150,56 +157,75 @@ const styles = {
     marginTop: 32,
     backgroundColor: "#fff",
     borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
+    padding: 20,
+    marginBottom: 32,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
     elevation: 2,
+    alignItems: "center",
   },
   titreStatistiques: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: "bold",
-    marginBottom: 12,
+    marginBottom: 24,
     color: "#222",
-    textAlign: "left",
+    textAlign: "center",
+    letterSpacing: 0.5,
   },
   containerStatistiques: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 12,
+    alignItems: "center",
+    marginBottom: -15,
     backgroundColor: "#fff",
     borderRadius: 12,
-    padding: 12,
-    elevation: 1,
+    overflow: "hidden",
+    width: "100%",
+    borderWidth: 1,
+    borderColor: "#f0f0f0",
   },
   elementStat: {
-    alignItems: "center",
     flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 10,
+    paddingHorizontal: 0,
+    borderRightWidth: 1,
+    borderRightColor: "#ececec",
   },
   valeurStat: {
     fontSize: 22,
     fontWeight: "bold",
     color: "#667eea",
+    marginBottom: 2,
+    textAlign: "center",
   },
   labelStat: {
-    fontSize: 13,
+    fontSize: 12,
     color: "#888",
-    marginTop: 2,
+    textAlign: "center",
+  },
+  // Dernière colonne sans bordure droite
+  elementStatLast: {
+    borderRightWidth: 0,
   },
   containerStatsDetaillees: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginTop: 8,
-    backgroundColor: "#fff",
+    alignItems: "center",
+    marginTop: 10,
+    backgroundColor: "#f8f9fa",
     borderRadius: 12,
-    padding: 12,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 1,
+    padding: 14,
+    width: "100%",
+    gap: 8,
   },
   elementStatDetaille: {
     flex: 1,
     alignItems: "center",
+    gap: 2,
   },
   labelStatDetaille: {
     fontSize: 13,
@@ -219,7 +245,7 @@ const styles = {
     paddingVertical: 15,
     backgroundColor: "#fff",
     marginHorizontal: 20,
-    marginTop:-10,
+    marginTop: -10,
     marginBottom: 70,
     borderRadius: 12,
     shadowColor: "#000",

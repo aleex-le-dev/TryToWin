@@ -302,7 +302,7 @@ const Puissance4 = ({ navigation }) => {
       stats={stats}
       streak={stats.currentStreak}
       onBack={() => navigation.goBack()}
-      statsMarginTop={200}
+      statsMarginTop={-15}
       currentTurnLabel={gameOver ? "Partie terminée" : `Tour du joueur`}
       currentSymbol={
         gameOver
@@ -317,10 +317,24 @@ const Puissance4 = ({ navigation }) => {
       }
       timerLabel={`${Math.floor(elapsedTime / 60)}:${(elapsedTime % 60)
         .toString()
-        .padStart(2, "0")}`}>
+        .padStart(2, "0")}`}
+      renderMainActionButton={() =>
+        !gameOver ? (
+          <TouchableOpacity style={styles.resetButton} onPress={resetGame}>
+            <Ionicons name='refresh' size={20} color='#fff' />
+            <Text style={styles.resetButtonText}>Nouvelle partie</Text>
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity
+            style={[styles.resetButton, { backgroundColor: "#667eea" }]}
+            onPress={resetGame}>
+            <Ionicons name='play' size={20} color='#fff' />
+            <Text style={styles.resetButtonText}>Rejouer</Text>
+          </TouchableOpacity>
+        )
+      }>
       <View style={styles.container}>
-
-        {/* Plateau de jeu */}
+        {/* Plateau de jeu juste sous le titre */}
         <View style={styles.boardContainer}>
           {width < 350 ? (
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -330,7 +344,6 @@ const Puissance4 = ({ navigation }) => {
             renderBoard()
           )}
         </View>
-
         {/* Message de fin de partie */}
         {gameOver && (
           <View style={styles.gameOverContainer}>
@@ -341,10 +354,6 @@ const Puissance4 = ({ navigation }) => {
                 ? "Rouge gagne !"
                 : "Jaune gagne !"}
             </Text>
-            <TouchableOpacity style={styles.resetButton} onPress={resetGame}>
-              <Ionicons name='refresh' size={20} color='#fff' />
-              <Text style={styles.resetButtonText}>Nouvelle partie</Text>
-            </TouchableOpacity>
           </View>
         )}
 
@@ -362,12 +371,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     alignItems: "center",
   },
-  title: {
-    fontSize: 28,
-    fontWeight: "bold",
-    marginBottom: 20,
-    color: "#333",
-  },
+
   playerIndicator: {
     flexDirection: "row",
     alignItems: "center",
@@ -387,13 +391,14 @@ const styles = StyleSheet.create({
     borderRadius: 15,
   },
   boardContainer: {
-    marginVertical: 20,
+    marginTop: 8,
+    marginBottom: 200,
     backgroundColor: "transparent",
     padding: 8,
     borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 32, // Ajout d'espace sous le plateau
+    // Ajout d'espace sous le plateau supprimé
   },
   boardEffect: {
     width: BOARD_WIDTH,
