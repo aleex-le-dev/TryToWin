@@ -92,7 +92,74 @@ const GameLeaderboard = ({
             item.placeholder ? (
               <View key={item.key} style={{ height: 40 }} />
             ) : (
-              renderLeaderboardItem({ item, index })
+              <View style={styles.leaderboardItem}>
+                <View style={styles.rankContainer}>
+                  <Text style={styles.rankText}>#{item.rank}</Text>
+                  {index < 3 && (
+                    <Ionicons
+                      name='trophy'
+                      size={16}
+                      color={
+                        index === 0
+                          ? "#FFD700"
+                          : index === 1
+                          ? "#C0C0C0"
+                          : "#CD7F32"
+                      }
+                    />
+                  )}
+                </View>
+                <View style={styles.userInfo}>
+                  <View style={styles.userAvatar}>
+                    {item.avatar && item.avatar.startsWith("http") ? (
+                      <Image
+                        source={{ uri: item.avatar }}
+                        style={{ width: 40, height: 40, borderRadius: 20 }}
+                        resizeMode='cover'
+                      />
+                    ) : (
+                      <View
+                        style={{
+                          width: 40,
+                          height: 40,
+                          borderRadius: 20,
+                          backgroundColor: "#bbb",
+                          justifyContent: "center",
+                          alignItems: "center",
+                        }}>
+                        <Text
+                          style={{
+                            color: "#fff",
+                            fontSize: 22,
+                            fontWeight: "bold",
+                          }}>
+                          {item.username && item.username.length > 0
+                            ? item.username[0].toUpperCase()
+                            : item.email && item.email.length > 0
+                            ? item.email[0].toUpperCase()
+                            : "U"}
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+                  <View style={styles.userDetails}>
+                    <View
+                      style={{ flexDirection: "row", alignItems: "center" }}>
+                      <Text style={{ fontSize: 18, marginRight: 5 }}>
+                        {item.country?.flag || "🌍"}
+                      </Text>
+                      <Text style={styles.username}>{item.username}</Text>
+                    </View>
+                    <Text style={styles.userStats}>
+                      {item.gamesPlayed} parties • {item.winRate}% victoires
+                    </Text>
+                  </View>
+                </View>
+                <View style={styles.scoreContainer}>
+                  <Text style={styles.scoreText}>{item.score}</Text>
+                  <Text style={styles.scoreLabel}>points</Text>
+                </View>
+              </View>
             )
           }
           keyExtractor={(item, index) =>
@@ -175,6 +242,63 @@ const styles = {
   },
   leaderboardList: {
     flex: 1,
+  },
+  leaderboardItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
+  },
+  rankContainer: {
+    width: 50,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  rankText: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#333",
+  },
+  userInfo: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    marginLeft: 15,
+  },
+  userAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    overflow: "hidden",
+  },
+  userDetails: {
+    marginLeft: 10,
+  },
+  username: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#333",
+  },
+  userStats: {
+    fontSize: 14,
+    color: "#666",
+    marginTop: 2,
+  },
+  scoreContainer: {
+    width: 80,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  scoreText: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#333",
+  },
+  scoreLabel: {
+    fontSize: 12,
+    color: "#666",
+    marginTop: 2,
   },
 };
 

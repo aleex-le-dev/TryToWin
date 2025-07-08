@@ -131,9 +131,11 @@ const GameDetailsScreen = ({ route, navigation }) => {
                     if (userDoc.exists()) {
                       const userData = userDoc.data();
                       userAvatar =
-                        getAvatarUrl(userData.avatar) ||
-                        userData.photoURL ||
-                        "👤";
+                        userData.photoURL &&
+                        typeof userData.photoURL === "string" &&
+                        userData.photoURL.startsWith("http")
+                          ? userData.photoURL
+                          : getAvatarUrl(userData.avatar) || "👤";
                     }
                   } catch (e) {}
                 }
