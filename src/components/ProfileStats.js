@@ -46,12 +46,14 @@ const ProfileStats = ({
   };
 
   const renderStatCard = (icon, value, label, color) => (
-    <View style={styles.statCard}>
-      <View style={[styles.statIcon, { backgroundColor: color }]}>
-        <Ionicons name={icon} size={20} color='#fff' />
+    <View style={styles.premiumStatCard}>
+      <View style={[styles.premiumStatIcon, { backgroundColor: color + "22" }]}>
+        {" "}
+        {/* Couleur pastel */}
+        <Ionicons name={icon} size={28} color={color} />
       </View>
-      <Text style={styles.statValue}>{value}</Text>
-      <Text style={styles.statLabel}>{label}</Text>
+      <Text style={styles.premiumStatValue}>{value}</Text>
+      <Text style={styles.premiumStatLabel}>{label}</Text>
     </View>
   );
 
@@ -323,6 +325,38 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontWeight: "bold",
     marginLeft: 8,
+  },
+  premiumStatCard: {
+    flex: 1,
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    alignItems: "center",
+    paddingVertical: 18,
+    margin: 8,
+    elevation: 4,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+  },
+  premiumStatIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  premiumStatValue: {
+    fontSize: 26,
+    fontWeight: "bold",
+    color: "#23272a",
+    marginBottom: 2,
+  },
+  premiumStatLabel: {
+    fontSize: 12,
+    color: "#6c757d",
+    marginTop: 1,
   },
 });
 
