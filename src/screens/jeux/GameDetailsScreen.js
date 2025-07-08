@@ -26,6 +26,8 @@ import { doc, getDoc } from "firebase/firestore";
 import { db } from "../../utils/firebaseConfig";
 import { countries } from "../../constants";
 import { AVATAR_COLLECTIONS } from "../../constants/avatars";
+import GameLeaderboard from "../../components/GameLeaderboard";
+import GameStat from "../../components/GameStat";
 
 const { width } = Dimensions.get("window");
 
@@ -478,7 +480,13 @@ const GameDetailsScreen = ({ route, navigation }) => {
           {/* Onglets avec couleur dynamique pour l'onglet actif */}
           <View style={styles.tabsContainer}>
             <TouchableOpacity
-              style={styles.tab}
+              style={[
+                styles.tab,
+                activeTab === "leaderboard" && {
+                  borderBottomColor: game.color,
+                  borderBottomWidth: 2,
+                },
+              ]}
               onPress={() => {
                 setActiveTab("leaderboard");
                 setTimeout(scrollToUserInWorld, 400);
@@ -517,170 +525,32 @@ const GameDetailsScreen = ({ route, navigation }) => {
           </View>
 
           {/* Contenu des onglets */}
-          {activeTab === "stats" ? (
-            <ScrollView
-              showsVerticalScrollIndicator={false}
-              style={{ flex: 1 }}>
-              <View style={styles.statsContent}>
-                {/* Statistiques personnelles */}
-                <View style={styles.section}>
-                  <Text style={styles.sectionTitle}>Statistiques</Text>
-                  {statsLoading ? (
-                    <View style={styles.loadingContainer}>
-                      <ActivityIndicator size='large' color={game.color} />
-                      <Text style={styles.loadingText}>
-                        Chargement des statistiques...
-                      </Text>
-                    </View>
-                  ) : (
-                    <View style={styles.personalStats}>
-                      <View style={styles.personalStatRow}>
-                        <Ionicons name='trophy' size={20} color='#FFD700' />
-                        <Text style={styles.personalStatLabel}>
-                          Meilleur temps
-                        </Text>
-                        <Text style={styles.personalStatValue}>
-                          {userStats.bestTime
-                            ? `${userStats.bestTime.toFixed(1)} s`
-                            : "Aucun temps"}
-                        </Text>
-                      </View>
-                      <View style={styles.personalStatRow}>
-                        <Ionicons
-                          name='checkmark-circle'
-                          size={20}
-                          color='#4CAF50'
-                        />
-                        <Text style={styles.personalStatLabel}>Victoires</Text>
-                        <Text style={styles.personalStatValue}>
-                          {userStats.win} sur {userStats.totalGames || 0}
-                        </Text>
-                      </View>
-                      <View style={styles.personalStatRow}>
-                        <Ionicons
-                          name='trending-up'
-                          size={20}
-                          color='#2196F3'
-                        />
-                        <Text style={styles.personalStatLabel}>
-                          Taux de victoire
-                        </Text>
-                        <Text style={styles.personalStatValue}>
-                          {userStats.winRate}%
-                        </Text>
-                      </View>
-                      <View style={styles.personalStatRow}>
-                        <Ionicons name='flash' size={20} color='#FF9800' />
-                        <Text style={styles.personalStatLabel}>
-                          Série actuelle
-                        </Text>
-                        <Text style={styles.personalStatValue}>
-                          {userStats.currentStreak} victoires
-                        </Text>
-                      </View>
-                    </View>
-                  )}
-                </View>
-              </View>
-            </ScrollView>
+          {activeTab === "leaderboard" ? (
+            <GameLeaderboard
+              leaderboardData={leaderboardData}
+              leaderboardType={leaderboardType}
+              setLeaderboardType={setLeaderboardType}
+              userCountry={userCountry}
+              currentUserRank={currentUserRank}
+              game={game}
+              filteredLeaderboardData={filteredLeaderboardData}
+              centeredLeaderboardData={centeredLeaderboardData}
+              flatListRef={flatListRef}
+              handleScrollToIndexFailed={handleScrollToIndexFailed}
+              pendingScrollToUserCountry={pendingScrollToUserCountry}
+              setPendingScrollToUserCountry={setPendingScrollToUserCountry}
+              getUserIndexWithPlaceholders={getUserIndexWithPlaceholders}
+              loading={loading}
+              renderLeaderboardItem={renderLeaderboardItem}
+              scrollToUserInWorld={scrollToUserInWorld}
+              countries={countries}
+            />
           ) : (
-            <View style={styles.leaderboardContent}>
-              <View style={styles.leaderboardHeader}>
-                <Text style={styles.leaderboardTitle}>
-                  Classement {game.title}
-                </Text>
-                <Text style={styles.leaderboardSubtitle}>
-                  {currentUserRank
-                    ? `Votre position : #${currentUserRank}`
-                    : "Non classé"}
-                </Text>
-              </View>
-
-              {/* Onglets de classement */}
-              <View style={styles.leaderboardSwitchRow}>
-                <TouchableOpacity
-                  style={[
-                    styles.leaderboardSwitchBtn,
-                    leaderboardType === "global" &&
-                      styles.leaderboardSwitchActive,
-                  ]}
-                  onPress={() => {
-                    setLeaderboardType("global");
-                    setTimeout(scrollToUserInWorld, 400);
-                  }}>
-                  <Text
-                    style={[
-                      styles.leaderboardSwitchText,
-                      leaderboardType === "global" &&
-                        styles.leaderboardSwitchTextActive,
-                    ]}>
-                    Mondial
-                  </Text>
-                </TouchableOpacity>
-                {userCountry && (
-                  <TouchableOpacity
-                    style={[
-                      styles.leaderboardSwitchBtn,
-                      leaderboardType === "country" &&
-                        styles.leaderboardSwitchActive,
-                    ]}
-                    onPress={() => {
-                      setLeaderboardType("country");
-                      setPendingScrollToUserCountry(true);
-                    }}>
-                    <Text
-                      style={[
-                        styles.leaderboardSwitchText,
-                        leaderboardType === "country" &&
-                          styles.leaderboardSwitchTextActive,
-                      ]}>
-                      {countries.find((c) => c.code === userCountry)?.flag ||
-                        "🌍"}{" "}
-                      {countries.find((c) => c.code === userCountry)?.name ||
-                        userCountry}
-                    </Text>
-                  </TouchableOpacity>
-                )}
-              </View>
-
-              {/* Liste du classement */}
-              <View style={styles.leaderboardList}>
-                <FlatList
-                  ref={flatListRef}
-                  data={centeredLeaderboardData}
-                  renderItem={({ item, index }) =>
-                    item.placeholder ? (
-                      <View key={item.key} style={{ height: 40 }} />
-                    ) : (
-                      renderLeaderboardItem({ item, index })
-                    )
-                  }
-                  keyExtractor={(item, index) =>
-                    item.key ||
-                    item.userId ||
-                    item.id ||
-                    `player_${item.rank}` ||
-                    `item_${index}`
-                  }
-                  showsVerticalScrollIndicator={false}
-                  contentContainerStyle={{ paddingBottom: 20 }}
-                  onScrollToIndexFailed={handleScrollToIndexFailed}
-                  onContentSizeChange={() => {
-                    if (pendingScrollToUserCountry) {
-                      const userIndex = getUserIndexWithPlaceholders();
-                      if (userIndex !== -1 && flatListRef.current) {
-                        flatListRef.current.scrollToIndex({
-                          index: userIndex,
-                          animated: true,
-                          viewPosition: 0.5,
-                        });
-                      }
-                      setPendingScrollToUserCountry(false);
-                    }
-                  }}
-                />
-              </View>
-            </View>
+            <GameStat
+              userStats={userStats}
+              statsLoading={statsLoading}
+              game={game}
+            />
           )}
         </View>
       )}
