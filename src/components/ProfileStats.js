@@ -173,10 +173,50 @@ const ProfileStats = ({
         {/* Statistiques par jeu */}
         {statsByGame && Object.keys(statsByGame).length > 0 && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Par jeu</Text>
-            {Object.entries(statsByGame).map(([gameId, gameStats]) =>
-              renderGameStats(gameId, gameStats)
-            )}
+            <Text style={styles.sectionTitle}>Par jeu (debug)</Text>
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                marginBottom: 6,
+              }}>
+              <Text style={{ flex: 2, fontWeight: "bold" }}>Jeu</Text>
+              <Text
+                style={{ flex: 1, textAlign: "center", fontWeight: "bold" }}>
+                Parties
+              </Text>
+              <Text
+                style={{ flex: 1, textAlign: "center", fontWeight: "bold" }}>
+                Victoires
+              </Text>
+              <Text
+                style={{ flex: 1, textAlign: "center", fontWeight: "bold" }}>
+                Points
+              </Text>
+            </View>
+            {Object.entries(statsByGame).map(([gameId, gameStats]) => {
+              const game = GAMES_DATA.find((g) => g.id === gameId);
+              return (
+                <View
+                  key={gameId}
+                  style={{
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                    marginBottom: 2,
+                  }}>
+                  <Text style={{ flex: 2 }}>{game?.title || gameId}</Text>
+                  <Text style={{ flex: 1, textAlign: "center" }}>
+                    {gameStats.totalGames || 0}
+                  </Text>
+                  <Text style={{ flex: 1, textAlign: "center" }}>
+                    {gameStats.win || 0}
+                  </Text>
+                  <Text style={{ flex: 1, textAlign: "center" }}>
+                    {gameStats.totalPoints || 0}
+                  </Text>
+                </View>
+              );
+            })}
           </View>
         )}
 
