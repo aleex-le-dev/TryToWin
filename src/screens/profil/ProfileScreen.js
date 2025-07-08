@@ -31,7 +31,7 @@ import * as DocumentPicker from "expo-document-picker";
 import AvatarLibrary from "../../components/AvatarLibrary";
 import ProfileHeaderAvatar from "../../components/ProfileHeaderAvatar";
 import ProfileTab from "../../components/ProfileTab";
-import LeaderboardGame from "../../components/LeaderboardGame";
+import LeaderboardProfil from "../../components/LeaderboardProfil";
 import ProfileStats from "../../components/ProfileStats";
 import WheelColorPicker from "react-native-wheel-color-picker";
 import SettingsScreen from "../social/SettingsScreen";
@@ -854,6 +854,16 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
     }
   };
 
+  // Lors de la sélection d'un avatar dans l'AvatarLibrary ou autre :
+  const handleAvatarSelect = (avatarKey) => {
+    setEditData((d) => ({ ...d, avatar: avatarKey, photoURL: "" }));
+    setShowAvatarLibrary(false);
+  };
+  // Lors de la sélection d'une photo de profil :
+  const handlePhotoSelect = (photoUrl) => {
+    setEditData((d) => ({ ...d, photoURL: photoUrl, avatar: "" }));
+  };
+
   if (!profileFromFirestoreLoaded || !profile?.username) {
     return (
       <View
@@ -990,7 +1000,7 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
       </View>
 
       {activeTab === "leaderboard" ? (
-        <LeaderboardGame
+        <LeaderboardProfil
           userId={user?.id}
           gameColor='#667eea'
           showUserPosition={true}
@@ -1225,24 +1235,11 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
               {(editData.bannerImage || editData.bannerColor) && (
                 <TouchableOpacity
                   onPress={() => {
-                    console.log(
-                      "[DEBUG] Avant suppression bannière",
-                      JSON.stringify(editData)
-                    );
-                    setEditData((d) => {
-                      const newData = {
-                        ...d,
-                        bannerImage: null,
-                        bannerColor: null,
-                        photoURL: d.photoURL,
-                        avatar: d.avatar,
-                      };
-                      console.log(
-                        "[DEBUG] Après suppression bannière",
-                        JSON.stringify(newData)
-                      );
-                      return newData;
-                    });
+                    setEditData((d) => ({
+                      ...d,
+                      bannerImage: null,
+                      bannerColor: null,
+                    }));
                   }}
                   style={{
                     marginTop: 8,
@@ -1296,6 +1293,61 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
                 />
               ))}
             </Picker>
+            {/* Section Avatar dans la modale d'édition du profil */}
+            <Text
+              style={{
+                fontWeight: "bold",
+                fontSize: 16,
+                marginBottom: 8,
+                alignSelf: "flex-start",
+                marginTop: 18,
+              }}>
+              Avatar
+            </Text>
+            {showAvatarLibrary && (
+              <AvatarLibrary onSelect={handleAvatarSelect} />
+            )}
+            {/* Aperçu de l'avatar/photo : */}
+            {editData.photoURL ? (
+              <Image
+                source={{ uri: editData.photoURL }}
+                style={{
+                  width: 80,
+                  height: 80,
+                  borderRadius: 40,
+                  alignSelf: "center",
+                  marginVertical: 8,
+                }}
+              />
+            ) : editData.avatar && editData.avatar.startsWith("http") ? (
+              <Image
+                source={{ uri: editData.avatar }}
+                style={{
+                  width: 80,
+                  height: 80,
+                  borderRadius: 40,
+                  alignSelf: "center",
+                  marginVertical: 8,
+                }}
+              />
+            ) : editData.avatar && editData.avatar.length === 1 ? (
+              <View
+                style={{
+                  width: 80,
+                  height: 80,
+                  borderRadius: 40,
+                  backgroundColor: "#bbb",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  alignSelf: "center",
+                  marginVertical: 8,
+                }}>
+                <Text
+                  style={{ color: "#fff", fontSize: 40, fontWeight: "bold" }}>
+                  {editData.avatar}
+                </Text>
+              </View>
+            ) : null}
             <View
               style={{
                 flexDirection: "row",
@@ -1316,13 +1368,13 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
                 color='#667eea'
               />
             </View>
-            {editData.avatar && editData.avatar !== "👤" && (
+            {(editData.photoURL || editData.avatar) && (
               <TouchableOpacity
                 onPress={() => {
                   setEditData((d) => ({
                     ...d,
-                    avatar: "👤",
-                    photoURL: null,
+                    photoURL: "",
+                    avatar: "",
                   }));
                 }}
                 style={{
@@ -1331,36 +1383,9 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
                   alignSelf: "flex-start",
                 }}>
                 <Text style={{ color: "#FF6B6B", fontSize: 13 }}>
-                  Réinitialiser l'avatar
+                  Supprimer l'avatar
                 </Text>
               </TouchableOpacity>
-            )}
-            {showAvatarLibrary && (
-              <AvatarLibrary
-                onSelect={(url) => {
-                  // Si c'est une URL de drapeau, extraire la clé
-                  if (url.includes("flagcdn.com")) {
-                    const flagKey = url.split("/").pop().replace(".png", "");
-                    setEditData((d) => ({ ...d, avatar: `flag-${flagKey}` }));
-                  } else {
-                    // Pour les autres avatars, stocker l'URL directement
-                    setEditData((d) => ({ ...d, avatar: url }));
-                  }
-                  setShowAvatarLibrary(false);
-                }}
-              />
-            )}
-            {editData.photoURL && (
-              <Image
-                source={{ uri: editData.photoURL }}
-                style={{
-                  width: 80,
-                  height: 80,
-                  borderRadius: 40,
-                  alignSelf: "center",
-                  marginVertical: 8,
-                }}
-              />
             )}
             <View
               style={{

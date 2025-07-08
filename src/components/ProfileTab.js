@@ -135,12 +135,16 @@ const ProfileTab = ({
               typeof profile?.photoURL === "string" &&
               profile.photoURL.trim() !== ""
                 ? profile.photoURL
-                : typeof profile?.avatar === "string" &&
-                  profile.avatar.startsWith("http")
-                ? profile.avatar
                 : null
             }
-            avatar={typeof profile?.avatar === "string" ? profile.avatar : ""}
+            avatar={
+              typeof profile?.photoURL === "string" &&
+              profile.photoURL.trim() !== ""
+                ? ""
+                : typeof profile?.avatar === "string"
+                ? profile.avatar
+                : ""
+            }
             size={100}
             displayName={
               typeof profile?.username === "string" &&

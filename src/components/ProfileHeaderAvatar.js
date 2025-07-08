@@ -3,13 +3,7 @@
 import React from "react";
 import { View, Image, Text } from "react-native";
 
-const COLORS = [
-  "#FF5733",
-  "#33FF57",
-  "#3357FF",
-  "#FF33A1",
-  "#A133FF",
-];
+const COLORS = ["#FF5733", "#33FF57", "#3357FF", "#FF33A1", "#A133FF"];
 
 function getRandomColor(email) {
   if (!email) return COLORS[0];
@@ -48,16 +42,6 @@ const ProfileHeaderAvatar = ({
   const hasPhoto = typeof photoURL === "string" && photoURL.trim() !== "";
   const showDefaultEmoji = avatar === "👤";
 
-  // DEBUG LOG
-  console.log("[DEBUG] ProfileHeaderAvatar", {
-    photoURL,
-    avatar,
-    showDefaultEmoji,
-    displayName,
-    initial,
-    hasPhoto,
-  });
-
   let renderContent;
   if (hasPhoto) {
     renderContent = (
@@ -73,30 +57,43 @@ const ProfileHeaderAvatar = ({
         style={{ width: size, height: size, borderRadius: size / 2 }}
       />
     );
-  } else if (showDefaultEmoji) {
+  } else if (avatar && typeof avatar === "string" && avatar.length === 1) {
+    // Emoji avatar
     renderContent = (
       <Text style={{ color: "#fff", fontSize: size / 2, fontWeight: "bold" }}>
-        👤
+        {avatar}
       </Text>
+    );
+  } else if (
+    avatar &&
+    typeof avatar === "string" &&
+    avatar.startsWith("http")
+  ) {
+    // Avatar image URL
+    renderContent = (
+      <Image
+        source={{ uri: avatar }}
+        style={{ width: size, height: size, borderRadius: size / 2 }}
+      />
     );
   } else {
+    // Fallback : bulle grise avec initiale
     renderContent = (
-      <Text style={{ color: "#fff", fontSize: size / 2, fontWeight: "bold" }}>
-        {initial}
-      </Text>
+      <View
+        style={{
+          width: size,
+          height: size,
+          borderRadius: size / 2,
+          backgroundColor: "#bbb",
+          justifyContent: "center",
+          alignItems: "center",
+        }}>
+        <Text style={{ color: "#fff", fontSize: size / 2, fontWeight: "bold" }}>
+          {initial}
+        </Text>
+      </View>
     );
   }
-  console.log("[DEBUG] ProfileHeaderAvatar render", {
-    avatar,
-    showDefaultEmoji,
-    renderContentType: hasPhoto
-      ? "photo"
-      : flagUrl
-      ? "flag"
-      : showDefaultEmoji
-      ? "emoji"
-      : "initial",
-  });
 
   return (
     <View

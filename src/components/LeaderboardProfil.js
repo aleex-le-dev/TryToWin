@@ -23,10 +23,10 @@ import { DEMO_PLAYERS } from "../constants/demoLeaderboard";
 import { AVATAR_COLLECTIONS } from "../constants/avatars";
 
 /**
- * Composant de classement pour les jeux (GameDetailsScreen)
+ * Composant de classement pour le profil utilisateur (ProfileScreen)
  * Style identique à GameDetailsScreen
  */
-const LeaderboardGame = ({
+const LeaderboardProfil = ({
   style,
   userId,
   gameColor = "#667eea",
@@ -46,7 +46,7 @@ const LeaderboardGame = ({
   // Utiliser l'userId passé en prop ou celui de l'utilisateur connecté
   const currentUserId = userId || user?.id;
 
-  // Dans le composant LeaderboardGame, je force isProfileView à true pour TOUS les usages
+  // Dans le composant LeaderboardProfil, je force isProfileView à true pour TOUS les usages
   const effectiveIsProfileView = true;
 
   // Fonction pour récupérer l'URL de l'avatar à partir de sa clé
@@ -71,15 +71,6 @@ const LeaderboardGame = ({
       const userCountry = profile?.country || user?.country || "FR";
       setSelectedCountry(userCountry);
       initializeLeaderboards();
-
-      // Debug: afficher les informations du profil
-      console.log("LeaderboardGame - Profile info:", {
-        profileAvatar: profile?.avatar,
-        profilePhotoURL: profile?.photoURL,
-        userAvatar: user?.avatar,
-        profileUsername: profile?.username,
-        userUsername: user?.username,
-      });
     }
   }, [currentUserId, user, profile]);
 
@@ -383,17 +374,6 @@ const LeaderboardGame = ({
   };
 
   const renderPlayer = ({ item, index }) => {
-    if (item.userId === currentUserId) {
-      console.log("[DEBUG] renderPlayer FULL", item);
-    }
-    console.log(
-      "Leaderboard avatar:",
-      item.avatar,
-      typeof item.avatar,
-      item.username,
-      "Profile avatar:",
-      profile?.avatar
-    );
     return (
       <View
         style={[
@@ -423,12 +403,6 @@ const LeaderboardGame = ({
           )}
         </View>
         <View style={styles.avatarContainer}>
-          {/* DEBUG LOG */}
-          {console.log("[DEBUG] renderPlayer AVATAR/PHOTO", {
-            photoURL: item.photoURL,
-            avatar: item.avatar,
-            username: item.username,
-          })}
           {item.photoURL &&
           typeof item.photoURL === "string" &&
           item.photoURL.trim() !== "" ? (
@@ -623,7 +597,6 @@ const LeaderboardGame = ({
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.listContainer}
           onScrollToIndexFailed={(info) => {
-            console.log("Scroll to index failed:", info);
             // Fallback: scroll vers le haut
             flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
           }}
@@ -817,4 +790,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default LeaderboardGame;
+export default LeaderboardProfil;
