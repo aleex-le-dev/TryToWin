@@ -8,6 +8,7 @@ import {
   Image,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import SkeletonProfile from "./SkeletonProfile";
 
 const GameLeaderboard = ({
   leaderboardData,
@@ -85,107 +86,111 @@ const GameLeaderboard = ({
 
       {/* Liste du classement */}
       <View style={styles.leaderboardList}>
-        <FlatList
-          ref={flatListRef}
-          data={centeredLeaderboardData}
-          renderItem={({ item, index }) =>
-            item.placeholder ? (
-              <View key={item.key} style={{ height: 40 }} />
-            ) : (
-              <View style={styles.leaderboardItem}>
-                <View style={styles.rankContainer}>
-                  <Text style={styles.rankText}>#{item.rank}</Text>
-                  {index < 3 && (
-                    <Ionicons
-                      name='trophy'
-                      size={16}
-                      color={
-                        index === 0
-                          ? "#FFD700"
-                          : index === 1
-                          ? "#C0C0C0"
-                          : "#CD7F32"
-                      }
-                    />
-                  )}
-                </View>
-                <View style={styles.userInfo}>
-                  <View style={styles.userAvatar}>
-                    {item.avatar && item.avatar.startsWith("http") ? (
-                      <Image
-                        source={{ uri: item.avatar }}
-                        style={{ width: 40, height: 40, borderRadius: 20 }}
-                        resizeMode='cover'
+        {loading ? (
+          <SkeletonProfile />
+        ) : (
+          <FlatList
+            ref={flatListRef}
+            data={centeredLeaderboardData}
+            renderItem={({ item, index }) =>
+              item.placeholder ? (
+                <View key={item.key} style={{ height: 40 }} />
+              ) : (
+                <View style={styles.leaderboardItem}>
+                  <View style={styles.rankContainer}>
+                    <Text style={styles.rankText}>#{item.rank}</Text>
+                    {index < 3 && (
+                      <Ionicons
+                        name='trophy'
+                        size={16}
+                        color={
+                          index === 0
+                            ? "#FFD700"
+                            : index === 1
+                            ? "#C0C0C0"
+                            : "#CD7F32"
+                        }
                       />
-                    ) : (
-                      <View
-                        style={{
-                          width: 40,
-                          height: 40,
-                          borderRadius: 20,
-                          backgroundColor: "#bbb",
-                          justifyContent: "center",
-                          alignItems: "center",
-                        }}>
-                        <Text
-                          style={{
-                            color: "#fff",
-                            fontSize: 22,
-                            fontWeight: "bold",
-                          }}>
-                          {item.username && item.username.length > 0
-                            ? item.username[0].toUpperCase()
-                            : item.email && item.email.length > 0
-                            ? item.email[0].toUpperCase()
-                            : "U"}
-                        </Text>
-                      </View>
                     )}
                   </View>
-                  <View style={styles.userDetails}>
-                    <View
-                      style={{ flexDirection: "row", alignItems: "center" }}>
-                      <Text style={{ fontSize: 18, marginRight: 5 }}>
-                        {item.country?.flag || "🌍"}
-                      </Text>
-                      <Text style={styles.username}>{item.username}</Text>
+                  <View style={styles.userInfo}>
+                    <View style={styles.userAvatar}>
+                      {item.avatar && item.avatar.startsWith("http") ? (
+                        <Image
+                          source={{ uri: item.avatar }}
+                          style={{ width: 40, height: 40, borderRadius: 20 }}
+                          resizeMode='cover'
+                        />
+                      ) : (
+                        <View
+                          style={{
+                            width: 40,
+                            height: 40,
+                            borderRadius: 20,
+                            backgroundColor: "#bbb",
+                            justifyContent: "center",
+                            alignItems: "center",
+                          }}>
+                          <Text
+                            style={{
+                              color: "#fff",
+                              fontSize: 22,
+                              fontWeight: "bold",
+                            }}>
+                            {item.username && item.username.length > 0
+                              ? item.username[0].toUpperCase()
+                              : item.email && item.email.length > 0
+                              ? item.email[0].toUpperCase()
+                              : "U"}
+                          </Text>
+                        </View>
+                      )}
                     </View>
-                    <Text style={styles.userStats}>
-                      {item.gamesPlayed} parties • {item.winRate}% victoires
-                    </Text>
+                    <View style={styles.userDetails}>
+                      <View
+                        style={{ flexDirection: "row", alignItems: "center" }}>
+                        <Text style={{ fontSize: 18, marginRight: 5 }}>
+                          {item.country?.flag || "🌍"}
+                        </Text>
+                        <Text style={styles.username}>{item.username}</Text>
+                      </View>
+                      <Text style={styles.userStats}>
+                        {item.gamesPlayed} parties • {item.winRate}% victoires
+                      </Text>
+                    </View>
+                  </View>
+                  <View style={styles.scoreContainer}>
+                    <Text style={styles.scoreText}>{item.score}</Text>
+                    <Text style={styles.scoreLabel}>points</Text>
                   </View>
                 </View>
-                <View style={styles.scoreContainer}>
-                  <Text style={styles.scoreText}>{item.score}</Text>
-                  <Text style={styles.scoreLabel}>points</Text>
-                </View>
-              </View>
-            )
-          }
-          keyExtractor={(item, index) =>
-            item.key ||
-            item.userId ||
-            item.id ||
-            `player_${item.rank}` ||
-            `item_${index}`
-          }
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: 20 }}
-          onScrollToIndexFailed={handleScrollToIndexFailed}
-          onContentSizeChange={() => {
-            if (pendingScrollToUserCountry) {
-              const userIndex = getUserIndexWithPlaceholders();
-              if (userIndex !== -1 && flatListRef.current) {
-                flatListRef.current.scrollToIndex({
-                  index: userIndex,
-                  animated: true,
-                  viewPosition: 0.5,
-                });
-              }
-              setPendingScrollToUserCountry(false);
+              )
             }
-          }}
-        />
+            keyExtractor={(item, index) =>
+              item.key ||
+              item.userId ||
+              item.id ||
+              `player_${item.rank}` ||
+              `item_${index}`
+            }
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ paddingBottom: 20 }}
+            onScrollToIndexFailed={handleScrollToIndexFailed}
+            onContentSizeChange={() => {
+              if (pendingScrollToUserCountry) {
+                const userIndex = getUserIndexWithPlaceholders();
+                if (userIndex !== -1 && flatListRef.current) {
+                  flatListRef.current.scrollToIndex({
+                    index: userIndex,
+                    animated: true,
+                    viewPosition: 0.5,
+                  });
+                }
+                setPendingScrollToUserCountry(false);
+              }
+            }}
+          />
+        )}
       </View>
     </View>
   );

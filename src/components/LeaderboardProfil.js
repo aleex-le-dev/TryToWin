@@ -21,6 +21,7 @@ import { db } from "../utils/firebaseConfig";
 import { countries } from "../constants";
 import { DEMO_PLAYERS } from "../constants/demoLeaderboard";
 import { AVATAR_COLLECTIONS } from "../constants/avatars";
+import SkeletonProfile from "./SkeletonProfile";
 
 /**
  * Composant de classement pour le profil utilisateur (ProfileScreen)
@@ -584,10 +585,7 @@ const LeaderboardProfil = ({
 
       {/* Liste du classement */}
       {loading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size='large' color={gameColor} />
-          <Text style={styles.loadingText}>Chargement du classement...</Text>
-        </View>
+        <SkeletonProfile />
       ) : leaderboard.length > 0 ? (
         <FlatList
           ref={flatListRef}
