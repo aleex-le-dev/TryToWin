@@ -250,6 +250,10 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
   );
   const nav = useNavigation();
 
+  // Ajouter un état d'upload pour la bannière et l'avatar
+  const [bannerUploading, setBannerUploading] = useState(false);
+  const [avatarUploading, setAvatarUploading] = useState(false);
+
   // Calcul des vraies statistiques utilisateur basées sur les données Firestore
   const userStats = {
     totalScore: userStatsGlobal.totalPoints || userStatsGlobal.totalPoints || 0,
@@ -824,32 +828,42 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
 
   // Permet d'uploader une image pour la bannière
   const pickImageBanner = async () => {
-    const result = await DocumentPicker.getDocumentAsync({
-      type: "image/*",
-      copyToCacheDirectory: true,
-      multiple: false,
-    });
-    if (!result.canceled && result.assets && result.assets[0].uri) {
-      setEditData((d) => ({
-        ...d,
-        bannerImage: result.assets[0].uri,
-        bannerColor: null,
-      }));
+    setBannerUploading(true);
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: "image/*",
+        copyToCacheDirectory: true,
+        multiple: false,
+      });
+      if (!result.canceled && result.assets && result.assets[0].uri) {
+        setEditData((d) => ({
+          ...d,
+          bannerImage: result.assets[0].uri,
+          bannerColor: null,
+        }));
+      }
+    } finally {
+      setBannerUploading(false);
     }
   };
 
   // Permet d'uploader une image pour l'avatar
   const pickImageAvatar = async () => {
-    const result = await DocumentPicker.getDocumentAsync({
-      type: "image/*",
-      copyToCacheDirectory: true,
-      multiple: false,
-    });
-    if (!result.canceled && result.assets && result.assets[0].uri) {
-      setEditData((d) => ({
-        ...d,
-        photoURL: result.assets[0].uri,
-      }));
+    setAvatarUploading(true);
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: "image/*",
+        copyToCacheDirectory: true,
+        multiple: false,
+      });
+      if (!result.canceled && result.assets && result.assets[0].uri) {
+        setEditData((d) => ({
+          ...d,
+          photoURL: result.assets[0].uri,
+        }));
+      }
+    } finally {
+      setAvatarUploading(false);
     }
   };
 
@@ -1071,27 +1085,80 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
                 Bannière
               </Text>
               {/* Aperçu de la bannière */}
-              <View
-                style={{
-                  width: "100%",
-                  height: 80,
-                  borderRadius: 12,
-                  marginBottom: 12,
-                  backgroundColor: editData.bannerColor || "transparent",
-                  overflow: "hidden",
-                  justifyContent: "center",
-                  alignItems: "center",
-                  borderWidth: 2,
-                  borderColor: "#000",
-                  borderStyle: "dashed",
-                }}>
-                {editData.bannerImage && (
+              {editData.bannerImage ? (
+                <View
+                  style={{
+                    position: "relative",
+                    width: "100%",
+                    height: 100,
+                    marginBottom: 10,
+                    borderWidth: 2,
+                    borderColor: "#000",
+                    borderStyle: "dashed",
+                    borderRadius: 0,
+                    overflow: "hidden",
+                  }}>
                   <Image
                     source={{ uri: editData.bannerImage }}
-                    style={{ width: "100%", height: 80, resizeMode: "cover" }}
+                    style={{ width: "100%", height: "100%", borderRadius: 12 }}
+                    resizeMode='cover'
                   />
-                )}
-              </View>
+                  {bannerUploading && (
+                    <View
+                      style={{
+                        position: "absolute",
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        justifyContent: "center",
+                        alignItems: "center",
+                        backgroundColor: "rgba(255,255,255,0.5)",
+                        zIndex: 2,
+                      }}>
+                      <ActivityIndicator size='large' color='#667eea' />
+                    </View>
+                  )}
+                </View>
+              ) : editData.bannerColor ? (
+                <View
+                  style={{
+                    position: "relative",
+                    width: "100%",
+                    height: 100,
+                    marginBottom: 10,
+                    borderWidth: 2,
+                    borderColor: "#000",
+                    borderStyle: "dashed",
+                    borderRadius: 0,
+                    overflow: "hidden",
+                  }}>
+                  <View
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      borderRadius: 12,
+                      backgroundColor: editData.bannerColor,
+                    }}
+                  />
+                  {bannerUploading && (
+                    <View
+                      style={{
+                        position: "absolute",
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        justifyContent: "center",
+                        alignItems: "center",
+                        backgroundColor: "rgba(255,255,255,0.5)",
+                        zIndex: 2,
+                      }}>
+                      <ActivityIndicator size='large' color='#667eea' />
+                    </View>
+                  )}
+                </View>
+              ) : null}
               {/* Ligne image + couleur */}
               <View
                 style={{
@@ -1307,46 +1374,64 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
               <AvatarLibrary onSelect={handleAvatarSelect} />
             )}
             {/* Aperçu de l'avatar/photo : */}
-            {editData.photoURL ? (
-              <Image
-                source={{ uri: editData.photoURL }}
-                style={{
-                  width: 80,
-                  height: 80,
-                  borderRadius: 40,
-                  alignSelf: "center",
-                  marginVertical: 8,
-                }}
-              />
-            ) : editData.avatar && editData.avatar.startsWith("http") ? (
-              <Image
-                source={{ uri: editData.avatar }}
-                style={{
-                  width: 80,
-                  height: 80,
-                  borderRadius: 40,
-                  alignSelf: "center",
-                  marginVertical: 8,
-                }}
-              />
-            ) : editData.avatar && editData.avatar.length === 1 ? (
-              <View
-                style={{
-                  width: 80,
-                  height: 80,
-                  borderRadius: 40,
-                  backgroundColor: "#bbb",
-                  justifyContent: "center",
-                  alignItems: "center",
-                  alignSelf: "center",
-                  marginVertical: 8,
-                }}>
-                <Text
-                  style={{ color: "#fff", fontSize: 40, fontWeight: "bold" }}>
-                  {editData.avatar}
-                </Text>
-              </View>
-            ) : null}
+            <View style={{ position: "relative", alignSelf: "center" }}>
+              {editData.photoURL ? (
+                <Image
+                  source={{ uri: editData.photoURL }}
+                  style={{
+                    width: 80,
+                    height: 80,
+                    borderRadius: 40,
+                    alignSelf: "center",
+                    marginVertical: 8,
+                  }}
+                />
+              ) : editData.avatar && editData.avatar.startsWith("http") ? (
+                <Image
+                  source={{ uri: editData.avatar }}
+                  style={{
+                    width: 80,
+                    height: 80,
+                    borderRadius: 40,
+                    alignSelf: "center",
+                    marginVertical: 8,
+                  }}
+                />
+              ) : editData.avatar && editData.avatar.length === 1 ? (
+                <View
+                  style={{
+                    width: 80,
+                    height: 80,
+                    borderRadius: 40,
+                    backgroundColor: "#bbb",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    alignSelf: "center",
+                    marginVertical: 8,
+                  }}>
+                  <Text
+                    style={{ color: "#fff", fontSize: 40, fontWeight: "bold" }}>
+                    {editData.avatar}
+                  </Text>
+                </View>
+              ) : null}
+              {avatarUploading && (
+                <View
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    justifyContent: "center",
+                    alignItems: "center",
+                    backgroundColor: "rgba(255,255,255,0.5)",
+                    zIndex: 2,
+                  }}>
+                  <ActivityIndicator size='large' color='#667eea' />
+                </View>
+              )}
+            </View>
             <View
               style={{
                 flexDirection: "row",
@@ -1415,6 +1500,22 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
           </View>
         </View>
       </Modal>
+      {(bannerUploading || avatarUploading) && (
+        <View
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(255,255,255,0.6)",
+            zIndex: 9999,
+            justifyContent: "center",
+            alignItems: "center",
+          }}>
+          <ActivityIndicator size='large' color='#667eea' />
+        </View>
+      )}
     </View>
   );
 };
