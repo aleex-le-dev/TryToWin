@@ -124,10 +124,13 @@ const ProfileTab = ({
           }}>
           <ProfileHeaderAvatar
             photoURL={
-              profile?.avatar && profile.avatar.startsWith("http")
+              profile?.photoURL
+                ? profile.photoURL
+                : profile?.avatar && profile.avatar.startsWith("http")
                 ? profile.avatar
                 : null
             }
+            avatar={profile?.avatar}
             size={100}
             displayName={profile?.username || user?.displayName}
             email={user?.email}
@@ -222,7 +225,9 @@ const ProfileTab = ({
             {(() => {
               // Si l'utilisateur a des points, il a forcément un meilleur jeu
               if (userStats.totalScore > 0 && userStats.bestGame) {
-                const gameData = gamesData.find((g) => g.id === userStats.bestGame);
+                const gameData = gamesData.find(
+                  (g) => g.id === userStats.bestGame
+                );
                 if (gameData) {
                   const img = gameData.image;
                   if (typeof img === "string") {
@@ -251,7 +256,9 @@ const ProfileTab = ({
               return null;
             })()}
             <Text style={{ fontSize: 11, color: "#6c757d" }}>
-              {userStats.totalScore > 0 && userStats.bestGame ? "Meilleur jeu" : ""}
+              {userStats.totalScore > 0 && userStats.bestGame
+                ? "Meilleur jeu"
+                : ""}
             </Text>
           </View>
 

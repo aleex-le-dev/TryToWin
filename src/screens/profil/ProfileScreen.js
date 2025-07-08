@@ -47,6 +47,7 @@ import {
   useNavigation,
   useRoute,
 } from "@react-navigation/native";
+import { uploadProfilePhoto } from "../../services/storageService";
 
 const { width } = Dimensions.get("window");
 
@@ -572,6 +573,7 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
   // Sauvegarde les modifications
   const handleSaveProfile = async () => {
     try {
+      console.log("[handleSaveProfile] Début", editData);
       if (!editData.username.trim()) {
         Toast.show({
           type: "error",
@@ -596,41 +598,45 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
         return;
       }
 
-      // Mise à jour Firestore directe (création si besoin)
       const userRef = doc(db, "users", user.id);
       let photoURL = editData.photoURL;
+      let avatar = editData.avatar;
+      // Si une photo a été uploadée, on l'upload et on remplace avatar par l'URL Firebase, photoURL est vidé
       if (photoURL && photoURL.startsWith("file")) {
-        photoURL = await uploadProfilePhoto(user.id, photoURL);
-        setProfilePhoto(photoURL);
+        avatar = await uploadProfilePhoto(user.id, photoURL);
+        photoURL = "";
+        setProfilePhoto(avatar);
       }
+      // Si un avatar custom (URL) est choisi, on met à jour avatar uniquement
+      // (aucune logique de vidage automatique)
       await setDoc(
         userRef,
         {
           username: editData.username.trim(),
-          avatar: editData.avatar || profile?.avatar || "",
+          avatar: avatar || profile?.avatar || "",
           bio: editData.bio,
           country: editData.country,
-          photoURL: photoURL || profilePhoto || "",
+          photoURL: photoURL || "",
           bannerColor: editData.bannerColor || null,
           bannerImage: editData.bannerImage || null,
         },
         { merge: true }
       );
-
-      // Mise à jour immédiate de l'état local
+      console.log("[handleSaveProfile] après setDoc");
       setProfile((prev) => ({
         ...prev,
         ...editData,
-        avatar: editData.avatar || prev?.avatar || "",
-        photoURL: photoURL || profilePhoto || "",
+        avatar: avatar || prev?.avatar || "",
+        photoURL: photoURL || "",
         bannerImage: editData.bannerImage || null,
       }));
-      setProfilePhoto(photoURL || profilePhoto || "");
+      setProfilePhoto(photoURL || "");
       const docSnap = await getDoc(userRef);
       if (docSnap.exists()) {
         setProfile(docSnap.data());
         setProfilePhoto(docSnap.data().photoURL || "");
       }
+      if (typeof fetchProfile === "function") fetchProfile();
       setEditModalVisible(false);
       Toast.show({
         type: "success",
@@ -640,6 +646,7 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
         visibilityTime: 2000,
       });
     } catch (error) {
+      console.log("[handleSaveProfile] ERREUR", error);
       Toast.show({
         type: "error",
         text1: "Erreur de sauvegarde",
@@ -800,20 +807,33 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
     } catch (error) {}
   };
 
-  // Handler pour uploader une image avec demande de permission
-  const pickImage = async () => {
-    console.log("pickImage called");
+  // Permet d'uploader une image pour la bannière
+  const pickImageBanner = async () => {
     const result = await DocumentPicker.getDocumentAsync({
       type: "image/*",
       copyToCacheDirectory: true,
       multiple: false,
     });
-    console.log("DocumentPicker result:", result);
     if (!result.canceled && result.assets && result.assets[0].uri) {
       setEditData((d) => ({
         ...d,
         bannerImage: result.assets[0].uri,
         bannerColor: null,
+      }));
+    }
+  };
+
+  // Permet d'uploader une image pour l'avatar
+  const pickImageAvatar = async () => {
+    const result = await DocumentPicker.getDocumentAsync({
+      type: "image/*",
+      copyToCacheDirectory: true,
+      multiple: false,
+    });
+    if (!result.canceled && result.assets && result.assets[0].uri) {
+      setEditData((d) => ({
+        ...d,
+        photoURL: result.assets[0].uri,
       }));
     }
   };
@@ -847,10 +867,13 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
             <View style={{ position: "relative", width: 48, height: 48 }}>
               <ProfileHeaderAvatar
                 photoURL={
-                  profile?.avatar && profile.avatar.startsWith("http")
+                  profile?.photoURL
+                    ? profile.photoURL
+                    : profile?.avatar && profile.avatar.startsWith("http")
                     ? profile.avatar
                     : null
                 }
+                avatar={profile?.avatar}
                 size={48}
                 displayName={profile?.username}
                 email={user?.email}
@@ -1032,7 +1055,7 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
                 <View style={{ marginRight: 15 }}>
                   <Button
                     title='Uploader une image'
-                    onPress={pickImage}
+                    onPress={pickImageBanner}
                     color='#667eea'
                   />
                 </View>
@@ -1231,20 +1254,7 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
                     ? "Changer l'image"
                     : "Uploader une image"
                 }
-                onPress={async () => {
-                  setShowAvatarLibrary(false);
-                  const result = await DocumentPicker.getDocumentAsync({
-                    type: "image/*",
-                    copyToCacheDirectory: true,
-                    multiple: false,
-                  });
-                  if (result.type === "success" && result.uri) {
-                    setEditData((d) => ({
-                      ...d,
-                      photoURL: result.uri,
-                    }));
-                  }
-                }}
+                onPress={pickImageAvatar}
               />
               <Button
                 title='Choisir un avatar'
@@ -1315,7 +1325,10 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
               <Button
                 title='Enregistrer'
                 color='#667eea'
-                onPress={handleSaveProfile}
+                onPress={async () => {
+                  setEditModalVisible(false);
+                  await handleSaveProfile();
+                }}
               />
             </View>
           </View>

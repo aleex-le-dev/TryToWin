@@ -19,10 +19,24 @@ function getRandomColor(email) {
  *   - size : number (par défaut 48)
  *   - displayName : string (nom à afficher pour l'initiale)
  *   - email : string (pour couleur stable)
+ *   - avatar : string | null (avatar type flag-xx)
  */
-const ProfileHeaderAvatar = ({ photoURL, size = 48, displayName, email }) => {
+const ProfileHeaderAvatar = ({
+  photoURL,
+  size = 48,
+  displayName,
+  email,
+  avatar,
+}) => {
   const color = getRandomColor(email);
   const initial = (displayName || email || "U")[0].toUpperCase();
+
+  // Gestion drapeau
+  let flagUrl = null;
+  if (avatar && typeof avatar === "string" && avatar.startsWith("flag-")) {
+    const code = avatar.replace("flag-", "").toLowerCase();
+    flagUrl = `https://flagcdn.com/w80/${code}.png`;
+  }
 
   return (
     <View
@@ -31,13 +45,18 @@ const ProfileHeaderAvatar = ({ photoURL, size = 48, displayName, email }) => {
         height: size,
         borderRadius: size / 2,
         overflow: "hidden",
-        backgroundColor: photoURL ? "#eee" : color,
+        backgroundColor: photoURL || flagUrl ? "#eee" : color,
         justifyContent: "center",
         alignItems: "center",
       }}>
       {photoURL ? (
         <Image
           source={{ uri: photoURL }}
+          style={{ width: size, height: size, borderRadius: size / 2 }}
+        />
+      ) : flagUrl ? (
+        <Image
+          source={{ uri: flagUrl }}
           style={{ width: size, height: size, borderRadius: size / 2 }}
         />
       ) : (
