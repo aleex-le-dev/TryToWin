@@ -1367,7 +1367,10 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
                 color='#667eea'
               />
             </View>
-            {(editData.photoURL || editData.avatar) && (
+            {((typeof editData.photoURL === "string" &&
+              editData.photoURL.trim().startsWith("http")) ||
+              (typeof editData.avatar === "string" &&
+                editData.avatar.trim().startsWith("http"))) && (
               <TouchableOpacity
                 onPress={() => {
                   setEditData((d) => ({
