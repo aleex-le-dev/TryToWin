@@ -24,8 +24,6 @@ const GameLayout = ({
     const victoires = stats?.win || 0;
     const defaites = stats?.lose || 0;
     const nuls = stats?.draw || 0;
-    const totalParties = stats?.totalGames || 0;
-    const tauxVictoire = stats?.winRate || 0;
     return (
       <View style={styles.containerStatistiques}>
         <View style={styles.elementStat}>
@@ -36,17 +34,9 @@ const GameLayout = ({
           <Text style={styles.valeurStat}>{defaites}</Text>
           <Text style={styles.labelStat}>Défaites</Text>
         </View>
-        <View style={styles.elementStat}>
+        <View style={[styles.elementStat, styles.elementStatLast]}>
           <Text style={styles.valeurStat}>{nuls}</Text>
           <Text style={styles.labelStat}>Nuls</Text>
-        </View>
-        <View style={styles.elementStat}>
-          <Text style={styles.valeurStat}>{totalParties}</Text>
-          <Text style={styles.labelStat}>Total</Text>
-        </View>
-        <View style={[styles.elementStat, styles.elementStatLast]}>
-          <Text style={styles.valeurStat}>{tauxVictoire.toFixed(1)}%</Text>
-          <Text style={styles.labelStat}>Taux Victoire</Text>
         </View>
       </View>
     );
@@ -108,7 +98,6 @@ const GameLayout = ({
       {
         <View
           style={{ ...styles.sectionStatistiques, marginTop: statsMarginTop }}>
-          <Text style={styles.titreStatistiques}>Statistiques</Text>
           {rendreStatistiques()}
           <View style={styles.containerStatsDetaillees}>
             <View style={styles.elementStatDetaille}>
