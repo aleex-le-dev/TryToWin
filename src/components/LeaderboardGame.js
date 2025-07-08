@@ -31,7 +31,7 @@ const LeaderboardGame = ({
   userId,
   gameColor = "#667eea",
   showUserPosition = false,
-  isProfileView = false,
+  isProfileView = true,
   profile = null,
 }) => {
   const { user } = useAuth();
@@ -45,6 +45,9 @@ const LeaderboardGame = ({
 
   // Utiliser l'userId passé en prop ou celui de l'utilisateur connecté
   const currentUserId = userId || user?.id;
+
+  // Dans le composant LeaderboardGame, je force isProfileView à true pour TOUS les usages
+  const effectiveIsProfileView = true;
 
   // Fonction pour récupérer l'URL de l'avatar à partir de sa clé
   const getAvatarUrl = (avatarKey) => {
@@ -88,7 +91,7 @@ const LeaderboardGame = ({
 
   // Scroll vers l'utilisateur quand le leaderboard est chargé
   useEffect(() => {
-    if (leaderboard.length > 0 && isProfileView) {
+    if (leaderboard.length > 0 && effectiveIsProfileView) {
       const userIndex = leaderboard.findIndex(
         (player) => player.userId === currentUserId
       );
@@ -102,7 +105,7 @@ const LeaderboardGame = ({
         }, 500); // Délai pour laisser le temps au FlatList de se rendre
       }
     }
-  }, [leaderboard, currentUserId, isProfileView, activeTab]);
+  }, [leaderboard, currentUserId, effectiveIsProfileView, activeTab]);
 
   const initializeLeaderboards = async () => {
     if (!currentUserId || initialized) return;
@@ -154,7 +157,7 @@ const LeaderboardGame = ({
       let data = [];
 
       // Si c'est une vue de profil, utiliser les données de démo
-      if (isProfileView) {
+      if (effectiveIsProfileView) {
         if (activeTab === "global") {
           // Utiliser les données de démo pour le classement mondial
           data = DEMO_PLAYERS.map((player, index) => ({
@@ -181,9 +184,8 @@ const LeaderboardGame = ({
               username: user?.username || profile?.username || "Vous",
               avatar:
                 profile?.photoURL || user?.photoURL
-                  ? "👤"
+                  ? undefined
                   : getAvatarUrl(profile?.avatar) ||
-                    profile?.photoURL ||
                     getAvatarUrl(user?.avatar) ||
                     "👤",
               photoURL: profile?.photoURL || user?.photoURL || null,
@@ -244,9 +246,8 @@ const LeaderboardGame = ({
               username: user?.username || profile?.username || "Vous",
               avatar:
                 profile?.photoURL || user?.photoURL
-                  ? "👤"
+                  ? undefined
                   : getAvatarUrl(profile?.avatar) ||
-                    profile?.photoURL ||
                     getAvatarUrl(user?.avatar) ||
                     "👤",
               photoURL: profile?.photoURL || user?.photoURL || null,
@@ -290,13 +291,13 @@ const LeaderboardGame = ({
 
               return {
                 ...entry,
-                username: userData.username || "",
-                avatar:
-                  getAvatarUrl(userData.avatar) ||
-                  userData.photoURL ||
-                  getAvatarUrl(profile?.avatar) ||
-                  getAvatarUrl(user?.avatar) ||
-                  "👤",
+                username:
+                  userData.username || `Joueur ${entry.userId.slice(0, 6)}`,
+                avatar: userData.photoURL
+                  ? undefined
+                  : getAvatarUrl(userData.avatar) ||
+                    userData.avatar ||
+                    undefined,
                 photoURL: userData.photoURL || null,
                 country: userData.country
                   ? userData.country.toUpperCase()
@@ -324,12 +325,11 @@ const LeaderboardGame = ({
                 ...entry,
                 username:
                   userData.username || `Joueur ${entry.userId.slice(0, 6)}`,
-                avatar:
-                  getAvatarUrl(userData.avatar) ||
-                  userData.photoURL ||
-                  getAvatarUrl(profile?.avatar) ||
-                  getAvatarUrl(user?.avatar) ||
-                  "👤",
+                avatar: userData.photoURL
+                  ? undefined
+                  : getAvatarUrl(userData.avatar) ||
+                    userData.avatar ||
+                    undefined,
                 photoURL: userData.photoURL || null,
                 country: userData.country
                   ? userData.country.toUpperCase()
@@ -362,7 +362,7 @@ const LeaderboardGame = ({
         }
       }
 
-      console.log("[DEBUG] leaderboard final", data);
+      console.log("[DEBUG] leaderboard JEUX", data);
       setLeaderboard(data);
     } catch (error) {
       setLeaderboard([]);
@@ -423,6 +423,12 @@ const LeaderboardGame = ({
           )}
         </View>
         <View style={styles.avatarContainer}>
+          {/* DEBUG LOG */}
+          {console.log("[DEBUG] renderPlayer AVATAR/PHOTO", {
+            photoURL: item.photoURL,
+            avatar: item.avatar,
+            username: item.username,
+          })}
           {item.photoURL &&
           typeof item.photoURL === "string" &&
           item.photoURL.trim() !== "" ? (
