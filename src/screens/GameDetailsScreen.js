@@ -706,6 +706,7 @@ const styles = StyleSheet.create({
   },
   backButton: {
     padding: 10,
+    zIndex: 3,
   },
   gameHeader: {
     flexDirection: "row",
@@ -734,11 +735,17 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#fff",
     marginBottom: 5,
+    backgroundColor: "transparent",
+    opacity: 1,
+    zIndex: 2,
   },
   gameDescription: {
     fontSize: 16,
-    color: "rgba(255,255,255,0.8)",
+    color: "#fff",
     marginBottom: 10,
+    backgroundColor: "transparent",
+    opacity: 1,
+    zIndex: 2,
   },
   gameMeta: {
     flexDirection: "row",
@@ -781,6 +788,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 4.65,
     elevation: 8,
+    backgroundColor: undefined,
+    opacity: 1,
+    zIndex: 2,
   },
   playButtonGradientFake: {
     flexDirection: "row",
@@ -791,6 +801,9 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "bold",
     marginLeft: 10,
+    backgroundColor: "transparent",
+    opacity: 1,
+    zIndex: 2,
   },
   tabsContainer: {
     flexDirection: "row",
