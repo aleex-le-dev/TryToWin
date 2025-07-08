@@ -21,27 +21,27 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import Toast from "react-native-toast-message";
 import { Picker } from "@react-native-picker/picker";
-import { useAuth } from "../hooks/useAuth";
-import { messages } from "../constants/config";
+import { useAuth } from "../../hooks/useAuth";
+import { messages } from "../../constants/config";
 import { doc, getDoc, updateDoc, setDoc, collection } from "firebase/firestore";
-import { db } from "../utils/firebaseConfig";
+import { db } from "../../utils/firebaseConfig";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import ProfileAvatar from "../components/ProfileAvatar";
+import ProfileAvatar from "../../components/ProfileAvatar";
 import * as DocumentPicker from "expo-document-picker";
-import AvatarLibrary from "../components/AvatarLibrary";
-import ProfileHeaderAvatar from "../components/ProfileHeaderAvatar";
-import ProfileTab from "../components/ProfileTab";
-import LeaderboardGame from "../components/LeaderboardGame";
-import ProfileStats from "../components/ProfileStats";
+import AvatarLibrary from "../../components/AvatarLibrary";
+import ProfileHeaderAvatar from "../../components/ProfileHeaderAvatar";
+import ProfileTab from "../../components/ProfileTab";
+import LeaderboardGame from "../../components/LeaderboardGame";
+import ProfileStats from "../../components/ProfileStats";
 import WheelColorPicker from "react-native-wheel-color-picker";
-import SettingsScreen from "../screens/social/SettingsScreen";
+import SettingsScreen from "../social/SettingsScreen";
 import {
   getUserGameScore,
   getUserAllGameStats,
   recordGameResult,
   initializeLeaderboardsForUser,
-} from "../services/scoreService";
-import { GAME_POINTS } from "../constants/gamePoints";
+} from "../../services/scoreService";
+import { GAME_POINTS } from "../../constants/gamePoints";
 import {
   useFocusEffect,
   useNavigation,
@@ -50,7 +50,7 @@ import {
 
 const { width } = Dimensions.get("window");
 
-import { countries } from "../constants/countries";
+import { countries } from "../../constants/countries";
 
 // Bannière par défaut (placeholder) via Placeholders.xyz
 const DEFAULT_BANNER =

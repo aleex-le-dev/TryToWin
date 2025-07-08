@@ -14,18 +14,18 @@ import {
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import Toast from "react-native-toast-message";
-import { useAuth } from "../hooks/useAuth";
+import { useAuth } from "../../hooks/useAuth";
 import {
   getUserGameScore,
   getUserRankInLeaderboard,
   recordGameResult,
   getLeaderboard,
-} from "../services/scoreService";
+} from "../../services/scoreService";
 import { useFocusEffect } from "@react-navigation/native";
 import { doc, getDoc } from "firebase/firestore";
-import { db } from "../utils/firebaseConfig";
-import { countries } from "../constants";
-import { AVATAR_COLLECTIONS } from "../constants/avatars";
+import { db } from "../../utils/firebaseConfig";
+import { countries } from "../../constants";
+import { AVATAR_COLLECTIONS } from "../../constants/avatars";
 
 const { width } = Dimensions.get("window");
 
@@ -263,7 +263,7 @@ const GameDetailsScreen = ({ route, navigation }) => {
                 borderRadius: 20,
               }}
               resizeMode='cover'
-              defaultSource={require("../../assets/icon.png")}
+              defaultSource={require("../../../assets/icon.png")}
               onError={() => {}}
             />
           ) : (

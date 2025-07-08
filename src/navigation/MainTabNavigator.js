@@ -4,9 +4,9 @@ import { createStackNavigator } from "@react-navigation/stack";
 import { Ionicons } from "@expo/vector-icons";
 
 // Import des écrans
-import HomeScreen from "../screens/HomeScreen";
-import ProfileScreen from "../screens/ProfileScreen";
-import GameDetailsScreen from "../screens/GameDetailsScreen";
+import GameScreen from "../screens/jeux/GameScreen";
+import ProfileScreen from "../screens/profil/ProfileScreen";
+import GameDetailsScreen from "../screens/jeux/GameDetailsScreen";
 import SocialScreen from "../screens/social/SocialScreen";
 import Morpion from "../games/Morpion";
 
@@ -19,7 +19,7 @@ const GamesStack = ({ resetCategoryTrigger, forceHomeReset }) => {
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name='GamesMain'>
         {(props) => (
-          <HomeScreen
+          <GameScreen
             {...props}
             resetCategoryTrigger={resetCategoryTrigger}
             forceHomeReset={forceHomeReset}

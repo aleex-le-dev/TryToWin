@@ -11,13 +11,13 @@ import {
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
-import { useAuth } from "../contexts/AuthContext";
+import { useAuth } from "../../contexts/AuthContext";
 import { doc, getDoc } from "firebase/firestore";
-import { db } from "../utils/firebaseConfig";
+import { db } from "../../utils/firebaseConfig";
 import { useIsFocused } from "@react-navigation/native";
-import { gamesData } from "../constants/gamesData";
-import { categories } from "../constants/categories";
-import { getUserAllGameStats } from "../services/scoreService";
+import { gamesData } from "../../constants/gamesData";
+import { categories } from "../../constants/categories";
+import { getUserAllGameStats } from "../../services/scoreService";
 
 const { width } = Dimensions.get("window");
 
@@ -58,7 +58,7 @@ function GameCard({ item, onPress }) {
 }
 
 // Écran d'accueil fusionné avec liste des jeux
-const HomeScreen = ({ navigation, resetCategoryTrigger, forceHomeReset }) => {
+const GameScreen = ({ navigation, resetCategoryTrigger, forceHomeReset }) => {
   const { user, loading } = useAuth();
   const [selectedCategory, setSelectedCategory] = useState("Tous");
   const [profile, setProfile] = useState(null);
@@ -590,4 +590,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default HomeScreen;
+export default GameScreen;
