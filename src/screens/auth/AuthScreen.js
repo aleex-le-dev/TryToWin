@@ -11,7 +11,7 @@ import {
   Alert,
   ActivityIndicator,
 } from "react-native";
-import { auth } from "../utils/firebaseConfig";
+import { auth } from "../../utils/firebaseConfig";
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
@@ -20,7 +20,7 @@ import {
 } from "firebase/auth";
 import * as Google from "expo-auth-session/providers/google";
 import * as WebBrowser from "expo-web-browser";
-import { ANDROID_CLIENT_ID, EXPO_CLIENT_ID } from "../utils/googleAuthConfig";
+import { ANDROID_CLIENT_ID, EXPO_CLIENT_ID } from "../../utils/googleAuthConfig";
 
 WebBrowser.maybeCompleteAuthSession();
 

@@ -4,12 +4,12 @@ import { createStackNavigator } from "@react-navigation/stack";
 import { ActivityIndicator, View, StyleSheet } from "react-native";
 
 // Import des écrans
-import LoginScreen from "../screens/LoginScreen";
-import RegisterScreen from "../screens/RegisterScreen";
+import LoginScreen from "../screens/auth/LoginScreen";
+import RegisterScreen from "../screens/auth/RegisterScreen";
 import MainTabNavigator from "./MainTabNavigator";
 import { useAuth } from "../contexts/AuthContext";
-import EmailValidationScreen from "../screens/EmailValidationScreen";
-import SettingsScreen from "../screens/SettingsScreen";
+import EmailValidationScreen from "../screens/auth/EmailValidationScreen";
+import SettingsScreen from "../screens/social/SettingsScreen";
 
 const Stack = createStackNavigator();
 

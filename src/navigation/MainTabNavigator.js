@@ -7,7 +7,7 @@ import { Ionicons } from "@expo/vector-icons";
 import HomeScreen from "../screens/HomeScreen";
 import ProfileScreen from "../screens/ProfileScreen";
 import GameDetailsScreen from "../screens/GameDetailsScreen";
-import SocialScreen from "../screens/SocialScreen";
+import SocialScreen from "../screens/social/SocialScreen";
 import Morpion from "../games/Morpion";
 
 const Tab = createBottomTabNavigator();
@@ -108,7 +108,9 @@ const MainTabNavigator = () => {
       />
       <Tab.Screen
         name='Profile'
-        children={(props) => <ProfileScreen {...props} key={profileTabResetKey} />}
+        children={(props) => (
+          <ProfileScreen {...props} key={profileTabResetKey} />
+        )}
         options={{
           title: "Profil",
           unmountOnBlur: true,

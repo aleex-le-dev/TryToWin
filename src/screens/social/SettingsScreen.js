@@ -9,7 +9,7 @@ import {
   ScrollView,
 } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
-import { useAuth } from "../hooks/useAuth";
+import { useAuth } from "../../hooks/useAuth";
 
 const SettingsScreen = ({ navigation, route }) => {
   const { logout } = useAuth();

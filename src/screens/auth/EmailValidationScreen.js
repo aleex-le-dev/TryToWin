@@ -12,8 +12,8 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useNavigation, useRoute } from "@react-navigation/native";
-import { authService } from "../services/authService";
-import { colors } from "../constants/colors";
+import { authService } from "../../services/authService";
+import { colors } from "../../constants/colors";
 
 const EmailValidationScreen = () => {
   const navigation = useNavigation();

@@ -13,17 +13,17 @@ import {
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import Toast from "react-native-toast-message";
-import { authService } from "../services/authService";
+import { authService } from "../../services/authService";
 import {
   authSchemas,
   validateForm,
   checkPasswordStrength,
-} from "../schemas/validationSchemas";
-import { useAuth } from "../hooks/useAuth";
-import { colors } from "../constants/colors";
-import { messages } from "../constants/config";
-import { logError, logSuccess, logInfo } from "../utils/errorHandler";
-import FormErrorMessage from "../components/FormErrorMessage";
+} from "../../schemas/validationSchemas";
+import { useAuth } from "../../hooks/useAuth";
+import { colors } from "../../constants/colors";
+import { messages } from "../../constants/config";
+import { logError, logSuccess, logInfo } from "../../utils/errorHandler";
+import FormErrorMessage from "../../components/FormErrorMessage";
 
 // Écran d'inscription avec validation des champs
 const RegisterScreen = ({ navigation }) => {

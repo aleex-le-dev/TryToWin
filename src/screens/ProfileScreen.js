@@ -34,7 +34,7 @@ import ProfileTab from "../components/ProfileTab";
 import LeaderboardGame from "../components/LeaderboardGame";
 import ProfileStats from "../components/ProfileStats";
 import WheelColorPicker from "react-native-wheel-color-picker";
-import SettingsScreen from "./SettingsScreen";
+import SettingsScreen from "../screens/social/SettingsScreen";
 import {
   getUserGameScore,
   getUserAllGameStats,
