@@ -429,42 +429,51 @@ const GameDetailsScreen = ({ route, navigation }) => {
           <LinearGradient
             colors={[game.color, game.color + "80"]}
             style={styles.header}>
-            <View style={styles.headerContent}>
-              <TouchableOpacity
-                style={styles.backButton}
-                onPress={() => navigation.goBack()}>
-                <Ionicons name='arrow-back' size={24} color='#fff' />
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.gameHeader}>
-              {/* Image en arrière-plan, grande et dépassant à gauche */}
-              {typeof game.image !== "string" && (
-                <Image
-                  source={game.image}
-                  style={styles.gameBgImage}
-                  resizeMode='contain'
-                  pointerEvents='none'
-                />
-              )}
-              <View style={styles.gameInfo}>
-                <Text style={styles.gameTitle}>{game.title}</Text>
-                <Text style={styles.gameDescription}>{game.description}</Text>
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                width: "100%",
+              }}>
+              {/* Flèche et titre alignés verticalement */}
+              <View
+                style={{ flexDirection: "row", alignItems: "center", flex: 1 }}>
+                <TouchableOpacity
+                  style={styles.backButton}
+                  onPress={() => navigation.goBack()}>
+                  <Ionicons name='arrow-back' size={24} color='#fff' />
+                </TouchableOpacity>
+                <View style={{ justifyContent: "center", marginLeft: 8 }}>
+                  <Text style={styles.gameTitle}>{game.title}</Text>
+                  <Text style={styles.gameDescription}>{game.description}</Text>
+                </View>
+              </View>
+              {/* Bouton jouer à droite */}
+              <View
+                style={[
+                  styles.playButtonContainer,
+                  { marginVertical: 0, marginLeft: 8 },
+                ]}>
+                <TouchableOpacity
+                  style={[styles.playButton, { backgroundColor: game.color }]}
+                  onPress={handlePlayGame}>
+                  <View style={styles.playButtonGradientFake}>
+                    <Ionicons name='game-controller' size={24} color='#fff' />
+                    <Text style={styles.playButtonText}>Jouer</Text>
+                  </View>
+                </TouchableOpacity>
               </View>
             </View>
+            {/* Image de fond centrée et discrète */}
+            {typeof game.image !== "string" && (
+              <Image
+                source={game.image}
+                style={styles.gameBgImage}
+                resizeMode='contain'
+                pointerEvents='none'
+              />
+            )}
           </LinearGradient>
-
-          {/* Bouton de jeu principal */}
-          <View style={styles.playButtonContainer}>
-            <TouchableOpacity
-              style={[styles.playButton, { backgroundColor: game.color }]}
-              onPress={handlePlayGame}>
-              <View style={styles.playButtonGradientFake}>
-                <Ionicons name='game-controller' size={24} color='#fff' />
-                <Text style={styles.playButtonText}>Jouer</Text>
-              </View>
-            </TouchableOpacity>
-          </View>
 
           {/* Onglets avec couleur dynamique pour l'onglet actif */}
           <View style={styles.tabsContainer}>
@@ -572,8 +581,6 @@ const GameDetailsScreen = ({ route, navigation }) => {
                     </View>
                   )}
                 </View>
-
-       
               </View>
             </ScrollView>
           ) : (
@@ -687,15 +694,15 @@ const styles = StyleSheet.create({
     backgroundColor: "#f8f9fa",
   },
   header: {
-    paddingTop: 50,
-    paddingBottom: 30,
+    paddingTop: 30,
+    paddingBottom: 18,
     paddingHorizontal: 20,
+    overflow: "hidden",
   },
   headerContent: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 20,
+    marginBottom: 0,
   },
   backButton: {
     padding: 10,
@@ -704,14 +711,14 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     position: "relative",
-    minHeight: 120,
+    minHeight: 80,
     overflow: "visible",
   },
   gameBgImage: {
     position: "absolute",
-    left: -40,
-    top: -20,
-    width: 300,
+    left: 0,
+    top: 0,
+    width: "80%",
     height: 250,
     opacity: 0.18,
     zIndex: 0,
@@ -719,7 +726,8 @@ const styles = StyleSheet.create({
   gameInfo: {
     flex: 1,
     zIndex: 1,
-    paddingLeft: 60,
+    paddingLeft: 16,
+    justifyContent: "center",
   },
   gameTitle: {
     fontSize: 24,

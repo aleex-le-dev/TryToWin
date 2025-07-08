@@ -15,7 +15,6 @@ import {
   recordGameResult,
   getUserGameScore,
   getUserRankInLeaderboard,
-  resetUserStreak,
 } from "../services/scoreService";
 import { useAuth } from "../hooks/useAuth";
 import { GAME_POINTS, getSerieMultiplier } from "../constants/gamePoints";
@@ -301,7 +300,7 @@ const Morpion = ({ navigation, route }) => {
     React.useCallback(() => {
       return () => {
         if (user?.id) {
-          resetUserStreak(user.id, "Morpion");
+          // resetUserStreak(user.id, "Morpion");
         }
       };
     }, [user?.id])
