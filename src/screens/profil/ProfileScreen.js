@@ -629,7 +629,7 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
         userRef,
         {
           username: editData.username.trim(),
-          avatar: avatar || profile?.avatar || "",
+          avatar: avatar || "",
           bio: editData.bio,
           country: editData.country,
           photoURL: photoURL || "",
@@ -642,11 +642,10 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
       setProfile((prev) => ({
         ...prev,
         ...editData,
-        avatar: avatar || prev?.avatar || "",
+        avatar: avatar || "",
         photoURL: photoURL || "",
         bannerImage: bannerImage || null,
       }));
-      setProfilePhoto(photoURL || "");
       const docSnap = await getDoc(userRef);
       if (docSnap.exists()) {
         setProfile(docSnap.data());
