@@ -81,31 +81,29 @@ const GameLayout = ({
           </View>
         </View>
       </LinearGradient>
-      {/* Affichage générique du tour et du timer pour tous les jeux, juste sous le header */}
-      {(currentTurnLabel || timerLabel) && (
-        <View style={styles.infoJeu}>
-          <View style={styles.infoJoueur}>
-            <Text style={styles.labelJoueur}>{currentTurnLabel}</Text>
-            {currentSymbol && (
-              <Text style={styles.symboleJoueur}>{currentSymbol}</Text>
-            )}
-          </View>
+      {/* Bloc tour/timer */}
+      <View style={styles.infoJeu}>
+        <View style={styles.infoJoueur}>
+          <Text style={styles.labelJoueur}>{currentTurnLabel}</Text>
+          {currentSymbol && (
+            <Text style={styles.symboleJoueur}>{currentSymbol}</Text>
+          )}
+        </View>
+        <View style={{ flexDirection: "row", alignItems: "center" }}>
           {timerLabel && (
             <View style={styles.containerTimer}>
               <Ionicons name='time' size={20} color='#667eea' />
               <Text style={styles.texteTimer}>{timerLabel}</Text>
             </View>
           )}
+          {/* Bouton principal d'action à droite du timer */}
+          {renderMainActionButton && (
+            <View style={{ marginLeft: 12 }}>{renderMainActionButton()}</View>
+          )}
         </View>
-      )}
+      </View>
       {/* Contenu spécifique au jeu */}
       <View style={{ flex: 1 }}>{children}</View>
-      {/* Bouton principal d'action juste au-dessus des statistiques */}
-      {renderMainActionButton && (
-        <View style={{ marginHorizontal: 20, marginBottom: 12 }}>
-          {renderMainActionButton()}
-        </View>
-      )}
       {/* Statistiques sous le jeu */}
       {
         <View
@@ -280,6 +278,22 @@ const styles = {
     fontWeight: "bold",
     color: "#667eea",
     marginLeft: 5,
+  },
+  boutonActionDiscret: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#e0e7ef",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 7,
+    borderWidth: 1,
+    borderColor: "#cfd8dc",
+  },
+  texteBoutonDiscret: {
+    color: "#667eea",
+    fontWeight: "bold",
+    marginLeft: 8,
+    fontSize: 15,
   },
 };
 
