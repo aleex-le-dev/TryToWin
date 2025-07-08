@@ -282,12 +282,21 @@ const styles = {
   leaderboardList: {
     flex: 1,
   },
+  // Styles pour chaque carte joueur (rectangle arrondi, ombre, fond blanc ou bleu)
   leaderboardItem: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: "#eee",
+    marginVertical: 6,
+    marginHorizontal: 2,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 2,
   },
   rankContainer: {
     width: 50,
