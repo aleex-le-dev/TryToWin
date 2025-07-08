@@ -313,7 +313,9 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
       loses,
       totalPoints,
       winrate: totalGames ? Math.round(100 * (wins / totalGames)) : 0,
-      streak: Math.max(...Object.values(scores).map((s) => s.wins)),
+      streak: Math.max(
+        ...Object.values(scores).map((s) => s.currentStreak || 0)
+      ),
     });
   };
 

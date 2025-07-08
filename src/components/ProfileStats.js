@@ -156,12 +156,6 @@ const ProfileStats = ({
               "#4ECDC4"
             )}
             {renderStatCard(
-              "flame",
-              globalStats.currentStreak,
-              "Série",
-              "#FF9800"
-            )}
-            {renderStatCard(
               "stats-chart-outline",
               `${globalStats.winRate}%`,
               "Victoires",
@@ -195,10 +189,6 @@ const ProfileStats = ({
               </Text>
               <Text
                 style={{ flex: 1, textAlign: "center", fontWeight: "bold" }}>
-                %V
-              </Text>
-              <Text
-                style={{ flex: 1, textAlign: "center", fontWeight: "bold" }}>
                 Points
               </Text>
             </View>
@@ -221,11 +211,6 @@ const ProfileStats = ({
                   </Text>
                   <Text style={{ flex: 1, textAlign: "center" }}>
                     {gameStats.loses || 0}
-                  </Text>
-                  <Text style={{ flex: 1, textAlign: "center" }}>
-                    {typeof gameStats.winrate === "number"
-                      ? `${gameStats.winrate}%`
-                      : "0%"}
                   </Text>
                   <Text style={{ flex: 1, textAlign: "center" }}>
                     {gameStats.points || 0}
