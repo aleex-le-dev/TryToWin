@@ -23,7 +23,6 @@ import {
 
 import { generateLeaderboard } from "../utils/leaderboardUtils";
 import Toast from "react-native-toast-message";
-import { DEMO_PLAYERS } from "../constants/demoLeaderboard";
 
 /**
  * Enregistre le résultat d'une partie pour un joueur et un jeu.
@@ -250,7 +249,7 @@ export async function getLeaderboard(game, topN = 10, currentUser = null) {
     const userCountry = userProfile.country || "FR";
 
     const leaderboard = generateLeaderboard(
-      DEMO_PLAYERS,
+      [],
       currentUser,
       userStats,
       userCountry
@@ -329,7 +328,7 @@ export async function getUserRankInLeaderboard(userId, game) {
     const userCountry = userProfile.country || "FR";
 
     const leaderboard = generateLeaderboard(
-      DEMO_PLAYERS,
+      [],
       {
         id: userId,
         displayName: userProfile.username || userProfile.displayName || "Vous",

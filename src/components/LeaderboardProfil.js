@@ -19,7 +19,6 @@ import {
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../utils/firebaseConfig";
 import { countries } from "../constants";
-import { DEMO_PLAYERS } from "../constants/demoLeaderboard";
 import { AVATAR_COLLECTIONS } from "../constants/avatars";
 import SkeletonProfile from "./SkeletonProfile";
 
@@ -148,30 +147,14 @@ const LeaderboardProfil = ({
     try {
       let data = [];
 
-      // Si c'est une vue de profil, utiliser les données de démo
+      // Si c'est une vue de profil, afficher seulement l'utilisateur actuel
       if (effectiveIsProfileView) {
         if (activeTab === "global") {
-          // Utiliser les données de démo pour le classement mondial
-          data = DEMO_PLAYERS.map((player, index) => ({
-            userId: `demo_${index}`,
-            username: player.name,
-            avatar: "👤",
-            country: player.country,
-            totalPoints: player.points,
-            totalGames: Math.floor(Math.random() * 100) + 10,
-            winRate: Math.floor(Math.random() * 30) + 50,
-            rank: index + 1,
-          }));
+          // Récupérer les vraies statistiques de l'utilisateur
+          const realStats = await getUserRealStats();
 
-          // Ajouter l'utilisateur actuel s'il n'est pas dans la liste
-          const userExists = data.find(
-            (player) => player.userId === currentUserId
-          );
-          if (!userExists) {
-            // Récupérer les vraies statistiques de l'utilisateur
-            const realStats = await getUserRealStats();
-
-            data.push({
+          data = [
+            {
               userId: currentUserId,
               username: user?.username || profile?.username || "Vous",
               avatar:
@@ -185,55 +168,20 @@ const LeaderboardProfil = ({
               totalPoints: realStats?.totalPoints || 0,
               totalGames: realStats?.totalGames || 0,
               winRate: realStats?.winRate || 0,
-              rank: data.length + 1,
-            });
-          }
+              rank: 1,
+            },
+          ];
 
-          // Trier par points et recalculer les rangs
-          data = data
-            .sort((a, b) => b.totalPoints - a.totalPoints)
-            .map((player, index) => ({
-              ...player,
-              rank: index + 1,
-              photoURL: player.photoURL || null,
-            }));
-
-          const userRankData = data.find((p) => p.userId === currentUserId);
-          console.log("User in leaderboard:", userRankData);
           setUserRank({
-            rank: userRankData?.rank || null,
-            total: data.length,
+            rank: 1,
+            total: 1,
           });
         } else if (activeTab === "country") {
-          // Filtrer par pays pour le classement national
-          const countryCode = selectedCountry;
-          const countryPlayers = DEMO_PLAYERS.filter(
-            (player) => player.country === countryCode
-          );
+          // Récupérer les vraies statistiques de l'utilisateur
+          const realStats = await getUserRealStats();
 
-          data = countryPlayers.map((player, index) => ({
-            userId: `demo_${index}`,
-            username: player.name,
-            avatar: "👤",
-            country: player.country,
-            totalPoints: player.points,
-            totalGames: Math.floor(Math.random() * 100) + 10,
-            winRate: Math.floor(Math.random() * 30) + 50,
-            rank: index + 1,
-          }));
-
-          // Ajouter l'utilisateur actuel s'il est du bon pays
-          const userExists = data.find(
-            (player) => player.userId === currentUserId
-          );
-          if (
-            !userExists &&
-            (user?.country === countryCode || profile?.country === countryCode)
-          ) {
-            // Récupérer les vraies statistiques de l'utilisateur
-            const realStats = await getUserRealStats();
-
-            data.push({
+          data = [
+            {
               userId: currentUserId,
               username: user?.username || profile?.username || "Vous",
               avatar:
@@ -243,31 +191,18 @@ const LeaderboardProfil = ({
                     getAvatarUrl(user?.avatar) ||
                     "👤",
               photoURL: profile?.photoURL || user?.photoURL || null,
-              country: user?.country || profile?.country || countryCode,
+              country: user?.country || profile?.country || selectedCountry,
               totalPoints: realStats?.totalPoints || 0,
               totalGames: realStats?.totalGames || 0,
               winRate: realStats?.winRate || 0,
-              rank: data.length + 1,
-            });
-          }
+              rank: 1,
+            },
+          ];
 
-          // Trier par points et recalculer les rangs
-          data = data
-            .sort((a, b) => b.totalPoints - a.totalPoints)
-            .map((player, index) => ({
-              ...player,
-              rank: index + 1,
-              photoURL: player.photoURL || null,
-            }));
-
-          const userEntry = data.find(
-            (player) => player.userId === currentUserId
-          );
-          if (userEntry) {
-            setUserRank({ rank: userEntry.rank, total: data.length });
-          } else {
-            setUserRank(null);
-          }
+          setUserRank({
+            rank: 1,
+            total: 1,
+          });
         }
       } else {
         // Logique existante pour les vues de jeux
