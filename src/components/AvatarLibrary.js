@@ -8,24 +8,11 @@ import {
   Image,
   TouchableOpacity,
   StyleSheet,
-  Dimensions,
   Text,
   ScrollView,
 } from "react-native";
 import { AVATAR_COLLECTIONS } from "../constants/avatars";
 
-const { width: screenWidth } = Dimensions.get("window");
-
-/**
- * HorizontalGridCarousel
- * Affiche un carrousel horizontal sur n lignes (par défaut 2)
- * Props :
- *   - data : tableau d'objets { key, url }
- *   - onSelect(url) : callback
- *   - imageStyle : style appliqué à l'image
- *   - btnStyle : style appliqué au bouton
- *   - numRows : nombre de lignes (défaut 2)
- */
 const HorizontalGridCarousel = ({
   data,
   onSelect,
@@ -84,12 +71,7 @@ const HorizontalGridCarousel = ({
   );
 };
 
-/**
- * AvatarLibrary
- * Affiche des collections d'avatars (drapeaux, animaux, personnages) avec navigation par onglets et carrousel horizontal 2 lignes
- * Props :
- *   - onSelect(url) : callback appelé avec l'URL de l'avatar choisi
- */
+
 const AvatarLibrary = ({ onSelect }) => {
   const [currentCollection, setCurrentCollection] = useState(0);
   const currentCollectionData = AVATAR_COLLECTIONS[currentCollection];

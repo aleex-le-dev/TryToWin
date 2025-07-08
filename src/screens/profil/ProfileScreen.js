@@ -1228,8 +1228,8 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
               <Button
                 title={
                   editData.photoURL && editData.photoURL.startsWith("http")
-                    ? "Changer la photo"
-                    : "Choisir une photo"
+                    ? "Changer l'image"
+                    : "Uploader une image"
                 }
                 onPress={async () => {
                   setShowAvatarLibrary(false);
