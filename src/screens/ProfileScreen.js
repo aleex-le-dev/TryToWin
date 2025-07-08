@@ -266,13 +266,17 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
     winRate: userStatsGlobal.winrate || 0,
     bestGame:
       userStatsByGame && Object.keys(userStatsByGame).length > 0
-        ? Object.entries(userStatsByGame).reduce(
-            (best, [game, stats]) =>
-              stats.points > (best ? userStatsByGame[best].points : 0)
-                ? game
-                : best,
-            null
-          )
+        ? (() => {
+            let best = null;
+            let maxPoints = 0;
+            for (const [game, stats] of Object.entries(userStatsByGame)) {
+              if ((stats.points || stats.totalPoints || 0) > maxPoints) {
+                maxPoints = stats.points || stats.totalPoints || 0;
+                best = game;
+              }
+            }
+            return maxPoints > 0 ? best : null;
+          })()
         : null,
     currentStreak: userStatsGlobal.streak || 0,
     totalTime: (() => {

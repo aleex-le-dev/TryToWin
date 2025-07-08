@@ -148,7 +148,7 @@ const StatsTab = ({ userStats, statsByGame }) => {
               <Text style={{ flex: 1, textAlign: "center", color: "#2196F3" }}>
                 {stats.winrate ?? 0}%
               </Text>
-            </View>
+                </View>
           ))}
         </View>
       )}
