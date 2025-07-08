@@ -14,7 +14,7 @@ import { gamesData as GAMES_DATA } from "../constants/gamesData";
  * Composant de statistiques de jeu réutilisable
  * Basé sur la logique de GameDetailsScreen
  */
-const GameStatsTab = ({
+const ProfileStats = ({
   userStats,
   statsByGame,
   statsLoading,
@@ -137,7 +137,7 @@ const GameStatsTab = ({
       <View style={styles.statsContent}>
         {/* Statistiques globales */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Statistiques Globales</Text>
+          <Text style={styles.sectionTitle}>Statistiques globales</Text>
 
           {/* Chips statistiques */}
           <View style={styles.statsChips}>
@@ -326,4 +326,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default GameStatsTab;
+export default ProfileStats;

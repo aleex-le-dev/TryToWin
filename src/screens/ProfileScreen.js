@@ -31,10 +31,8 @@ import * as DocumentPicker from "expo-document-picker";
 import AvatarLibrary from "../components/AvatarLibrary";
 import ProfileHeaderAvatar from "../components/ProfileHeaderAvatar";
 import ProfileTab from "../components/ProfileTab";
-import StatsTab from "../components/StatsTab";
 import LeaderboardGame from "../components/LeaderboardGame";
-
-import GameStatsTab from "../components/GameStatsTab";
+import ProfileStats from "../components/ProfileStats";
 import WheelColorPicker from "react-native-wheel-color-picker";
 import SettingsScreen from "./SettingsScreen";
 import {
@@ -49,7 +47,6 @@ import {
   useNavigation,
   useRoute,
 } from "@react-navigation/native";
-import VisualStatsTab from "../components/VisualStatsTab";
 
 const { width } = Dimensions.get("window");
 
@@ -955,7 +952,7 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
             />
           ) : (
             <>
-              <GameStatsTab
+              <ProfileStats
                 userStats={userStats}
                 statsByGame={userStatsByGameForStatsTab}
                 statsLoading={false}
