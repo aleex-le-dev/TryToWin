@@ -187,7 +187,15 @@ const ProfileStats = ({
               </Text>
               <Text
                 style={{ flex: 1, textAlign: "center", fontWeight: "bold" }}>
-                Victoires
+                V
+              </Text>
+              <Text
+                style={{ flex: 1, textAlign: "center", fontWeight: "bold" }}>
+                D
+              </Text>
+              <Text
+                style={{ flex: 1, textAlign: "center", fontWeight: "bold" }}>
+                %V
               </Text>
               <Text
                 style={{ flex: 1, textAlign: "center", fontWeight: "bold" }}>
@@ -209,10 +217,18 @@ const ProfileStats = ({
                     {gameStats.totalGames || 0}
                   </Text>
                   <Text style={{ flex: 1, textAlign: "center" }}>
-                    {gameStats.win || 0}
+                    {gameStats.wins || 0}
                   </Text>
                   <Text style={{ flex: 1, textAlign: "center" }}>
-                    {gameStats.totalPoints || 0}
+                    {gameStats.loses || 0}
+                  </Text>
+                  <Text style={{ flex: 1, textAlign: "center" }}>
+                    {typeof gameStats.winrate === "number"
+                      ? `${gameStats.winrate}%`
+                      : "0%"}
+                  </Text>
+                  <Text style={{ flex: 1, textAlign: "center" }}>
+                    {gameStats.points || 0}
                   </Text>
                 </View>
               );
