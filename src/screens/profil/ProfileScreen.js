@@ -48,6 +48,8 @@ import {
   useRoute,
 } from "@react-navigation/native";
 import { uploadProfilePhoto } from "../../services/storageService";
+import { uploadToCloudinary } from "../../services/cloudinaryService";
+import * as ImageManipulator from "expo-image-manipulator";
 
 const { width } = Dimensions.get("window");
 
@@ -601,11 +603,48 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
       const userRef = doc(db, "users", user.id);
       let photoURL = editData.photoURL;
       let avatar = editData.avatar;
-      // Si une photo a été uploadée, on l'upload et on remplace avatar par l'URL Firebase, photoURL est vidé
+      let bannerImage = editData.bannerImage;
+      // Si une photo a été uploadée, on la compress et on la upload
       if (photoURL && photoURL.startsWith("file")) {
-        avatar = await uploadProfilePhoto(user.id, photoURL);
-        photoURL = "";
-        setProfilePhoto(avatar);
+        console.log("[handleSaveProfile] Début compression photoURL", photoURL);
+        const manipResult = await ImageManipulator.manipulateAsync(
+          photoURL,
+          [{ resize: { width: 900 } }],
+          { compress: 0.85, format: ImageManipulator.SaveFormat.JPEG }
+        );
+        console.log(
+          "[handleSaveProfile] URI compressée photoURL",
+          manipResult.uri
+        );
+        photoURL = await uploadToCloudinary(manipResult.uri, "trytowin avatar");
+        console.log(
+          "[handleSaveProfile] photoURL après upload Cloudinary",
+          photoURL
+        );
+        setProfilePhoto(photoURL);
+      }
+      if (bannerImage && bannerImage.startsWith("file")) {
+        console.log(
+          "[handleSaveProfile] Début compression bannière",
+          bannerImage
+        );
+        const manipResult = await ImageManipulator.manipulateAsync(
+          bannerImage,
+          [{ resize: { width: 900 } }],
+          { compress: 0.85, format: ImageManipulator.SaveFormat.JPEG }
+        );
+        console.log(
+          "[handleSaveProfile] URI compressée bannière",
+          manipResult.uri
+        );
+        bannerImage = await uploadToCloudinary(
+          manipResult.uri,
+          "trytowin banner"
+        );
+        console.log(
+          "[handleSaveProfile] bannerImage après upload Cloudinary",
+          bannerImage
+        );
       }
       // Si un avatar custom (URL) est choisi, on met à jour avatar uniquement
       // (aucune logique de vidage automatique)
@@ -618,7 +657,7 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
           country: editData.country,
           photoURL: photoURL || "",
           bannerColor: editData.bannerColor || null,
-          bannerImage: editData.bannerImage || null,
+          bannerImage: bannerImage || null,
         },
         { merge: true }
       );
@@ -628,7 +667,7 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
         ...editData,
         avatar: avatar || prev?.avatar || "",
         photoURL: photoURL || "",
-        bannerImage: editData.bannerImage || null,
+        bannerImage: bannerImage || null,
       }));
       setProfilePhoto(photoURL || "");
       const docSnap = await getDoc(userRef);
