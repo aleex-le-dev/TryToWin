@@ -887,16 +887,34 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
             <View style={{ position: "relative", width: 48, height: 48 }}>
               <ProfileHeaderAvatar
                 photoURL={
-                  profile?.photoURL
+                  typeof profile?.photoURL === "string" &&
+                  profile.photoURL.trim() !== ""
                     ? profile.photoURL
-                    : profile?.avatar && profile.avatar.startsWith("http")
+                    : typeof profile?.avatar === "string" &&
+                      profile.avatar.startsWith("http")
                     ? profile.avatar
                     : null
                 }
-                avatar={profile?.avatar}
+                avatar={
+                  typeof profile?.avatar === "string" ? profile.avatar : ""
+                }
                 size={48}
-                displayName={profile?.username}
-                email={user?.email}
+                displayName={
+                  typeof profile?.username === "string" &&
+                  profile.username.length > 0
+                    ? profile.username
+                    : typeof user?.displayName === "string" &&
+                      user.displayName.length > 0
+                    ? user.displayName
+                    : typeof user?.email === "string" && user.email.length > 0
+                    ? user.email
+                    : "Utilisateur"
+                }
+                email={
+                  typeof user?.email === "string"
+                    ? user.email
+                    : "user@example.com"
+                }
               />
               <View
                 style={{
@@ -1050,10 +1068,13 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
                   height: 80,
                   borderRadius: 12,
                   marginBottom: 12,
-                  backgroundColor: editData.bannerColor || "#fff",
+                  backgroundColor: editData.bannerColor || "transparent",
                   overflow: "hidden",
                   justifyContent: "center",
                   alignItems: "center",
+                  borderWidth: 2,
+                  borderColor: "#000",
+                  borderStyle: "dashed",
                 }}>
                 {editData.bannerImage && (
                   <Image

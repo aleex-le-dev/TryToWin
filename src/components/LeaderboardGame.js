@@ -180,10 +180,13 @@ const LeaderboardGame = ({
               userId: currentUserId,
               username: user?.username || profile?.username || "Vous",
               avatar:
-                getAvatarUrl(profile?.avatar) ||
-                profile?.photoURL ||
-                getAvatarUrl(user?.avatar) ||
-                "👤",
+                profile?.photoURL || user?.photoURL
+                  ? "👤"
+                  : getAvatarUrl(profile?.avatar) ||
+                    profile?.photoURL ||
+                    getAvatarUrl(user?.avatar) ||
+                    "👤",
+              photoURL: profile?.photoURL || user?.photoURL || null,
               country: user?.country || profile?.country || "FR",
               totalPoints: realStats?.totalPoints || 0,
               totalGames: realStats?.totalGames || 0,
@@ -198,6 +201,7 @@ const LeaderboardGame = ({
             .map((player, index) => ({
               ...player,
               rank: index + 1,
+              photoURL: player.photoURL || null,
             }));
 
           const userRankData = data.find((p) => p.userId === currentUserId);
@@ -239,10 +243,13 @@ const LeaderboardGame = ({
               userId: currentUserId,
               username: user?.username || profile?.username || "Vous",
               avatar:
-                getAvatarUrl(profile?.avatar) ||
-                profile?.photoURL ||
-                getAvatarUrl(user?.avatar) ||
-                "👤",
+                profile?.photoURL || user?.photoURL
+                  ? "👤"
+                  : getAvatarUrl(profile?.avatar) ||
+                    profile?.photoURL ||
+                    getAvatarUrl(user?.avatar) ||
+                    "👤",
+              photoURL: profile?.photoURL || user?.photoURL || null,
               country: user?.country || profile?.country || countryCode,
               totalPoints: realStats?.totalPoints || 0,
               totalGames: realStats?.totalGames || 0,
@@ -257,6 +264,7 @@ const LeaderboardGame = ({
             .map((player, index) => ({
               ...player,
               rank: index + 1,
+              photoURL: player.photoURL || null,
             }));
 
           const userEntry = data.find(
@@ -289,6 +297,7 @@ const LeaderboardGame = ({
                   getAvatarUrl(profile?.avatar) ||
                   getAvatarUrl(user?.avatar) ||
                   "👤",
+                photoURL: userData.photoURL || null,
                 country: userData.country
                   ? userData.country.toUpperCase()
                   : null,
@@ -321,6 +330,7 @@ const LeaderboardGame = ({
                   getAvatarUrl(profile?.avatar) ||
                   getAvatarUrl(user?.avatar) ||
                   "👤",
+                photoURL: userData.photoURL || null,
                 country: userData.country
                   ? userData.country.toUpperCase()
                   : null,
@@ -337,6 +347,7 @@ const LeaderboardGame = ({
             .map((player, index) => ({
               ...player,
               rank: index + 1,
+              photoURL: player.photoURL || null,
             }))
             .slice(0, 50);
 
@@ -351,6 +362,7 @@ const LeaderboardGame = ({
         }
       }
 
+      console.log("[DEBUG] leaderboard final", data);
       setLeaderboard(data);
     } catch (error) {
       setLeaderboard([]);
@@ -371,6 +383,9 @@ const LeaderboardGame = ({
   };
 
   const renderPlayer = ({ item, index }) => {
+    if (item.userId === currentUserId) {
+      console.log("[DEBUG] renderPlayer FULL", item);
+    }
     console.log(
       "Leaderboard avatar:",
       item.avatar,
@@ -408,17 +423,49 @@ const LeaderboardGame = ({
           )}
         </View>
         <View style={styles.avatarContainer}>
-          {typeof item.avatar === "string" && item.avatar.startsWith("http") ? (
+          {item.photoURL &&
+          typeof item.photoURL === "string" &&
+          item.photoURL.trim() !== "" ? (
             <Image
+              key={item.photoURL}
+              source={{ uri: item.photoURL }}
+              style={styles.avatarImage}
+              resizeMode='cover'
+              defaultSource={require("../../assets/icon.png")}
+              onError={() => {}}
+              accessibilityLabel={`Photo de profil de ${item.username}`}
+            />
+          ) : typeof item.avatar === "string" &&
+            item.avatar.startsWith("flag-") ? (
+            <Image
+              key={item.avatar}
+              source={{
+                uri: `https://flagcdn.com/w80/${item.avatar
+                  .replace("flag-", "")
+                  .toLowerCase()}.png`,
+              }}
+              style={styles.avatarImage}
+              resizeMode='cover'
+              defaultSource={require("../../assets/icon.png")}
+              onError={() => {}}
+              accessibilityLabel={`Drapeau de ${item.username}`}
+            />
+          ) : typeof item.avatar === "string" &&
+            item.avatar.startsWith("http") ? (
+            <Image
+              key={item.avatar}
               source={{ uri: item.avatar }}
               style={styles.avatarImage}
               resizeMode='cover'
               defaultSource={require("../../assets/icon.png")}
               onError={() => {}}
+              accessibilityLabel={`Avatar de ${item.username}`}
             />
           ) : (
             <View style={styles.avatarFallback}>
-              <Text style={styles.avatarText}>{item.avatar || "👤"}</Text>
+              <Text style={styles.avatarText}>
+                {(item.username || "U")[0].toUpperCase()}
+              </Text>
             </View>
           )}
         </View>

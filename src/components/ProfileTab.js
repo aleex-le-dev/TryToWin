@@ -131,11 +131,31 @@ const ProfileTab = ({
             zIndex: 3,
           }}>
           <ProfileHeaderAvatar
-            photoURL={profile?.photoURL || null}
-            avatar={profile?.avatar}
+            photoURL={
+              typeof profile?.photoURL === "string" &&
+              profile.photoURL.trim() !== ""
+                ? profile.photoURL
+                : typeof profile?.avatar === "string" &&
+                  profile.avatar.startsWith("http")
+                ? profile.avatar
+                : null
+            }
+            avatar={typeof profile?.avatar === "string" ? profile.avatar : ""}
             size={100}
-            displayName={profile?.username || user?.displayName}
-            email={user?.email}
+            displayName={
+              typeof profile?.username === "string" &&
+              profile.username.length > 0
+                ? profile.username
+                : typeof user?.displayName === "string" &&
+                  user.displayName.length > 0
+                ? user.displayName
+                : typeof user?.email === "string" && user.email.length > 0
+                ? user.email
+                : "Utilisateur"
+            }
+            email={
+              typeof user?.email === "string" ? user.email : "user@example.com"
+            }
           />
         </View>
         {/* Pseudo, pays dynamiques */}

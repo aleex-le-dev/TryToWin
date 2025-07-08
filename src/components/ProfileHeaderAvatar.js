@@ -3,7 +3,13 @@
 import React from "react";
 import { View, Image, Text } from "react-native";
 
-const COLORS = ["#667eea", "#45B7D1", "#FF6B6B", "#4ECDC4", "#FFD700"];
+const COLORS = [
+  "#FF5733",
+  "#33FF57",
+  "#3357FF",
+  "#FF33A1",
+  "#A133FF",
+];
 
 function getRandomColor(email) {
   if (!email) return COLORS[0];
@@ -38,6 +44,60 @@ const ProfileHeaderAvatar = ({
     flagUrl = `https://flagcdn.com/w80/${code}.png`;
   }
 
+  // Correction stricte : si avatar === '👤', on affiche toujours 👤
+  const hasPhoto = typeof photoURL === "string" && photoURL.trim() !== "";
+  const showDefaultEmoji = avatar === "👤";
+
+  // DEBUG LOG
+  console.log("[DEBUG] ProfileHeaderAvatar", {
+    photoURL,
+    avatar,
+    showDefaultEmoji,
+    displayName,
+    initial,
+    hasPhoto,
+  });
+
+  let renderContent;
+  if (hasPhoto) {
+    renderContent = (
+      <Image
+        source={{ uri: photoURL }}
+        style={{ width: size, height: size, borderRadius: size / 2 }}
+      />
+    );
+  } else if (flagUrl) {
+    renderContent = (
+      <Image
+        source={{ uri: flagUrl }}
+        style={{ width: size, height: size, borderRadius: size / 2 }}
+      />
+    );
+  } else if (showDefaultEmoji) {
+    renderContent = (
+      <Text style={{ color: "#fff", fontSize: size / 2, fontWeight: "bold" }}>
+        👤
+      </Text>
+    );
+  } else {
+    renderContent = (
+      <Text style={{ color: "#fff", fontSize: size / 2, fontWeight: "bold" }}>
+        {initial}
+      </Text>
+    );
+  }
+  console.log("[DEBUG] ProfileHeaderAvatar render", {
+    avatar,
+    showDefaultEmoji,
+    renderContentType: hasPhoto
+      ? "photo"
+      : flagUrl
+      ? "flag"
+      : showDefaultEmoji
+      ? "emoji"
+      : "initial",
+  });
+
   return (
     <View
       style={{
@@ -45,25 +105,11 @@ const ProfileHeaderAvatar = ({
         height: size,
         borderRadius: size / 2,
         overflow: "hidden",
-        backgroundColor: photoURL || flagUrl ? "#eee" : color,
+        backgroundColor: hasPhoto || flagUrl ? "#eee" : color,
         justifyContent: "center",
         alignItems: "center",
       }}>
-      {photoURL ? (
-        <Image
-          source={{ uri: photoURL }}
-          style={{ width: size, height: size, borderRadius: size / 2 }}
-        />
-      ) : flagUrl ? (
-        <Image
-          source={{ uri: flagUrl }}
-          style={{ width: size, height: size, borderRadius: size / 2 }}
-        />
-      ) : (
-        <Text style={{ color: "#fff", fontSize: size / 2, fontWeight: "bold" }}>
-          {initial}
-        </Text>
-      )}
+      {renderContent}
     </View>
   );
 };
