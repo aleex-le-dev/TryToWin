@@ -311,7 +311,8 @@ const Morpion = ({ navigation, route }) => {
       title='Morpion'
       stats={statsJeu}
       streak={statsJeu.currentStreak}
-      onBack={() => navigation.goBack()}>
+      onBack={() => navigation.goBack()}
+      statsMarginTop={-50}>
       {/* Informations du jeu */}
       <View style={styles.infoJeu}>
         <View style={styles.infoJoueur}>
@@ -352,41 +353,6 @@ const Morpion = ({ navigation, route }) => {
           </TouchableOpacity>
         )}
       </View>
-
-      {/* Statistiques */}
-      {statsJeu.totalGames > 0 && (
-        <View style={styles.sectionStatistiques}>
-          <Text style={styles.titreStatistiques}>Statistiques</Text>
-          {rendreStatistiques()}
-
-          {/* Statistiques détaillées */}
-          <View style={styles.containerStatsDetaillees}>
-            <View style={styles.elementStatDetaille}>
-              <Text style={styles.labelStatDetaille}>Position</Text>
-              <Text style={styles.valeurStatDetaille}>
-                {rank !== null ? `${rank}/${totalPlayers}` : "-"}
-              </Text>
-            </View>
-            <View style={styles.elementStatDetaille}>
-              <Text style={styles.labelStatDetaille}>Meilleur temps</Text>
-              <Text style={styles.valeurStatDetaille}>
-                {typeof statsJeu.bestTime === "number" && statsJeu.bestTime > 0
-                  ? `${statsJeu.bestTime.toFixed(1)} s`
-                  : "-"}
-              </Text>
-            </View>
-            {statsJeu.currentStreak >= 5 && (
-              <View style={styles.elementStatDetaille}>
-                <Text style={styles.labelStatDetaille}>Multiplicateur</Text>
-                <Text style={styles.valeurStatDetaille}>
-                  x{(1 + getSerieMultiplier(statsJeu.currentStreak)).toFixed(2)}
-                </Text>
-              </View>
-            )}
-          </View>
-        </View>
-      )}
-
       <Toast />
     </GameLayout>
   );
