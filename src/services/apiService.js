@@ -12,7 +12,7 @@ import {
 
 // Configuration de base d'Axios
 const apiClient = axios.create({
-  baseURL: "https://api.trytowin.com", // URL de votre API
+  baseURL: "https://api.trytowin.com", 
   timeout: 10000, // Timeout de 10 secondes
   headers: {
     "Content-Type": "application/json",

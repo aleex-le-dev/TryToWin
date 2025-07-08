@@ -1,6 +1,6 @@
 const CLOUDINARY_URL =
   "https://api.cloudinary.com/v1_1/trytowinimage/image/upload";
-const UPLOAD_PRESET = "<votre_upload_preset>"; // à créer dans le dashboard Cloudinary
+// const UPLOAD_PRESET = "<votre_upload_preset>"; // Supprimé pour éviter toute confusion
 
 /**
  * Upload une image locale sur Cloudinary et retourne l'URL publique
