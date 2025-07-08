@@ -28,6 +28,14 @@ const ProfileTab = ({
         backgroundColor: bannerColor || "#fff",
       };
 
+  console.log("[DEBUG] ProfileTab props", {
+    profile,
+    profilePhoto,
+    profileBanner,
+    avatar: profile?.avatar,
+    photoURL: profile?.photoURL,
+  });
+
   return (
     <View
       style={{
@@ -123,20 +131,14 @@ const ProfileTab = ({
             zIndex: 3,
           }}>
           <ProfileHeaderAvatar
-            photoURL={
-              profile?.photoURL
-                ? profile.photoURL
-                : profile?.avatar && profile.avatar.startsWith("http")
-                ? profile.avatar
-                : null
-            }
+            photoURL={profile?.photoURL || null}
             avatar={profile?.avatar}
             size={100}
             displayName={profile?.username || user?.displayName}
             email={user?.email}
           />
         </View>
-        {/* Pseudo, tag et pays dynamiques */}
+        {/* Pseudo, pays dynamiques */}
         <View
           style={{
             flexDirection: "row",
@@ -146,19 +148,6 @@ const ProfileTab = ({
           }}>
           <Text style={{ fontSize: 22, fontWeight: "bold", color: "#23272a" }}>
             {profile?.username || user?.displayName || "Utilisateur"}
-          </Text>
-          <Text
-            style={{
-              backgroundColor: "#667eea",
-              color: "#fff",
-              borderRadius: 8,
-              paddingHorizontal: 8,
-              paddingVertical: 2,
-              fontSize: 13,
-              fontWeight: "bold",
-              marginLeft: 6,
-            }}>
-            #{profile?.tag || "----"}
           </Text>
         </View>
         {/* Pays dynamique (drapeau + nom) */}

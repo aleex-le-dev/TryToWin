@@ -59,11 +59,6 @@ import { countries } from "../../constants/countries";
 const DEFAULT_BANNER =
   "https://placeholders.xyz/800x200/667eea/FFFFFF?text=Ma+Banni%C3%A8re";
 
-// Génère un tag unique à 4 chiffres
-function generateTag() {
-  return Math.floor(1000 + Math.random() * 9000).toString();
-}
-
 // Fonction utilitaire pour sauvegarder le profil localement
 const saveProfileLocally = async (userId, profileData) => {
   try {
@@ -176,10 +171,6 @@ const SkeletonProfile = () => {
       <Block
         style={{ width: 120, height: 22, borderRadius: 8, marginBottom: 10 }}
       />
-      {/* Tag */}
-      <Block
-        style={{ width: 60, height: 16, borderRadius: 8, marginBottom: 18 }}
-      />
       {/* Stats (4 blocs) */}
       <View
         style={{
@@ -232,6 +223,7 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
     country: "",
     bannerColor: null,
     bannerImage: null,
+    photoURL: "",
   });
   const [syncPending, setSyncPending] = useState(false);
   const [profilePhoto, setProfilePhoto] = useState(null);
@@ -315,26 +307,10 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
           const docSnap = await getDoc(docRef);
           if (docSnap.exists()) {
             const data = docSnap.data();
-            if (!data.tag) {
-              // Génère un tag localement
-              const newTag = generateTag();
-              setProfile({ ...data, tag: newTag });
-              saveProfileLocally(user.id, { ...data, tag: newTag });
-              // Tente de le sauvegarder en BDD (en arrière-plan)
-              try {
-                await updateDoc(docRef, { tag: newTag });
-              } catch (e) {
-                // Ajoute à la queue
-                addToProfileQueue(user.id, { tag: newTag });
-                setSyncPending(true);
-              }
-              setProfileFromFirestoreLoaded(true);
-            } else {
-              setProfile(data);
-              saveProfileLocally(user.id, data); // Ecrase le cache local avec la version serveur
-              if (data.photoURL) setProfilePhoto(data.photoURL);
-              setProfileFromFirestoreLoaded(true);
-            }
+            setProfile(data);
+            saveProfileLocally(user.id, data); // Ecrase le cache local avec la version serveur
+            if (data.photoURL) setProfilePhoto(data.photoURL);
+            setProfileFromFirestoreLoaded(true);
           } else {
             // Si pas de doc, on génère un tag localement aussi
             const newTag = generateTag();
@@ -568,6 +544,7 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
       country: profile?.country || "",
       bannerColor: profile?.bannerColor || null,
       bannerImage: profile?.bannerImage || null,
+      photoURL: profile?.photoURL || "",
     });
     setEditModalVisible(true);
   };
@@ -889,6 +866,10 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
         <SkeletonProfile />
       </View>
     );
+  }
+
+  if (editModalVisible) {
+    console.log("[DEBUG] RENDER MODAL", JSON.stringify(editData));
   }
 
   return (
@@ -1222,13 +1203,26 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
               {/* Bouton supprimer la bannière */}
               {(editData.bannerImage || editData.bannerColor) && (
                 <TouchableOpacity
-                  onPress={() =>
-                    setEditData((d) => ({
-                      ...d,
-                      bannerImage: null,
-                      bannerColor: null,
-                    }))
-                  }
+                  onPress={() => {
+                    console.log(
+                      "[DEBUG] Avant suppression bannière",
+                      JSON.stringify(editData)
+                    );
+                    setEditData((d) => {
+                      const newData = {
+                        ...d,
+                        bannerImage: null,
+                        bannerColor: null,
+                        photoURL: d.photoURL,
+                        avatar: d.avatar,
+                      };
+                      console.log(
+                        "[DEBUG] Après suppression bannière",
+                        JSON.stringify(newData)
+                      );
+                      return newData;
+                    });
+                  }}
                   style={{
                     marginTop: 8,
                     marginBottom: 12,
@@ -1679,21 +1673,6 @@ const styles = StyleSheet.create({
     color: "#fff",
     marginBottom: 2,
   },
-  profileTagRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 8,
-  },
-  profileTag: {
-    backgroundColor: "#5865f2",
-    color: "#fff",
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    fontSize: 13,
-    marginRight: 6,
-    fontWeight: "bold",
-  },
   profileCountry: {
     flexDirection: "row",
     alignItems: "center",
@@ -1881,16 +1860,6 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: "bold",
     color: "#23272a",
-  },
-  playerTag: {
-    backgroundColor: "#667eea",
-    color: "#fff",
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    fontSize: 13,
-    fontWeight: "bold",
-    marginLeft: 6,
   },
   playerCountry: {
     flexDirection: "row",
