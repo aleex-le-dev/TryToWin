@@ -96,9 +96,19 @@ const GameLeaderboard = ({
               item.placeholder ? (
                 <View key={item.key} style={{ height: 40 }} />
               ) : (
-                <View style={styles.leaderboardItem}>
+                <View
+                  style={[
+                    styles.leaderboardItem,
+                    item.isCurrentUser && { backgroundColor: game.color },
+                  ]}>
                   <View style={styles.rankContainer}>
-                    <Text style={styles.rankText}>#{item.rank}</Text>
+                    <Text
+                      style={[
+                        styles.rankText,
+                        item.isCurrentUser && { color: "#fff" },
+                      ]}>
+                      #{item.rank}
+                    </Text>
                     {index < 3 && (
                       <Ionicons
                         name='trophy'
@@ -152,16 +162,40 @@ const GameLeaderboard = ({
                         <Text style={{ fontSize: 18, marginRight: 5 }}>
                           {item.country?.flag || "🌍"}
                         </Text>
-                        <Text style={styles.username}>{item.username}</Text>
+                        <Text
+                          style={[
+                            styles.username,
+                            item.isCurrentUser && { color: "#fff" },
+                          ]}>
+                          {item.username}
+                        </Text>
                       </View>
-                      <Text style={styles.userStats}>
+                      <Text
+                        style={[
+                          styles.userStats,
+                          item.isCurrentUser && { color: "#fff" },
+                        ]}>
                         {item.gamesPlayed} parties • {item.winRate}% victoires
                       </Text>
                     </View>
                   </View>
                   <View style={styles.scoreContainer}>
-                    <Text style={styles.scoreText}>{item.score}</Text>
-                    <Text style={styles.scoreLabel}>points</Text>
+                    <Text
+                      style={[
+                        styles.scoreText,
+                        item.isCurrentUser
+                          ? { color: "#fff" }
+                          : { color: game.color, fontWeight: "bold" },
+                      ]}>
+                      {item.score}
+                    </Text>
+                    <Text
+                      style={[
+                        styles.scoreLabel,
+                        item.isCurrentUser && { color: "#fff" },
+                      ]}>
+                      points
+                    </Text>
                   </View>
                 </View>
               )

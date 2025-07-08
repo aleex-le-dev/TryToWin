@@ -542,7 +542,7 @@ const GameDetailsScreen = ({ route, navigation }) => {
               pendingScrollToUserCountry={pendingScrollToUserCountry}
               setPendingScrollToUserCountry={setPendingScrollToUserCountry}
               getUserIndexWithPlaceholders={getUserIndexWithPlaceholders}
-              loading={loading}
+              loading={leaderboardLoading}
               renderLeaderboardItem={renderLeaderboardItem}
               scrollToUserInWorld={scrollToUserInWorld}
               countries={countries}
