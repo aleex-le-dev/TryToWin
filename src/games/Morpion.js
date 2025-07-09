@@ -256,11 +256,6 @@ const Morpion = ({ navigation }) => {
       timerLabel={`${Math.floor(tempsEcoule / 60)}:${(tempsEcoule % 60)
         .toString()
         .padStart(2, "0")}`}
-      renderMainActionButton={(onPress) => (
-        <TouchableOpacity onPress={onPress}>
-          <Ionicons name='refresh' size={22} color='#667eea' />
-        </TouchableOpacity>
-      )}
       onPressMainActionButton={nouvellePartie}>
       <View style={styles.containerJeu}>{rendrePlateau()}</View>
       <Toast />

@@ -189,15 +189,20 @@ const Puissance4 = ({ navigation }) => {
   };
 
   const resetGame = () => {
+    console.log("resetGame appelée dans Puissance4 - Reset du jeu");
     setBoard(
       Array(6)
         .fill()
         .map(() => Array(7).fill(null))
     );
     setCurrentPlayer(1);
-    setGameOver(false);
+    setGameOver(true);
     setWinner(null);
     setElapsedTime(0);
+    // Forcer le redémarrage du timer
+    setTimeout(() => {
+      setGameOver(false);
+    }, 100);
   };
 
   const renderBoard = () => {
@@ -251,11 +256,6 @@ const Puissance4 = ({ navigation }) => {
       timerLabel={`${Math.floor(elapsedTime / 60)}:${(elapsedTime % 60)
         .toString()
         .padStart(2, "0")}`}
-      renderMainActionButton={(onPress) => (
-        <TouchableOpacity onPress={onPress}>
-          <Ionicons name='refresh' size={22} color='#667eea' />
-        </TouchableOpacity>
-      )}
       onPressMainActionButton={resetGame}>
       <View style={styles.containerJeu}>{renderBoard()}</View>
       <Toast />

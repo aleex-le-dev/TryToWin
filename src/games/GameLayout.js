@@ -1,5 +1,5 @@
-import React from "react";
-import { View, Text, TouchableOpacity } from "react-native";
+import React, { useRef } from "react";
+import { View, Text, TouchableOpacity, Animated } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import Toast from "react-native-toast-message";
@@ -42,6 +42,31 @@ const GameLayout = ({
       </View>
     );
   };
+
+  const rotation = useRef(new Animated.Value(0)).current;
+
+  const handleResetPress = () => {
+    console.log("Bouton reset cliqué");
+    Animated.sequence([
+      Animated.timing(rotation, {
+        toValue: 1,
+        duration: 400,
+        useNativeDriver: true,
+      }),
+      Animated.timing(rotation, {
+        toValue: 0,
+        duration: 0,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      if (onPressMainActionButton) onPressMainActionButton();
+    });
+  };
+  const rotateInterpolate = rotation.interpolate({
+    inputRange: [0, 1],
+    outputRange: ["0deg", "180deg"],
+  });
+
   return (
     <View style={{ flex: 1, backgroundColor: "#f8f9fa" }}>
       {/* Header */}
@@ -73,26 +98,75 @@ const GameLayout = ({
         </View>
       </LinearGradient>
       {/* Bloc tour/timer */}
-      <View style={styles.infoJeu}>
-        <View style={styles.infoJoueur}>
+      <View
+        style={styles.infoJeu}
+        onStartShouldSetResponder={() => {
+          console.log("Barre info cliquée");
+          return false;
+        }}>
+        <View
+          style={styles.infoJoueur}
+          onStartShouldSetResponder={() => {
+            console.log("Zone joueur cliquée");
+            return false;
+          }}>
           <Text style={styles.labelJoueur}>{currentTurnLabel}</Text>
           {currentSymbol && (
             <Text style={styles.symboleJoueur}>{currentSymbol}</Text>
           )}
         </View>
-        <View style={{ flexDirection: "row", alignItems: "center" }}>
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            flex: 1,
+            justifyContent: "space-between",
+            position: "relative",
+          }}>
+          <View style={{ flex: 1 }} />
           {timerLabel && (
             <View style={styles.containerTimer}>
               <Ionicons name='time' size={20} color='#667eea' />
               <Text style={styles.texteTimer}>{timerLabel}</Text>
             </View>
           )}
-          {/* Bouton principal d'action à droite du timer */}
-          {renderMainActionButton && (
-            <View style={{ marginLeft: 12 }}>
-              {renderMainActionButton(onPressMainActionButton)}
-            </View>
-          )}
+          <View style={{ width: 60 }} />
+          <View
+            style={{
+              width: 1,
+              backgroundColor: "#e9ecef",
+              alignSelf: "stretch",
+            }}
+          />
+          <View style={{ flex: 1 }} />
+          <View
+            style={{
+              alignItems: "flex-end",
+              flex: 1,
+              height: "100%",
+              justifyContent: "center",
+            }}>
+            {renderMainActionButton ? (
+              renderMainActionButton(onPressMainActionButton)
+            ) : (
+              <TouchableOpacity
+                style={{
+                  padding: 8,
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+                onPress={() => {
+                  console.log("TouchableOpacity reset cliquée");
+                  handleResetPress();
+                }}
+                activeOpacity={0.7}>
+                <Animated.View
+                  style={{ transform: [{ rotate: rotateInterpolate }] }}>
+                  <Ionicons name='refresh' size={32} color='#1976d2' />
+                </Animated.View>
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
       </View>
       {/* Contenu spécifique au jeu */}
@@ -246,6 +320,8 @@ const styles = {
     borderTopWidth: 1,
     borderBottomWidth: 1,
     borderColor: "#ececec",
+    paddingRight: 0,
+    overflow: "visible",
   },
   infoJoueur: {
     flexDirection: "row",

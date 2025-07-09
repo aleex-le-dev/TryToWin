@@ -4,7 +4,7 @@
  * Utilisé dans la navigation et la BDD sous l'identifiant "Othello".
  */
 import React, { useState, useEffect } from "react";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { View, TouchableOpacity, StyleSheet, Dimensions } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Toast from "react-native-toast-message";
 import {
@@ -16,9 +16,20 @@ import { useAuth } from "../hooks/useAuth";
 import { GAME_POINTS, getSerieMultiplier } from "../constants/gamePoints";
 import GameLayout from "./GameLayout";
 
+const { width } = Dimensions.get("window");
+const BOARD_SIZE = 8;
+const CELL_SIZE = (width - 40) / BOARD_SIZE;
+
 const Othello = ({ navigation }) => {
   const { user } = useAuth();
-  const [partieTerminee, setPartieTerminee] = useState(false);
+  const [board, setBoard] = useState(
+    Array(BOARD_SIZE)
+      .fill()
+      .map(() => Array(BOARD_SIZE).fill(null))
+  );
+  const [currentPlayer, setCurrentPlayer] = useState(1); // 1 = noir, 2 = blanc
+  const [gameOver, setGameOver] = useState(false);
+  const [winner, setWinner] = useState(null);
   const [stats, setStats] = useState({
     win: 0,
     draw: 0,
@@ -29,6 +40,17 @@ const Othello = ({ navigation }) => {
   });
   const [rank, setRank] = useState(null);
   const [totalPlayers, setTotalPlayers] = useState(null);
+  const [elapsedTime, setElapsedTime] = useState(0);
+
+  useEffect(() => {
+    let interval = null;
+    if (!gameOver) {
+      interval = setInterval(() => {
+        setElapsedTime((prev) => prev + 1);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [gameOver]);
 
   useEffect(() => {
     const chargerStats = async () => {
@@ -46,43 +68,46 @@ const Othello = ({ navigation }) => {
     chargerStats();
   }, [user?.id]);
 
-  const enregistrerVictoire = async () => {
-    if (user?.id) {
-      await recordGameResult(user.id, "Othello", "win", 0, 0);
-      const s = await getUserGameScore(user.id, "Othello");
-      setStats(s);
-      const { rank, total } = await getUserRankInLeaderboard(
-        user.id,
-        "Othello"
-      );
-      setRank(rank);
-      setTotalPlayers(total);
+  // Plateau fictif (aucune logique de jeu réelle ici)
+  const renderBoard = () => {
+    return (
+      <View style={styles.board}>
+        {board.map((row, rowIndex) => (
+          <View key={rowIndex} style={styles.row}>
+            {row.map((cell, colIndex) => (
+              <View key={`${rowIndex}-${colIndex}`} style={styles.cell}>
+                {/* Pion fictif */}
+                {cell && (
+                  <View
+                    style={[
+                      styles.token,
+                      cell === 1 ? styles.blackToken : styles.whiteToken,
+                    ]}
+                  />
+                )}
+              </View>
+            ))}
+          </View>
+        ))}
+      </View>
+    );
+  };
 
-      // Afficher le toast avec les points gagnés et la série si applicable
-      const points = GAME_POINTS["Othello"]["win"];
-      const mult = getSerieMultiplier(s.currentStreak);
-      const pointsAvecMultiplicateur =
-        mult > 0 ? Math.round(points * (1 + mult)) : points;
-
-      let toastConfig = {
-        type: "success",
-        position: "top",
-        topOffset: 40,
-        visibilityTime: 3000,
-      };
-
-      if (mult > 0) {
-        toastConfig.text1 = `🔥 Victoire ! Série de ${s.currentStreak}`;
-        toastConfig.text2 = `+${pointsAvecMultiplicateur} points (x${(
-          1 + mult
-        ).toFixed(2)})`;
-      } else {
-        toastConfig.text1 = "Victoire enregistrée !";
-        toastConfig.text2 = `+${points} points`;
-      }
-
-      Toast.show(toastConfig);
-    }
+  const resetGame = () => {
+    console.log("resetGame appelée dans Othello - Reset du jeu");
+    setBoard(
+      Array(BOARD_SIZE)
+        .fill()
+        .map(() => Array(BOARD_SIZE).fill(null))
+    );
+    setCurrentPlayer(1);
+    setGameOver(true);
+    setWinner(null);
+    setElapsedTime(0);
+    // Forcer le redémarrage du timer
+    setTimeout(() => {
+      setGameOver(false);
+    }, 100);
   };
 
   return (
@@ -90,43 +115,67 @@ const Othello = ({ navigation }) => {
       title='Othello'
       stats={stats}
       streak={stats.currentStreak}
-      onBack={() => navigation.goBack()}>
-      {/* Ancien contenu principal du jeu (plateau, stats, etc.) ici */}
-      {/* ... tout sauf l'ancien header/score/multiplicateur ... */}
-      {/* Par exemple : */}
-      {/* Plateau */}
-      {/* ... */}
-      <TouchableOpacity style={styles.button} onPress={enregistrerVictoire}>
-        <Ionicons name='trophy' size={20} color='#fff' />
-        <Text style={styles.buttonText}>Simuler une victoire</Text>
-      </TouchableOpacity>
-      <View style={styles.stats}>
-        <Text>Points : {stats.totalPoints}</Text>
-        <Text>Victoires : {stats.win}</Text>
-        <Text>Nuls : {stats.draw}</Text>
-        <Text>Défaites : {stats.lose}</Text>
-        <Text>Parties : {stats.totalGames}</Text>
-        <Text>Winrate : {stats.winRate}%</Text>
-        <Text>Classement : {rank ? `#${rank} sur ${totalPlayers}` : "-"}</Text>
-      </View>
+      onBack={() => navigation.goBack()}
+      currentTurnLabel={gameOver ? "Partie terminée" : `Tour du joueur`}
+      currentSymbol={
+        gameOver
+          ? winner === 1
+            ? "⚫"
+            : winner === 2
+            ? "⚪"
+            : "-"
+          : currentPlayer === 1
+          ? "⚫"
+          : "⚪"
+      }
+      timerLabel={`${Math.floor(elapsedTime / 60)}:${(elapsedTime % 60)
+        .toString()
+        .padStart(2, "0")}`}
+      onPressMainActionButton={resetGame}>
+      <View style={styles.containerJeu}>{renderBoard()}</View>
       <Toast />
     </GameLayout>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 24, backgroundColor: "#fff" },
-  title: { fontSize: 24, fontWeight: "bold", marginBottom: 20 },
-  button: {
-    flexDirection: "row",
+  containerJeu: {
+    flex: 1,
+    justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#667eea",
-    padding: 12,
-    borderRadius: 8,
-    marginVertical: 20,
+    paddingHorizontal: 8,
   },
-  buttonText: { color: "#fff", fontWeight: "bold", marginLeft: 8 },
-  stats: { marginTop: 20 },
+  board: {
+    backgroundColor: "#388e3c",
+    borderRadius: 12,
+    padding: 8,
+    marginTop: 20,
+  },
+  row: {
+    flexDirection: "row",
+  },
+  cell: {
+    width: CELL_SIZE,
+    height: CELL_SIZE,
+    backgroundColor: "#4caf50",
+    borderWidth: 1,
+    borderColor: "#2e7d32",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  token: {
+    width: CELL_SIZE - 10,
+    height: CELL_SIZE - 10,
+    borderRadius: (CELL_SIZE - 10) / 2,
+  },
+  blackToken: {
+    backgroundColor: "#222",
+  },
+  whiteToken: {
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: "#222",
+  },
 });
 
 export default Othello;
