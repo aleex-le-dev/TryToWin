@@ -13,6 +13,8 @@ import { Ionicons } from "@expo/vector-icons";
 import Toast from "react-native-toast-message";
 import GameLayout from "./GameLayout";
 import { GAME_POINTS } from "../constants/gamePoints";
+import { recordGameResult } from "../services/scoreService";
+import { useAuth } from "../hooks/useAuth";
 
 const WORDS = [
   "DEVELOPPEUR",
@@ -61,6 +63,7 @@ const PenduDrawing = ({ erreurs }) => {
 };
 
 const Pendu = ({ navigation }) => {
+  const { user } = useAuth();
   const [mot, setMot] = useState(getRandomWord());
   const [lettres, setLettres] = useState([]);
   const [erreurs, setErreurs] = useState(0);
@@ -86,7 +89,9 @@ const Pendu = ({ navigation }) => {
   }, [lettres, erreurs]);
 
   useEffect(() => {
-    if (gagne || perdu) {
+    if ((gagne || perdu) && user?.id) {
+      const result = gagne ? "win" : "lose";
+      recordGameResult(user.id, "Pendu", result, 0, elapsedTime);
       const points = gagne ? GAME_POINTS.Pendu.win : GAME_POINTS.Pendu.lose;
       const message = gagne ? "Victoire !" : "Défaite !";
       Toast.show({
