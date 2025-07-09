@@ -73,10 +73,10 @@ export async function recordGameResult(
     if (result === "win") {
       data.currentStreak += 1;
       const multiplier = getSerieMultiplier(data.currentStreak);
-      data.totalPoints += points + points * multiplier;
+      data.totalPoints += Math.round(points + points * multiplier);
     } else {
       data.currentStreak = 0;
-      data.totalPoints += points;
+      data.totalPoints += Math.round(points);
     }
 
     // Mise à jour du meilleur temps
