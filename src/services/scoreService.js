@@ -397,6 +397,46 @@ export async function getUserGlobalRank(userId) {
 }
 
 /**
+ * Récupère la position d'un utilisateur dans le classement par pays pour un jeu.
+ * @param {string} userId - ID de l'utilisateur
+ * @param {string} game - Nom du jeu
+ * @param {string} country - Code pays (ex: 'FR')
+ * @returns {Promise<{rank: number, total: number}>} Rang et total dans le pays
+ */
+export async function getUserRankInCountryLeaderboard(userId, game, country) {
+  if (!userId || !game || !country) return { rank: null, total: 0 };
+  try {
+    // Récupérer tous les utilisateurs du pays
+    const usersSnap = await getDocs(collection(db, "users"));
+    const leaderboard = [];
+    for (const userDoc of usersSnap.docs) {
+      const userProfile = userDoc.data();
+      if ((userProfile.country || "FR") !== country) continue;
+      const scoreSnap = await getDoc(
+        doc(db, "users", userDoc.id, "scores", game)
+      );
+      if (!scoreSnap.exists()) continue;
+      const data = scoreSnap.data();
+      if (!data.totalPoints) continue;
+      leaderboard.push({ userId: userDoc.id, totalPoints: data.totalPoints });
+    }
+    leaderboard.sort((a, b) => b.totalPoints - a.totalPoints);
+    const userIndex = leaderboard.findIndex((entry) => entry.userId === userId);
+    if (userIndex === -1) return { rank: null, total: leaderboard.length };
+    // Gestion des égalités de rang
+    let rank = 1;
+    for (let i = 0; i < userIndex; i++) {
+      if (leaderboard[i].totalPoints > leaderboard[i + 1].totalPoints) {
+        rank = i + 2;
+      }
+    }
+    return { rank, total: leaderboard.length };
+  } catch (error) {
+    return { rank: null, total: 0 };
+  }
+}
+
+/**
  * Initialise les leaderboards pour un utilisateur.
  * @param {string} userId - ID de l'utilisateur
  */

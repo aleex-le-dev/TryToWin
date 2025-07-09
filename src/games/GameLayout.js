@@ -4,6 +4,14 @@ import { LinearGradient } from "expo-linear-gradient";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import Toast from "react-native-toast-message";
 
+// Fonction utilitaire pour convertir un code pays en emoji drapeau
+function countryCodeToFlag(code) {
+  if (!code) return "🇫🇷";
+  return code
+    .toUpperCase()
+    .replace(/./g, (char) => String.fromCodePoint(127397 + char.charCodeAt()));
+}
+
 const GameLayout = ({
   title,
   stats,
@@ -19,6 +27,9 @@ const GameLayout = ({
   currentSymbol,
   renderMainActionButton, // Ajout d'une prop pour le bouton principal
   onPressMainActionButton, // Ajout de la prop pour le clic
+  countryRank,
+  countryTotal,
+  countryCode,
 }) => {
   // Tableau de stats
   const rendreStatistiques = () => {
@@ -169,20 +180,20 @@ const GameLayout = ({
           {rendreStatistiques()}
           <View style={styles.containerStatsDetaillees}>
             <View style={styles.elementStatDetaille}>
-              <Text style={styles.labelStatDetaille}>Position globale</Text>
+              <Text style={{ fontSize: 20, marginBottom: 2 }}>🌍</Text>
               <Text style={styles.valeurStatDetaille}>
-                {rank !== undefined &&
-                totalPlayers !== undefined &&
-                rank !== null &&
-                totalPlayers !== null
-                  ? `${rank}/${totalPlayers}`
-                  : "-"}
+                {typeof rank === "number" && rank !== null ? `#${rank}` : "-"}
               </Text>
             </View>
             <View style={styles.elementStatDetaille}>
-              <Text style={styles.labelStatDetaille}>Position pays</Text>
+              {/* Drapeau du pays, par défaut 🇫🇷 */}
+              <Text style={{ fontSize: 20, marginBottom: 2 }}>
+                {countryCodeToFlag(countryCode)}
+              </Text>
               <Text style={styles.valeurStatDetaille}>
-                {/* À remplacer par la vraie valeur du pays si disponible */}-
+                {typeof countryRank === "number" && countryRank !== null
+                  ? `#${countryRank}`
+                  : "-"}
               </Text>
             </View>
             {streak >= 5 && (

@@ -12,6 +12,7 @@ import {
   recordGameResult,
   getUserGameScore,
   getUserRankInLeaderboard,
+  getUserRankInCountryLeaderboard,
 } from "../services/scoreService";
 import { useAuth } from "../hooks/useAuth";
 import { GAME_POINTS, getSerieMultiplier } from "../constants/gamePoints";
@@ -38,6 +39,8 @@ const Morpion = ({ navigation }) => {
   });
   const [rank, setRank] = useState(null);
   const [totalPlayers, setTotalPlayers] = useState(null);
+  const [countryRank, setCountryRank] = useState(null);
+  const [countryTotal, setCountryTotal] = useState(null);
 
   useEffect(() => {
     const chargerStats = async () => {
@@ -52,6 +55,12 @@ const Morpion = ({ navigation }) => {
           );
           setRank(rank);
           setTotalPlayers(total);
+          // Pays
+          const country = user.country || user.profile?.country || "FR";
+          const { rank: cRank, total: cTotal } =
+            await getUserRankInCountryLeaderboard(user.id, "Morpion", country);
+          setCountryRank(cRank);
+          setCountryTotal(cTotal);
         } catch (error) {
           console.log("Erreur lors du chargement des stats:", error);
         }
@@ -256,7 +265,12 @@ const Morpion = ({ navigation }) => {
       timerLabel={`${Math.floor(tempsEcoule / 60)}:${(tempsEcoule % 60)
         .toString()
         .padStart(2, "0")}`}
-      onPressMainActionButton={nouvellePartie}>
+      onPressMainActionButton={nouvellePartie}
+      rank={rank}
+      totalPlayers={totalPlayers}
+      countryRank={countryRank}
+      countryTotal={countryTotal}
+      countryCode={user?.country || user?.profile?.country || "FR"}>
       <View style={styles.containerJeu}>{rendrePlateau()}</View>
       <Toast />
     </GameLayout>
