@@ -13,7 +13,7 @@ import { Ionicons } from "@expo/vector-icons";
 import Toast from "react-native-toast-message";
 import GameLayout from "./GameLayout";
 import { GAME_POINTS } from "../constants/gamePoints";
-import { recordGameResult } from "../services/scoreService";
+import { recordGameResult, getUserGameScore } from "../services/scoreService";
 import { useAuth } from "../hooks/useAuth";
 
 const WORDS = [
@@ -71,6 +71,20 @@ const Pendu = ({ navigation }) => {
   const [perdu, setPerdu] = useState(false);
   const [input, setInput] = useState("");
   const [elapsedTime, setElapsedTime] = useState(0);
+  const [stats, setStats] = useState({
+    win: 0,
+    draw: 0,
+    lose: 0,
+    totalPoints: 0,
+    totalGames: 0,
+    winRate: 0,
+  });
+
+  useEffect(() => {
+    if (user?.id) {
+      getUserGameScore(user.id, "Pendu").then(setStats);
+    }
+  }, [user?.id]);
 
   useEffect(() => {
     let interval = null;
@@ -91,15 +105,8 @@ const Pendu = ({ navigation }) => {
   useEffect(() => {
     if ((gagne || perdu) && user?.id) {
       const result = gagne ? "win" : "lose";
-      recordGameResult(user.id, "Pendu", result, 0, elapsedTime);
-      const points = gagne ? GAME_POINTS.Pendu.win : GAME_POINTS.Pendu.lose;
-      const message = gagne ? "Victoire !" : "Défaite !";
-      Toast.show({
-        type: gagne ? "success" : "error",
-        text1: message,
-        text2: `${points} points`,
-        position: "top",
-        visibilityTime: 3000,
+      recordGameResult(user.id, "Pendu", result, 0, elapsedTime).then(() => {
+        getUserGameScore(user.id, "Pendu").then(setStats);
       });
     }
   }, [gagne, perdu]);
@@ -193,6 +200,9 @@ const Pendu = ({ navigation }) => {
   return (
     <GameLayout
       title='Pendu'
+      onBack={() => navigation.goBack()}
+      stats={stats}
+      streak={stats.currentStreak}
       timerLabel={`${Math.floor(elapsedTime / 60)}:${(elapsedTime % 60)
         .toString()
         .padStart(2, "0")}`}

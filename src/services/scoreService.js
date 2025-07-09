@@ -73,7 +73,7 @@ export async function recordGameResult(
     if (result === "win") {
       data.currentStreak += 1;
       const multiplier = getSerieMultiplier(data.currentStreak);
-      data.totalPoints += points * multiplier;
+      data.totalPoints += points + points * multiplier;
     } else {
       data.currentStreak = 0;
       data.totalPoints += points;
@@ -97,17 +97,34 @@ export async function recordGameResult(
         : result === "draw"
         ? "Match nul"
         : "Défaite";
-    Toast.show({
+    const pointsGagnes =
+      result === "win"
+        ? points + points * getSerieMultiplier(data.currentStreak)
+        : points;
+    const multiplier = getSerieMultiplier(data.currentStreak);
+
+    let toastConfig = {
       type: result === "win" ? "success" : "info",
-      text1: resultText,
-      text2: `+${
-        data.totalPoints -
-        (data.totalPoints -
-          points *
-            (result === "win" ? getSerieMultiplier(data.currentStreak) : 1))
-      } points`,
       position: "top",
-    });
+    };
+
+    if (result === "win" && multiplier > 0) {
+      toastConfig.text1 = `🔥 Victoire ! Série de ${data.currentStreak}`;
+      toastConfig.text2 = `+${pointsGagnes} points (x${(1 + multiplier).toFixed(
+        2
+      )})`;
+    } else if (result === "win") {
+      toastConfig.text1 = "Victoire !";
+      toastConfig.text2 = `+${pointsGagnes} points`;
+    } else if (result === "draw") {
+      toastConfig.text1 = "Match nul !";
+      toastConfig.text2 = `+${pointsGagnes} points`;
+    } else {
+      toastConfig.text1 = "Défaite";
+      toastConfig.text2 = `+${pointsGagnes} points`;
+    }
+
+    Toast.show(toastConfig);
   } catch (error) {
     Toast.show({
       type: "error",
