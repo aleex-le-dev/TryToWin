@@ -169,7 +169,7 @@ const GameLayout = ({
           {rendreStatistiques()}
           <View style={styles.containerStatsDetaillees}>
             <View style={styles.elementStatDetaille}>
-              <Text style={styles.labelStatDetaille}>Position</Text>
+              <Text style={styles.labelStatDetaille}>Position globale</Text>
               <Text style={styles.valeurStatDetaille}>
                 {rank !== undefined &&
                 totalPlayers !== undefined &&
@@ -180,11 +180,9 @@ const GameLayout = ({
               </Text>
             </View>
             <View style={styles.elementStatDetaille}>
-              <Text style={styles.labelStatDetaille}>Meilleur temps</Text>
+              <Text style={styles.labelStatDetaille}>Position pays</Text>
               <Text style={styles.valeurStatDetaille}>
-                {typeof bestTime === "number" && bestTime > 0
-                  ? `${bestTime.toFixed(1)} s`
-                  : "-"}
+                {/* À remplacer par la vraie valeur du pays si disponible */}-
               </Text>
             </View>
             {streak >= 5 && (

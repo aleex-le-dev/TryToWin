@@ -4,7 +4,13 @@
  * Utilisé dans la navigation et la BDD sous l'identifiant "Othello".
  */
 import React, { useState, useEffect } from "react";
-import { View, TouchableOpacity, StyleSheet, Dimensions } from "react-native";
+import {
+  View,
+  TouchableOpacity,
+  StyleSheet,
+  Dimensions,
+  Text,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Toast from "react-native-toast-message";
 import {
@@ -176,7 +182,33 @@ const Othello = ({ navigation }) => {
       if (oppMoves.length === 0) {
         setGameOver(true);
         const { black, white } = countTokens(board);
-        setWinner(black > white ? 1 : white > black ? 2 : 0);
+        const winnerValue = black > white ? 1 : white > black ? 2 : 0;
+        setWinner(winnerValue);
+        // Toast points
+        if (user?.id) {
+          let resultatBDD = "draw";
+          if (winnerValue === 1) resultatBDD = "win";
+          else if (winnerValue === 2) resultatBDD = "lose";
+          const points = GAME_POINTS["Othello"][resultatBDD];
+          Toast.show({
+            type:
+              resultatBDD === "win"
+                ? "success"
+                : resultatBDD === "lose"
+                ? "error"
+                : "info",
+            text1:
+              resultatBDD === "win"
+                ? "Victoire !"
+                : resultatBDD === "lose"
+                ? "Défaite"
+                : "Égalité",
+            text2: `+${points} points`,
+            position: "top",
+            topOffset: 40,
+            visibilityTime: 3000,
+          });
+        }
       } else {
         setCurrentPlayer(getOpponent(currentPlayer));
       }
@@ -244,13 +276,30 @@ const Othello = ({ navigation }) => {
     setValidMoves(getValidMoves(initialBoard(), 1));
   };
 
+  // Calcul du score
+  const { black, white } = countTokens(board);
+
+  // Message de fin de partie
+  let endMessage = null;
+  if (gameOver) {
+    if (winner === 1) endMessage = `Victoire Noir (${black} - ${white})`;
+    else if (winner === 2) endMessage = `Victoire Blanc (${white} - ${black})`;
+    else endMessage = `Égalité (${black} - ${white})`;
+  }
+
   return (
     <GameLayout
       title='Othello'
       stats={stats}
       streak={stats.currentStreak}
       onBack={() => navigation.goBack()}
-      currentTurnLabel={gameOver ? "Partie terminée" : `Tour du joueur`}
+      currentTurnLabel={
+        gameOver
+          ? winner === 0
+            ? "Égalité"
+            : "Partie terminée"
+          : `Tour du joueur`
+      }
       currentSymbol={
         gameOver
           ? winner === 1
@@ -266,7 +315,68 @@ const Othello = ({ navigation }) => {
         .toString()
         .padStart(2, "0")}`}
       onPressMainActionButton={resetGame}>
-      <View style={styles.containerJeu}>{renderBoard()}</View>
+      <View style={styles.containerJeu}>
+        {renderBoard()}
+        {gameOver && (
+          <View
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: "rgba(0,0,0,0.25)",
+              justifyContent: "center",
+              alignItems: "center",
+              zIndex: 10,
+            }}>
+            <View
+              style={{
+                backgroundColor: "rgba(255,255,255,0.8)",
+                borderRadius: 18,
+                paddingVertical: 24,
+                paddingHorizontal: 36,
+                alignItems: "center",
+                shadowColor: "#000",
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.12,
+                shadowRadius: 8,
+                elevation: 4,
+              }}>
+              <Text
+                style={{
+                  color: "#222",
+                  fontSize: 36,
+                  fontWeight: "bold",
+                  marginBottom: 18,
+                  textAlign: "center",
+                  textShadowColor: "rgba(0,0,0,0.08)",
+                  textShadowOffset: { width: 0, height: 1 },
+                  textShadowRadius: 2,
+                }}>
+                {winner === 1
+                  ? "Victoire des Noirs"
+                  : winner === 2
+                  ? "Victoire des Blancs"
+                  : "Égalité"}
+              </Text>
+              <Text
+                style={{
+                  color: "#1976d2",
+                  fontSize: 48,
+                  fontWeight: "bold",
+                  textAlign: "center",
+                  letterSpacing: 4,
+                  textShadowColor: "rgba(0,0,0,0.08)",
+                  textShadowOffset: { width: 0, height: 1 },
+                  textShadowRadius: 2,
+                }}>
+                {black} - {white}
+              </Text>
+            </View>
+          </View>
+        )}
+      </View>
       <Toast />
     </GameLayout>
   );
