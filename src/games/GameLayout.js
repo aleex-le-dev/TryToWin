@@ -18,6 +18,7 @@ const GameLayout = ({
   timerLabel,
   currentSymbol,
   renderMainActionButton, // Ajout d'une prop pour le bouton principal
+  onPressMainActionButton, // Ajout de la prop pour le clic
 }) => {
   // Tableau de stats
   const rendreStatistiques = () => {
@@ -88,7 +89,9 @@ const GameLayout = ({
           )}
           {/* Bouton principal d'action à droite du timer */}
           {renderMainActionButton && (
-            <View style={{ marginLeft: 12 }}>{renderMainActionButton()}</View>
+            <View style={{ marginLeft: 12 }}>
+              {renderMainActionButton(onPressMainActionButton)}
+            </View>
           )}
         </View>
       </View>
