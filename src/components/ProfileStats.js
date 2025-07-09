@@ -48,7 +48,6 @@ const ProfileStats = ({
   const renderStatCard = (icon, value, label, color) => (
     <View style={styles.premiumStatCard}>
       <View style={[styles.premiumStatIcon, { backgroundColor: color + "22" }]}>
-        {" "}
         {/* Couleur pastel */}
         <Ionicons name={icon} size={28} color={color} />
       </View>
