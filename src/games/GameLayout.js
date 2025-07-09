@@ -97,77 +97,68 @@ const GameLayout = ({
           </View>
         </View>
       </LinearGradient>
-      {/* Bloc tour/timer */}
+      {/* NOUVEAU BLOC INFO SIMPLE ET FONCTIONNEL */}
       <View
-        style={styles.infoJeu}
-        onStartShouldSetResponder={() => {
-          console.log("Barre info cliquée");
-          return false;
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+          backgroundColor: "#fff",
+          borderRadius: 10,
+          marginHorizontal: 20,
+          marginTop: -10,
+          marginBottom: 32,
+          paddingVertical: 8,
+          paddingHorizontal: 14,
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.08,
+          shadowRadius: 8,
+          elevation: 2,
+          minHeight: 44,
         }}>
+        {/* Tour du joueur à gauche */}
         <View
-          style={styles.infoJoueur}
-          onStartShouldSetResponder={() => {
-            console.log("Zone joueur cliquée");
-            return false;
-          }}>
-          <Text style={styles.labelJoueur}>{currentTurnLabel}</Text>
+          style={{ flexDirection: "row", alignItems: "center", minWidth: 80 }}>
+          <Text style={{ fontSize: 15, color: "#222", fontWeight: "500" }}>
+            {currentTurnLabel}
+          </Text>
           {currentSymbol && (
-            <Text style={styles.symboleJoueur}>{currentSymbol}</Text>
+            <Text style={{ fontSize: 20, marginLeft: 6 }}>{currentSymbol}</Text>
           )}
         </View>
+        {/* Timer centré */}
         <View
           style={{
-            flexDirection: "row",
-            alignItems: "center",
             flex: 1,
-            justifyContent: "space-between",
-            position: "relative",
+            alignItems: "center",
+            flexDirection: "row",
+            justifyContent: "center",
           }}>
-          <View style={{ flex: 1 }} />
           {timerLabel && (
-            <View style={styles.containerTimer}>
-              <Ionicons name='time' size={20} color='#667eea' />
-              <Text style={styles.texteTimer}>{timerLabel}</Text>
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <Ionicons
+                name='time'
+                size={18}
+                color='#667eea'
+                style={{ marginRight: 3 }}
+              />
+              <Text
+                style={{ fontSize: 16, color: "#667eea", fontWeight: "bold" }}>
+                {timerLabel}
+              </Text>
             </View>
           )}
-          <View style={{ width: 60 }} />
-          <View
-            style={{
-              width: 1,
-              backgroundColor: "#e9ecef",
-              alignSelf: "stretch",
-            }}
-          />
-          <View style={{ flex: 1 }} />
-          <View
-            style={{
-              alignItems: "flex-end",
-              flex: 1,
-              height: "100%",
-              justifyContent: "center",
-            }}>
-            {renderMainActionButton ? (
-              renderMainActionButton(onPressMainActionButton)
-            ) : (
-              <TouchableOpacity
-                style={{
-                  padding: 8,
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-                onPress={() => {
-                  console.log("TouchableOpacity reset cliquée");
-                  handleResetPress();
-                }}
-                activeOpacity={0.7}>
-                <Animated.View
-                  style={{ transform: [{ rotate: rotateInterpolate }] }}>
-                  <Ionicons name='refresh' size={32} color='#1976d2' />
-                </Animated.View>
-              </TouchableOpacity>
-            )}
-          </View>
         </View>
+        {/* Bouton reset à droite */}
+        <TouchableOpacity
+          style={{ padding: 6, alignItems: "center", justifyContent: "center" }}
+          onPress={handleResetPress}
+          activeOpacity={0.7}>
+          <Animated.View style={{ transform: [{ rotate: rotateInterpolate }] }}>
+            <Ionicons name='refresh' size={24} color='#1976d2' />
+          </Animated.View>
+        </TouchableOpacity>
       </View>
       {/* Contenu spécifique au jeu */}
       <View style={{ flex: 1 }}>{children}</View>
