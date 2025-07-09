@@ -1,5 +1,5 @@
 // Composant Pendu.js
-// Ce composant implémente le jeu du Pendu adapté à React Native et intégré au layout commun des jeux.
+// Ce composant implémente le jeu du Pendu avec un dessin minimaliste et moderne inspiré du dépôt yonizukaa/LeJeuduPendu.
 // Il gère la logique du jeu, l'affichage, et l'intégration avec le système de points et de classement.
 import React, { useState, useEffect } from "react";
 import {
@@ -12,7 +12,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import Toast from "react-native-toast-message";
 import GameLayout from "./GameLayout";
-import { gamePoints } from "../constants/gamePoints";
+import { GAME_POINTS } from "../constants/gamePoints";
 
 const WORDS = [
   "DEVELOPPEUR",
@@ -32,6 +32,33 @@ function getRandomWord() {
 }
 
 const MAX_ERRORS = 7;
+
+const PenduDrawing = ({ erreurs }) => {
+  return (
+    <View style={styles.penduContainer}>
+      {/* Base */}
+      {erreurs > 0 && <View style={styles.penduBase} />}
+      {/* Poteau */}
+      {erreurs > 1 && <View style={styles.penduPole} />}
+      {/* Traverse */}
+      {erreurs > 2 && <View style={styles.penduBeam} />}
+      {/* Corde */}
+      {erreurs > 3 && <View style={styles.penduRope} />}
+      {/* Tête */}
+      {erreurs > 4 && <View style={styles.penduHead} />}
+      {/* Corps */}
+      {erreurs > 5 && <View style={styles.penduBody} />}
+      {/* Bras gauche */}
+      {erreurs > 6 && <View style={styles.penduLeftArm} />}
+      {/* Bras droit */}
+      {erreurs > 7 && <View style={styles.penduRightArm} />}
+      {/* Jambe gauche */}
+      {erreurs > 8 && <View style={styles.penduLeftLeg} />}
+      {/* Jambe droite */}
+      {erreurs > 9 && <View style={styles.penduRightLeg} />}
+    </View>
+  );
+};
 
 const Pendu = ({ navigation }) => {
   const [mot, setMot] = useState(getRandomWord());
@@ -60,7 +87,7 @@ const Pendu = ({ navigation }) => {
 
   useEffect(() => {
     if (gagne || perdu) {
-      const points = gagne ? gamePoints.Pendu.win : gamePoints.Pendu.lose;
+      const points = gagne ? GAME_POINTS.Pendu.win : GAME_POINTS.Pendu.lose;
       const message = gagne ? "Victoire !" : "Défaite !";
       Toast.show({
         type: gagne ? "success" : "error",
@@ -173,8 +200,10 @@ const Pendu = ({ navigation }) => {
         <Text style={styles.erreurs}>
           Erreurs : {erreurs} / {MAX_ERRORS}
         </Text>
-        {renderPendu()}
-        {renderWord()}
+        <View style={styles.penduWrapper}>
+          <PenduDrawing erreurs={erreurs} />
+        </View>
+        <View style={styles.wordWrapper}>{renderWord()}</View>
         {renderAlphabet()}
         <TextInput
           style={styles.input}
@@ -203,19 +232,26 @@ const styles = StyleSheet.create({
   containerJeu: {
     flex: 1,
     alignItems: "center",
-    justifyContent: "center",
+    justifyContent: "flex-start",
     padding: 10,
   },
   erreurs: {
     fontSize: 18,
     color: "#e74c3c",
-    marginBottom: 10,
+    marginBottom: 6,
     fontWeight: "bold",
   },
+  penduWrapper: {
+    width: "100%",
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 8,
+    marginBottom: 18,
+    minHeight: 180,
+  },
   penduContainer: {
-    width: 140,
-    height: 220,
-    marginBottom: 20,
+    width: 120,
+    height: 140,
     alignItems: "center",
     justifyContent: "flex-start",
     position: "relative",
@@ -224,101 +260,104 @@ const styles = StyleSheet.create({
     position: "absolute",
     bottom: 0,
     left: 10,
-    width: 120,
-    height: 8,
-    backgroundColor: "#8B4513",
-    borderRadius: 4,
+    width: 100,
+    height: 4,
+    backgroundColor: "#444",
+    borderRadius: 2,
   },
   penduPole: {
     position: "absolute",
-    bottom: 8,
+    bottom: 3,
     left: 30,
-    width: 8,
-    height: 160,
-    backgroundColor: "#8B4513",
-    borderRadius: 4,
+    width: 4,
+    height: 140,
+    backgroundColor: "#444",
+    borderRadius: 2,
   },
   penduBeam: {
     position: "absolute",
-    top: 0,
+    bottom: 140,
     left: 30,
-    width: 70,
-    height: 8,
-    backgroundColor: "#8B4513",
-    borderRadius: 4,
+    width: 50,
+    height: 4,
+    backgroundColor: "#444",
+    borderRadius: 2,
   },
   penduRope: {
     position: "absolute",
-    top: 8,
-    left: 92,
+    top: 0,
+    left: 75,
     width: 2,
-    height: 32,
-    backgroundColor: "#8B4513",
+    height: 18,
+    backgroundColor: "#444",
     borderRadius: 1,
   },
   penduHead: {
     position: "absolute",
-    top: 40,
-    left: 77,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: "#FFB6C1",
-    borderWidth: 3,
-    borderColor: "#8B4513",
+    top: 15,
+    left: 62,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: "#fff",
+    borderWidth: 2,
+    borderColor: "#444",
   },
   penduBody: {
     position: "absolute",
-    top: 72,
-    left: 91,
-    width: 4,
-    height: 48,
-    backgroundColor: "#8B4513",
+    top: 40,
+    left: 74,
+    width: 3,
+    height: 36,
+    backgroundColor: "#444",
     borderRadius: 2,
   },
   penduLeftArm: {
     position: "absolute",
-    top: 80,
-    left: 91,
-    width: 28,
-    height: 4,
-    backgroundColor: "#8B4513",
+    top: 56,
+    left: 74,
+    width: 18,
+    height: 3,
+    backgroundColor: "#444",
     borderRadius: 2,
     transform: [{ rotate: "-30deg" }],
   },
   penduRightArm: {
     position: "absolute",
-    top: 80,
-    left: 67,
-    width: 28,
-    height: 4,
-    backgroundColor: "#8B4513",
+    top: 56,
+    left: 60,
+    width: 18,
+    height: 3,
+    backgroundColor: "#444",
     borderRadius: 2,
     transform: [{ rotate: "30deg" }],
   },
   penduLeftLeg: {
     position: "absolute",
-    top: 120,
-    left: 91,
-    width: 24,
-    height: 4,
-    backgroundColor: "#8B4513",
+    top: 80,
+    left: 74,
+    width: 16,
+    height: 3,
+    backgroundColor: "#444",
     borderRadius: 2,
     transform: [{ rotate: "30deg" }],
   },
   penduRightLeg: {
     position: "absolute",
-    top: 120,
-    left: 71,
-    width: 24,
-    height: 4,
-    backgroundColor: "#8B4513",
+    top: 80,
+    left: 62,
+    width: 16,
+    height: 3,
+    backgroundColor: "#444",
     borderRadius: 2,
     transform: [{ rotate: "-30deg" }],
   },
+  wordWrapper: {
+    marginBottom: 10,
+  },
   wordContainer: {
     flexDirection: "row",
-    marginBottom: 20,
+    marginBottom: 10,
   },
   letter: {
     fontSize: 28,
