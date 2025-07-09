@@ -31,30 +31,30 @@ function getRandomWord() {
   return WORDS[Math.floor(Math.random() * WORDS.length)];
 }
 
-const MAX_ERRORS = 7;
+const MAX_ERRORS = 10;
 
 const PenduDrawing = ({ erreurs }) => {
   return (
     <View style={styles.penduContainer}>
-      {/* Base */}
+      {/* 1. Base */}
       {erreurs > 0 && <View style={styles.penduBase} />}
-      {/* Poteau */}
+      {/* 2. Poteau */}
       {erreurs > 1 && <View style={styles.penduPole} />}
-      {/* Traverse */}
+      {/* 3. Traverse */}
       {erreurs > 2 && <View style={styles.penduBeam} />}
-      {/* Corde */}
+      {/* 4. Corde */}
       {erreurs > 3 && <View style={styles.penduRope} />}
-      {/* Tête */}
+      {/* 5. Tête */}
       {erreurs > 4 && <View style={styles.penduHead} />}
-      {/* Corps */}
+      {/* 6. Corps */}
       {erreurs > 5 && <View style={styles.penduBody} />}
-      {/* Bras gauche */}
+      {/* 7. Bras gauche */}
       {erreurs > 6 && <View style={styles.penduLeftArm} />}
-      {/* Bras droit */}
+      {/* 8. Bras droit */}
       {erreurs > 7 && <View style={styles.penduRightArm} />}
-      {/* Jambe gauche */}
+      {/* 9. Jambe gauche */}
       {erreurs > 8 && <View style={styles.penduLeftLeg} />}
-      {/* Jambe droite */}
+      {/* 10. Jambe droite */}
       {erreurs > 9 && <View style={styles.penduRightLeg} />}
     </View>
   );
@@ -278,7 +278,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     bottom: 140,
     left: 30,
-    width: 50,
+    width: 70,
     height: 4,
     backgroundColor: "#444",
     borderRadius: 2,
@@ -314,7 +314,7 @@ const styles = StyleSheet.create({
   },
   penduLeftArm: {
     position: "absolute",
-    top: 56,
+    top: 50,
     left: 74,
     width: 18,
     height: 3,
@@ -324,7 +324,7 @@ const styles = StyleSheet.create({
   },
   penduRightArm: {
     position: "absolute",
-    top: 56,
+    top: 50,
     left: 60,
     width: 18,
     height: 3,
@@ -334,7 +334,7 @@ const styles = StyleSheet.create({
   },
   penduLeftLeg: {
     position: "absolute",
-    top: 80,
+    top: 75,
     left: 74,
     width: 16,
     height: 3,
@@ -344,7 +344,7 @@ const styles = StyleSheet.create({
   },
   penduRightLeg: {
     position: "absolute",
-    top: 80,
+    top: 75,
     left: 62,
     width: 16,
     height: 3,
