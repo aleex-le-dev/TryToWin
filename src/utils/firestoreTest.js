@@ -94,7 +94,7 @@ export async function testFirestoreConnection(userId) {
 export async function generateTestData(userId) {
   console.log("=== GÉNÉRATION DE DONNÉES DE TEST ===");
 
-  const games = ["Morpion", "Puissance4", "Othello", "Pong"];
+  const games = ["Morpion", "Puissance4", "Othello", "Pendu"];
   const results = ["win", "draw", "lose"];
 
   try {

@@ -1,108 +1,187 @@
-/**
- * Composant du jeu Pong.
- * Enregistre et affiche uniquement les points du barème (pas de score brut).
- * Utilisé dans la navigation et la BDD sous l'identifiant "Pong".
- */
+// Composant Pendu.js
+// Ce composant implémente le jeu du Pendu adapté à React Native et intégré au layout commun des jeux.
+// Il gère la logique du jeu, l'affichage, et l'intégration avec le système de points et de classement.
 import React, { useState, useEffect } from "react";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  TextInput,
+  Image,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Toast from "react-native-toast-message";
-import {
-  recordGameResult,
-  getUserGameScore,
-  getUserRankInLeaderboard,
-} from "../services/scoreService";
-import { useAuth } from "../hooks/useAuth";
-import { GAME_POINTS, getSerieMultiplier } from "../constants/gamePoints";
 import GameLayout from "./GameLayout";
+import { gamePoints } from "../constants/gamePoints";
 
-const Pong = ({ navigation }) => {
-  const { user } = useAuth();
-  const [partieTerminee, setPartieTerminee] = useState(false);
-  const [stats, setStats] = useState({
-    win: 0,
-    draw: 0,
-    lose: 0,
-    totalPoints: 0,
-    totalGames: 0,
-    winRate: 0,
-  });
-  const [rank, setRank] = useState(null);
-  const [totalPlayers, setTotalPlayers] = useState(null);
+const WORDS = [
+  "DEVELOPPEUR",
+  "REACT",
+  "JAVASCRIPT",
+  "MOBILE",
+  "ORDINATEUR",
+  "ALGORITHME",
+  "FONCTION",
+  "VARIABLE",
+  "COMPILATEUR",
+  "NAVIGATEUR",
+];
+
+function getRandomWord() {
+  return WORDS[Math.floor(Math.random() * WORDS.length)];
+}
+
+const MAX_ERRORS = 7;
+
+const penduImages = [
+  require("../../assets/pendu0.png"),
+  require("../../assets/pendu1.png"),
+  require("../../assets/pendu2.png"),
+  require("../../assets/pendu3.png"),
+  require("../../assets/pendu4.png"),
+  require("../../assets/pendu5.png"),
+  require("../../assets/pendu6.png"),
+  require("../../assets/pendu7.png"),
+];
+
+const Pendu = ({ navigation }) => {
+  const [mot, setMot] = useState(getRandomWord());
+  const [lettres, setLettres] = useState([]);
+  const [erreurs, setErreurs] = useState(0);
+  const [gagne, setGagne] = useState(false);
+  const [perdu, setPerdu] = useState(false);
+  const [input, setInput] = useState("");
+  const [elapsedTime, setElapsedTime] = useState(0);
 
   useEffect(() => {
-    const chargerStats = async () => {
-      if (user?.id) {
-        const s = await getUserGameScore(user.id, "Pong");
-        setStats(s);
-        const { rank, total } = await getUserRankInLeaderboard(user.id, "Pong");
-        setRank(rank);
-        setTotalPlayers(total);
-      }
-    };
-    chargerStats();
-  }, [user?.id]);
-
-  const enregistrerVictoire = async () => {
-    if (user?.id) {
-      await recordGameResult(user.id, "Pong", "win", 0, 0);
-      const s = await getUserGameScore(user.id, "Pong");
-      setStats(s);
-      const { rank, total } = await getUserRankInLeaderboard(user.id, "Pong");
-      setRank(rank);
-      setTotalPlayers(total);
-
-      // Afficher le toast avec les points gagnés et la série si applicable
-      const points = GAME_POINTS["Pong"]["win"];
-      const mult = getSerieMultiplier(s.currentStreak);
-      const pointsAvecMultiplicateur =
-        mult > 0 ? Math.round(points * (1 + mult)) : points;
-
-      let toastConfig = {
-        type: "success",
-        position: "top",
-        topOffset: 40,
-        visibilityTime: 3000,
-      };
-
-      if (mult > 0) {
-        toastConfig.text1 = `🔥 Victoire ! Série de ${s.currentStreak}`;
-        toastConfig.text2 = `+${pointsAvecMultiplicateur} points (x${(
-          1 + mult
-        ).toFixed(2)})`;
-      } else {
-        toastConfig.text1 = "Victoire enregistrée !";
-        toastConfig.text2 = `+${points} points`;
-      }
-
-      Toast.show(toastConfig);
+    let interval = null;
+    if (!gagne && !perdu) {
+      interval = setInterval(() => {
+        setElapsedTime((prev) => prev + 1);
+      }, 1000);
     }
+    return () => clearInterval(interval);
+  }, [gagne, perdu]);
+
+  useEffect(() => {
+    const motAffiche = mot.split("").every((l) => lettres.includes(l));
+    if (motAffiche) setGagne(true);
+    if (erreurs >= MAX_ERRORS) setPerdu(true);
+  }, [lettres, erreurs]);
+
+  useEffect(() => {
+    if (gagne || perdu) {
+      const points = gagne ? gamePoints.Pendu.win : gamePoints.Pendu.lose;
+      const message = gagne ? "Victoire !" : "Défaite !";
+      Toast.show({
+        type: gagne ? "success" : "error",
+        text1: message,
+        text2: `${points} points`,
+        position: "top",
+        visibilityTime: 3000,
+      });
+    }
+  }, [gagne, perdu]);
+
+  const handleLettre = (lettre) => {
+    if (gagne || perdu) return;
+    lettre = lettre.toUpperCase();
+    if (!lettre.match(/^[A-Z]$/) || lettres.includes(lettre)) return;
+    if (mot.includes(lettre)) {
+      setLettres([...lettres, lettre]);
+    } else {
+      setLettres([...lettres, lettre]);
+      setErreurs(erreurs + 1);
+    }
+    setInput("");
+  };
+
+  const resetGame = () => {
+    setMot(getRandomWord());
+    setLettres([]);
+    setErreurs(0);
+    setGagne(false);
+    setPerdu(false);
+    setInput("");
+    setElapsedTime(0);
+  };
+
+  const renderPendu = () => (
+    <View style={styles.penduContainer}>
+      <Image
+        source={penduImages[Math.min(erreurs, penduImages.length - 1)]}
+        style={styles.penduImage}
+        resizeMode='contain'
+      />
+    </View>
+  );
+
+  const renderWord = () => (
+    <View style={styles.wordContainer}>
+      {mot.split("").map((lettre, idx) => (
+        <Text key={idx} style={styles.letter}>
+          {lettres.includes(lettre) || gagne || perdu ? lettre : "_"}
+        </Text>
+      ))}
+    </View>
+  );
+
+  const renderAlphabet = () => {
+    const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+    return (
+      <View style={styles.alphabetContainer}>
+        {alphabet.map((lettre) => (
+          <TouchableOpacity
+            key={lettre}
+            style={[
+              styles.alphabetButton,
+              lettres.includes(lettre) && styles.alphabetButtonUsed,
+            ]}
+            onPress={() => handleLettre(lettre)}
+            disabled={lettres.includes(lettre) || gagne || perdu}>
+            <Text style={styles.alphabetText}>{lettre}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+    );
   };
 
   return (
     <GameLayout
-      title='Pong'
-      stats={stats}
-      streak={stats.currentStreak}
-      onBack={() => navigation.goBack()}>
-      <View style={styles.container}>
-        <Text style={styles.title}>Pong</Text>
-        {/* Plateau de jeu à implémenter ici */}
-        <TouchableOpacity style={styles.button} onPress={enregistrerVictoire}>
-          <Ionicons name='trophy' size={20} color='#fff' />
-          <Text style={styles.buttonText}>Simuler une victoire</Text>
-        </TouchableOpacity>
-        <View style={styles.stats}>
-          <Text>Points : {stats.totalPoints}</Text>
-          <Text>Victoires : {stats.win}</Text>
-          <Text>Nuls : {stats.draw}</Text>
-          <Text>Défaites : {stats.lose}</Text>
-          <Text>Parties : {stats.totalGames}</Text>
-          <Text>Winrate : {stats.winRate}%</Text>
-          <Text>
-            Classement : {rank ? `#${rank} sur ${totalPlayers}` : "-"}
+      title='Pendu'
+      timerLabel={`${Math.floor(elapsedTime / 60)}:${(elapsedTime % 60)
+        .toString()
+        .padStart(2, "0")}`}
+      currentTurnLabel={
+        gagne ? "Gagné !" : perdu ? "Perdu !" : "À vous de jouer"
+      }
+      currentSymbol={<Ionicons name='help-circle' size={22} color='#1976d2' />}
+      onPressMainActionButton={resetGame}>
+      <View style={styles.containerJeu}>
+        <Text style={styles.erreurs}>
+          Erreurs : {erreurs} / {MAX_ERRORS}
+        </Text>
+        {renderPendu()}
+        {renderWord()}
+        {renderAlphabet()}
+        <TextInput
+          style={styles.input}
+          value={input}
+          onChangeText={setInput}
+          onSubmitEditing={() => handleLettre(input)}
+          maxLength={1}
+          editable={!gagne && !perdu}
+          autoCapitalize='characters'
+          placeholder='Lettre'
+        />
+        {(gagne || perdu) && (
+          <Text style={styles.resultat}>
+            {gagne
+              ? "Bravo, vous avez trouvé le mot !"
+              : `Le mot était : ${mot}`}
           </Text>
-        </View>
+        )}
       </View>
       <Toast />
     </GameLayout>
@@ -110,18 +189,179 @@ const Pong = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 24, backgroundColor: "#fff" },
-  title: { fontSize: 24, fontWeight: "bold", marginBottom: 20 },
-  button: {
-    flexDirection: "row",
+  containerJeu: {
+    flex: 1,
     alignItems: "center",
-    backgroundColor: "#667eea",
-    padding: 12,
-    borderRadius: 8,
-    marginVertical: 20,
+    justifyContent: "center",
+    padding: 10,
   },
-  buttonText: { color: "#fff", fontWeight: "bold", marginLeft: 8 },
-  stats: { marginTop: 20 },
+  erreurs: {
+    fontSize: 18,
+    color: "#e74c3c",
+    marginBottom: 10,
+    fontWeight: "bold",
+  },
+  penduContainer: {
+    width: 160,
+    height: 220,
+    marginBottom: 20,
+    alignItems: "center",
+    justifyContent: "flex-start",
+  },
+  penduImage: {
+    width: 160,
+    height: 220,
+  },
+  penduBase: {
+    position: "absolute",
+    bottom: 0,
+    left: 10,
+    width: 120,
+    height: 8,
+    backgroundColor: "#8B4513",
+    borderRadius: 4,
+  },
+  penduPole: {
+    position: "absolute",
+    bottom: 8,
+    left: 30,
+    width: 8,
+    height: 160,
+    backgroundColor: "#8B4513",
+    borderRadius: 4,
+  },
+  penduBeam: {
+    position: "absolute",
+    top: 0,
+    left: 30,
+    width: 70,
+    height: 8,
+    backgroundColor: "#8B4513",
+    borderRadius: 4,
+  },
+  penduRope: {
+    position: "absolute",
+    top: 8,
+    left: 92,
+    width: 2,
+    height: 32,
+    backgroundColor: "#8B4513",
+    borderRadius: 1,
+  },
+  penduHead: {
+    position: "absolute",
+    top: 40,
+    left: 77,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "#FFB6C1",
+    borderWidth: 3,
+    borderColor: "#8B4513",
+  },
+  penduBody: {
+    position: "absolute",
+    top: 72,
+    left: 91,
+    width: 4,
+    height: 48,
+    backgroundColor: "#8B4513",
+    borderRadius: 2,
+  },
+  penduLeftArm: {
+    position: "absolute",
+    top: 80,
+    left: 91,
+    width: 28,
+    height: 4,
+    backgroundColor: "#8B4513",
+    borderRadius: 2,
+    transform: [{ rotate: "-30deg" }],
+  },
+  penduRightArm: {
+    position: "absolute",
+    top: 80,
+    left: 67,
+    width: 28,
+    height: 4,
+    backgroundColor: "#8B4513",
+    borderRadius: 2,
+    transform: [{ rotate: "30deg" }],
+  },
+  penduLeftLeg: {
+    position: "absolute",
+    top: 120,
+    left: 91,
+    width: 24,
+    height: 4,
+    backgroundColor: "#8B4513",
+    borderRadius: 2,
+    transform: [{ rotate: "30deg" }],
+  },
+  penduRightLeg: {
+    position: "absolute",
+    top: 120,
+    left: 71,
+    width: 24,
+    height: 4,
+    backgroundColor: "#8B4513",
+    borderRadius: 2,
+    transform: [{ rotate: "-30deg" }],
+  },
+  wordContainer: {
+    flexDirection: "row",
+    marginBottom: 20,
+  },
+  letter: {
+    fontSize: 28,
+    marginHorizontal: 4,
+    borderBottomWidth: 2,
+    borderColor: "#1976d2",
+    minWidth: 24,
+    textAlign: "center",
+    fontWeight: "bold",
+    color: "#222",
+  },
+  alphabetContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "center",
+    marginVertical: 10,
+  },
+  alphabetButton: {
+    backgroundColor: "#f1f3f4",
+    borderRadius: 6,
+    padding: 8,
+    margin: 2,
+    minWidth: 32,
+    alignItems: "center",
+  },
+  alphabetButtonUsed: {
+    backgroundColor: "#e0e0e0",
+  },
+  alphabetText: {
+    fontSize: 16,
+    color: "#1976d2",
+    fontWeight: "bold",
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: "#1976d2",
+    borderRadius: 6,
+    padding: 8,
+    marginTop: 10,
+    width: 60,
+    textAlign: "center",
+    fontSize: 18,
+    backgroundColor: "#fff",
+  },
+  resultat: {
+    fontSize: 20,
+    color: "#1976d2",
+    marginTop: 16,
+    fontWeight: "bold",
+    textAlign: "center",
+  },
 });
 
-export default Pong;
+export default Pendu;

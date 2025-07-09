@@ -444,7 +444,7 @@ export async function initializeLeaderboardsForUser(userId) {
   if (!userId) return;
 
   try {
-    const games = ["Puissance4", "Othello", "Morpion", "Pong"];
+    const games = ["Puissance4", "Othello", "Morpion", "Pendu"];
 
     for (const game of games) {
       const scoreRef = doc(db, "users", userId, "scores", game);

@@ -8,7 +8,7 @@
   - **Puissance 4**
   - **Othello**
   - **Morpion / TicTacToe**
-  - **Pong**
+  - **Pendu**
 - Création et personnalisation avancée de profil (avatar, bannière, pays, bio, carrousel d'avatars)
 - Classements : Top 10 mondial et par pays, pour chaque jeu et pour le profil
 - Partage de profil via QR code ou lien unique

@@ -11,6 +11,7 @@ import SocialScreen from "../screens/social/SocialScreen";
 import Morpion from "../games/Morpion";
 import Puissance4 from "../games/Puissance4";
 import Othello from "../games/Othello";
+import Pendu from "../games/Pendu";
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -32,6 +33,7 @@ const GamesStack = ({ resetCategoryTrigger, forceHomeReset }) => {
       <Stack.Screen name='Morpion' component={Morpion} />
       <Stack.Screen name='Puissance4' component={Puissance4} />
       <Stack.Screen name='Othello' component={Othello} />
+      <Stack.Screen name='Pendu' component={Pendu} />
     </Stack.Navigator>
   );
 };

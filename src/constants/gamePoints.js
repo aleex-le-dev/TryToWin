@@ -17,7 +17,7 @@ export const GAME_POINTS = {
     draw: 2,
     lose: 0,
   },
-  Pong: {
+  Pendu: {
     win: 15,
     draw: 5,
     lose: 0,
