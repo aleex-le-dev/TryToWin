@@ -5,22 +5,22 @@ export const GAME_POINTS = {
   Puissance4: {
     win: 10,
     draw: 3,
-    lose: 0,
+    lose: 1,
   },
   Othello: {
     win: 12,
     draw: 4,
-    lose: 0,
+    lose: 1,
   },
   Morpion: {
     win: 8,
     draw: 2,
-    lose: 0,
+    lose: 1,
   },
   Pendu: {
     win: 15,
     draw: 5,
-    lose: 0,
+    lose: 1,
   },
 };
 

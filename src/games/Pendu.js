@@ -13,7 +13,12 @@ import { Ionicons } from "@expo/vector-icons";
 import Toast from "react-native-toast-message";
 import GameLayout from "./GameLayout";
 import { GAME_POINTS } from "../constants/gamePoints";
-import { recordGameResult, getUserGameScore } from "../services/scoreService";
+import {
+  recordGameResult,
+  getUserGameScore,
+  getUserRankInLeaderboard,
+  getUserRankInCountryLeaderboard,
+} from "../services/scoreService";
 import { useAuth } from "../hooks/useAuth";
 
 const WORDS = [
@@ -79,10 +84,28 @@ const Pendu = ({ navigation }) => {
     totalGames: 0,
     winRate: 0,
   });
+  const [rank, setRank] = useState(null);
+  const [totalPlayers, setTotalPlayers] = useState(null);
+  const [countryRank, setCountryRank] = useState(null);
+  const [countryTotal, setCountryTotal] = useState(null);
+
+  const updateRanks = async () => {
+    if (user?.id) {
+      const { rank, total } = await getUserRankInLeaderboard(user.id, "Pendu");
+      setRank(rank);
+      setTotalPlayers(total);
+      const country = user.country || user.profile?.country || "FR";
+      const { rank: cRank, total: cTotal } =
+        await getUserRankInCountryLeaderboard(user.id, "Pendu", country);
+      setCountryRank(cRank);
+      setCountryTotal(cTotal);
+    }
+  };
 
   useEffect(() => {
     if (user?.id) {
       getUserGameScore(user.id, "Pendu").then(setStats);
+      updateRanks();
     }
   }, [user?.id]);
 
@@ -107,6 +130,7 @@ const Pendu = ({ navigation }) => {
       const result = gagne ? "win" : "lose";
       recordGameResult(user.id, "Pendu", result, 0, elapsedTime).then(() => {
         getUserGameScore(user.id, "Pendu").then(setStats);
+        updateRanks();
       });
     }
   }, [gagne, perdu]);
@@ -203,6 +227,11 @@ const Pendu = ({ navigation }) => {
       onBack={() => navigation.goBack()}
       stats={stats}
       streak={stats.currentStreak}
+      rank={rank}
+      totalPlayers={totalPlayers}
+      countryRank={countryRank}
+      countryTotal={countryTotal}
+      countryCode={user?.country || user?.profile?.country || "FR"}
       timerLabel={`${Math.floor(elapsedTime / 60)}:${(elapsedTime % 60)
         .toString()
         .padStart(2, "0")}`}

@@ -99,8 +99,8 @@ export async function recordGameResult(
         : "Défaite";
     const pointsGagnes =
       result === "win"
-        ? points + points * getSerieMultiplier(data.currentStreak)
-        : points;
+        ? Math.round(points + points * getSerieMultiplier(data.currentStreak))
+        : Math.round(points);
     const multiplier = getSerieMultiplier(data.currentStreak);
 
     let toastConfig = {
@@ -110,8 +110,8 @@ export async function recordGameResult(
 
     if (result === "win" && multiplier > 0) {
       toastConfig.text1 = `🔥 Victoire ! Série de ${data.currentStreak}`;
-      toastConfig.text2 = `+${pointsGagnes} points (x${(1 + multiplier).toFixed(
-        2
+      toastConfig.text2 = `+${pointsGagnes} points (x${Math.round(
+        1 + multiplier
       )})`;
     } else if (result === "win") {
       toastConfig.text1 = "Victoire !";
