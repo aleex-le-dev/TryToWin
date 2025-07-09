@@ -8,7 +8,6 @@ import {
   TouchableOpacity,
   StyleSheet,
   TextInput,
-  Image,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Toast from "react-native-toast-message";
@@ -33,17 +32,6 @@ function getRandomWord() {
 }
 
 const MAX_ERRORS = 7;
-
-const penduImages = [
-  require("../../assets/pendu0.png"),
-  require("../../assets/pendu1.png"),
-  require("../../assets/pendu2.png"),
-  require("../../assets/pendu3.png"),
-  require("../../assets/pendu4.png"),
-  require("../../assets/pendu5.png"),
-  require("../../assets/pendu6.png"),
-  require("../../assets/pendu7.png"),
-];
 
 const Pendu = ({ navigation }) => {
   const [mot, setMot] = useState(getRandomWord());
@@ -107,15 +95,38 @@ const Pendu = ({ navigation }) => {
     setElapsedTime(0);
   };
 
-  const renderPendu = () => (
-    <View style={styles.penduContainer}>
-      <Image
-        source={penduImages[Math.min(erreurs, penduImages.length - 1)]}
-        style={styles.penduImage}
-        resizeMode='contain'
-      />
-    </View>
-  );
+  const renderPendu = () => {
+    const penduSteps = [
+      // Base
+      <View key='base' style={styles.penduBase} />,
+      // Poteau vertical
+      <View key='pole' style={styles.penduPole} />,
+      // Barre horizontale
+      <View key='beam' style={styles.penduBeam} />,
+      // Corde
+      <View key='rope' style={styles.penduRope} />,
+      // Tête
+      <View key='head' style={styles.penduHead} />,
+      // Corps
+      <View key='body' style={styles.penduBody} />,
+      // Bras gauche
+      <View key='leftArm' style={styles.penduLeftArm} />,
+      // Bras droit
+      <View key='rightArm' style={styles.penduRightArm} />,
+      // Jambe gauche
+      <View key='leftLeg' style={styles.penduLeftLeg} />,
+      // Jambe droite
+      <View key='rightLeg' style={styles.penduRightLeg} />,
+    ];
+
+    return (
+      <View style={styles.penduContainer}>
+        {penduSteps.slice(0, erreurs).map((step, index) => (
+          <View key={index}>{step}</View>
+        ))}
+      </View>
+    );
+  };
 
   const renderWord = () => (
     <View style={styles.wordContainer}>
@@ -202,15 +213,12 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   penduContainer: {
-    width: 160,
+    width: 140,
     height: 220,
     marginBottom: 20,
     alignItems: "center",
     justifyContent: "flex-start",
-  },
-  penduImage: {
-    width: 160,
-    height: 220,
+    position: "relative",
   },
   penduBase: {
     position: "absolute",
