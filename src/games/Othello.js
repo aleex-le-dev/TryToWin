@@ -20,16 +20,116 @@ const { width } = Dimensions.get("window");
 const BOARD_SIZE = 8;
 const CELL_SIZE = (width - 40) / BOARD_SIZE;
 
+const initialBoard = () => {
+  const board = Array(BOARD_SIZE)
+    .fill()
+    .map(() => Array(BOARD_SIZE).fill(null));
+  board[3][3] = 2;
+  board[3][4] = 1;
+  board[4][3] = 1;
+  board[4][4] = 2;
+  return board;
+};
+
+function getOpponent(player) {
+  return player === 1 ? 2 : 1;
+}
+
+function isValidMove(board, row, col, player) {
+  if (board[row][col] !== null) return false;
+  const directions = [
+    [0, 1],
+    [1, 0],
+    [0, -1],
+    [-1, 0],
+    [1, 1],
+    [1, -1],
+    [-1, 1],
+    [-1, -1],
+  ];
+  for (const [dx, dy] of directions) {
+    let x = row + dx,
+      y = col + dy,
+      foundOpponent = false;
+    while (x >= 0 && x < BOARD_SIZE && y >= 0 && y < BOARD_SIZE) {
+      if (board[x][y] === getOpponent(player)) {
+        foundOpponent = true;
+      } else if (board[x][y] === player && foundOpponent) {
+        return true;
+      } else {
+        break;
+      }
+      x += dx;
+      y += dy;
+    }
+  }
+  return false;
+}
+
+function getValidMoves(board, player) {
+  const moves = [];
+  for (let i = 0; i < BOARD_SIZE; i++) {
+    for (let j = 0; j < BOARD_SIZE; j++) {
+      if (isValidMove(board, i, j, player)) moves.push([i, j]);
+    }
+  }
+  return moves;
+}
+
+function applyMove(board, row, col, player) {
+  const newBoard = board.map((r) => [...r]);
+  newBoard[row][col] = player;
+  const directions = [
+    [0, 1],
+    [1, 0],
+    [0, -1],
+    [-1, 0],
+    [1, 1],
+    [1, -1],
+    [-1, 1],
+    [-1, -1],
+  ];
+  for (const [dx, dy] of directions) {
+    let x = row + dx,
+      y = col + dy,
+      toFlip = [];
+    while (x >= 0 && x < BOARD_SIZE && y >= 0 && y < BOARD_SIZE) {
+      if (newBoard[x][y] === getOpponent(player)) {
+        toFlip.push([x, y]);
+      } else if (newBoard[x][y] === player) {
+        for (const [fx, fy] of toFlip) newBoard[fx][fy] = player;
+        break;
+      } else {
+        break;
+      }
+      x += dx;
+      y += dy;
+    }
+  }
+  return newBoard;
+}
+
+function countTokens(board) {
+  let black = 0,
+    white = 0;
+  for (let i = 0; i < BOARD_SIZE; i++) {
+    for (let j = 0; j < BOARD_SIZE; j++) {
+      if (board[i][j] === 1) black++;
+      if (board[i][j] === 2) white++;
+    }
+  }
+  return { black, white };
+}
+
 const Othello = ({ navigation }) => {
   const { user } = useAuth();
-  const [board, setBoard] = useState(
-    Array(BOARD_SIZE)
-      .fill()
-      .map(() => Array(BOARD_SIZE).fill(null))
-  );
+  const [board, setBoard] = useState(initialBoard());
   const [currentPlayer, setCurrentPlayer] = useState(1); // 1 = noir, 2 = blanc
   const [gameOver, setGameOver] = useState(false);
   const [winner, setWinner] = useState(null);
+  const [validMoves, setValidMoves] = useState(
+    getValidMoves(initialBoard(), 1)
+  );
   const [stats, setStats] = useState({
     win: 0,
     draw: 0,
@@ -68,25 +168,67 @@ const Othello = ({ navigation }) => {
     chargerStats();
   }, [user?.id]);
 
-  // Plateau fictif (aucune logique de jeu réelle ici)
+  useEffect(() => {
+    setValidMoves(getValidMoves(board, currentPlayer));
+    const moves = getValidMoves(board, currentPlayer);
+    if (moves.length === 0) {
+      const oppMoves = getValidMoves(board, getOpponent(currentPlayer));
+      if (oppMoves.length === 0) {
+        setGameOver(true);
+        const { black, white } = countTokens(board);
+        setWinner(black > white ? 1 : white > black ? 2 : 0);
+      } else {
+        setCurrentPlayer(getOpponent(currentPlayer));
+      }
+    }
+  }, [board, currentPlayer]);
+
+  const handleCellPress = (row, col) => {
+    if (gameOver || !isValidMove(board, row, col, currentPlayer)) return;
+    const newBoard = applyMove(board, row, col, currentPlayer);
+    setBoard(newBoard);
+    setCurrentPlayer(getOpponent(currentPlayer));
+  };
+
   const renderBoard = () => {
     return (
       <View style={styles.board}>
-        {board.map((row, rowIndex) => (
+        {board.map((rowArr, rowIndex) => (
           <View key={rowIndex} style={styles.row}>
-            {row.map((cell, colIndex) => (
-              <View key={`${rowIndex}-${colIndex}`} style={styles.cell}>
-                {/* Pion fictif */}
-                {cell && (
-                  <View
-                    style={[
-                      styles.token,
-                      cell === 1 ? styles.blackToken : styles.whiteToken,
-                    ]}
-                  />
-                )}
-              </View>
-            ))}
+            {rowArr.map((cell, colIndex) => {
+              const isValid = validMoves.some(
+                ([r, c]) => r === rowIndex && c === colIndex
+              );
+              return (
+                <TouchableOpacity
+                  key={`${rowIndex}-${colIndex}`}
+                  style={styles.cell}
+                  onPress={() => handleCellPress(rowIndex, colIndex)}
+                  disabled={gameOver || !isValid}
+                  activeOpacity={0.7}>
+                  {cell && (
+                    <View
+                      style={[
+                        styles.token,
+                        cell === 1 ? styles.blackToken : styles.whiteToken,
+                      ]}
+                    />
+                  )}
+                  {/* Indicateur de coup possible */}
+                  {!cell && isValid && !gameOver && (
+                    <View
+                      style={{
+                        width: CELL_SIZE / 3,
+                        height: CELL_SIZE / 3,
+                        borderRadius: CELL_SIZE / 6,
+                        backgroundColor: "#222",
+                        alignSelf: "center",
+                      }}
+                    />
+                  )}
+                </TouchableOpacity>
+              );
+            })}
           </View>
         ))}
       </View>
@@ -94,20 +236,12 @@ const Othello = ({ navigation }) => {
   };
 
   const resetGame = () => {
-    console.log("resetGame appelée dans Othello - Reset du jeu");
-    setBoard(
-      Array(BOARD_SIZE)
-        .fill()
-        .map(() => Array(BOARD_SIZE).fill(null))
-    );
+    setBoard(initialBoard());
     setCurrentPlayer(1);
-    setGameOver(true);
+    setGameOver(false);
     setWinner(null);
     setElapsedTime(0);
-    // Forcer le redémarrage du timer
-    setTimeout(() => {
-      setGameOver(false);
-    }, 100);
+    setValidMoves(getValidMoves(initialBoard(), 1));
   };
 
   return (
