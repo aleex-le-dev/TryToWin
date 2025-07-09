@@ -17,7 +17,10 @@ import { Ionicons } from "@expo/vector-icons";
 import Toast from "react-native-toast-message";
 import * as Google from "expo-auth-session/providers/google";
 import * as WebBrowser from "expo-web-browser";
-import { ANDROID_CLIENT_ID, EXPO_CLIENT_ID } from "../../utils/googleAuthConfig";
+import {
+  ANDROID_CLIENT_ID,
+  EXPO_CLIENT_ID,
+} from "../../utils/googleAuthConfig";
 import { auth } from "../../utils/firebaseConfig";
 import { GoogleAuthProvider, signInWithCredential } from "firebase/auth";
 import { authService } from "../../services/authService";
@@ -28,6 +31,7 @@ import { messages } from "../../constants/config";
 import { logError, logSuccess, logInfo } from "../../utils/errorHandler";
 import FormErrorMessage from "../../components/FormErrorMessage";
 import { useToast } from "../../contexts/ToastContext";
+import TestGoogleLogin from "./TestGoogleLogin";
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -373,6 +377,8 @@ const LoginScreen = ({ navigation }) => {
                   )}
                 </TouchableOpacity>
               </View>
+              {/* Bouton de test Google minimal */}
+              <TestGoogleLogin />
             </View>
           </View>
         </ScrollView>
