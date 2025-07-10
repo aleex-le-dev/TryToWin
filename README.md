@@ -63,12 +63,6 @@
 - **UI/UX** : React Native Animated, LinearGradient
 - **Notifications** : React Native Toast Message
 
-## 🔧 Configuration
-
-1. Configurer Firebase dans `src/utils/firebaseConfig.js`
-2. Ajouter la clé API Mistral dans `src/services/mistralService.js`
-3. Configurer les variables d'environnement
-
 ## 📊 Architecture
 
 ```
