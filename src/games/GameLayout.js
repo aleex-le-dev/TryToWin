@@ -178,25 +178,31 @@ const GameLayout = ({
         <View
           style={{ ...styles.sectionStatistiques, marginTop: statsMarginTop }}>
           {rendreStatistiques()}
-          <View style={styles.containerStatsDetaillees}>
-            <View style={styles.elementStatDetaille}>
-              <Text style={{ fontSize: 20, marginBottom: 2 }}>🌍</Text>
-              <Text style={styles.valeurStatDetaille}>
+          <View style={styles.containerStatistiques}>
+            <View style={styles.elementStat}>
+              <Text style={styles.valeurStat}>
                 {typeof rank === "number" && rank !== null ? `#${rank}` : "-"}
               </Text>
-            </View>
-            <View style={styles.elementStatDetaille}>
-              {/* Drapeau du pays, par défaut 🇫🇷 */}
-              <Text style={{ fontSize: 20, marginBottom: 2 }}>
-                {countryCodeToFlag(countryCode)}
+              <Text style={styles.labelStat}>
+                <Text style={{ fontSize: 16 }}>🌍</Text> Monde
               </Text>
-              <Text style={styles.valeurStatDetaille}>
+            </View>
+            <View style={[styles.elementStat, styles.elementStatLast]}>
+              <Text style={styles.valeurStat}>
                 {typeof countryRank === "number" && countryRank !== null
                   ? `#${countryRank}`
                   : "-"}
               </Text>
+              <Text style={styles.labelStat}>
+                <Text style={{ fontSize: 16 }}>
+                  {countryCodeToFlag(countryCode)}
+                </Text>{" "}
+                Pays
+              </Text>
             </View>
-            {streak >= 5 && (
+          </View>
+          {streak >= 5 && (
+            <View style={styles.containerStatsDetaillees}>
               <View style={styles.elementStatDetaille}>
                 <Text style={styles.labelStatDetaille}>Multiplicateur</Text>
                 <Text style={styles.valeurStatDetaille}>
@@ -206,8 +212,8 @@ const GameLayout = ({
                   ).toFixed(2)}
                 </Text>
               </View>
-            )}
-          </View>
+            </View>
+          )}
         </View>
       }
       {/* Toast global pour tous les jeux */}
@@ -270,6 +276,7 @@ const styles = {
     fontSize: 12,
     color: "#888",
     textAlign: "center",
+    paddingBottom: 10,
   },
   // Dernière colonne sans bordure droite
   elementStatLast: {
