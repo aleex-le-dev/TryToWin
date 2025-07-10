@@ -31,7 +31,6 @@ import { messages } from "../../constants/config";
 import { logError, logSuccess, logInfo } from "../../utils/errorHandler";
 import FormErrorMessage from "../../components/FormErrorMessage";
 import { useToast } from "../../contexts/ToastContext";
-import TestGoogleLogin from "./TestGoogleLogin";
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -377,8 +376,6 @@ const LoginScreen = ({ navigation }) => {
                   )}
                 </TouchableOpacity>
               </View>
-              {/* Bouton de test Google minimal */}
-              <TestGoogleLogin />
             </View>
           </View>
         </ScrollView>

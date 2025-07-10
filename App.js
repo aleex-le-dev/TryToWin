@@ -12,6 +12,7 @@ import { logInfo, logSuccess } from "./src/utils/errorHandler";
 import { ToastProvider } from "./src/contexts/ToastContext";
 import SettingsScreen from "./src/screens/social/SettingsScreen";
 
+
 // Application principale TryToWin
 export default function App() {
   React.useEffect(() => {
@@ -35,6 +36,7 @@ export default function App() {
         <AuthProvider>
           <AppNavigator />
           <Toast />
+          
           <StatusBar style='light' />
         </AuthProvider>
       </SafeAreaProvider>

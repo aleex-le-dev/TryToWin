@@ -18,9 +18,10 @@ import {
   GoogleAuthProvider,
   signInWithCredential,
 } from "firebase/auth";
+import * as AuthSession from "expo-auth-session";
 import * as Google from "expo-auth-session/providers/google";
 import * as WebBrowser from "expo-web-browser";
-import { ANDROID_CLIENT_ID, EXPO_CLIENT_ID } from "../../utils/googleAuthConfig";
+import { androidClientId, expoClientId } from "../../utils/googleAuthConfig";
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -31,9 +32,11 @@ export default function AuthScreen() {
   const [loading, setLoading] = useState(false);
 
   // Google Auth
+  const redirectUri = AuthSession.makeRedirectUri({ useProxy: true });
   const [request, response, promptAsync] = Google.useAuthRequest({
-    expoClientId: EXPO_CLIENT_ID,
-    androidClientId: ANDROID_CLIENT_ID,
+    expoClientId: expoClientId,
+    androidClientId: androidClientId,
+    redirectUri,
   });
 
   React.useEffect(() => {
