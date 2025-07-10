@@ -185,6 +185,7 @@ function useDecryptedText(
           }
         }
       }
+
       setDisplayed(current.join(""));
       frame++;
       if (done || frame > totalFrames + 5) clearInterval(intervalRef.current);
@@ -600,17 +601,21 @@ const styles = StyleSheet.create({
     marginBottom: 18,
     borderRadius: 28,
     overflow: "hidden",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.18,
-    shadowRadius: 12,
-    elevation: 10,
+    shadowColor: undefined,
+    shadowOffset: undefined,
+    shadowOpacity: undefined,
+    shadowRadius: undefined,
+    elevation: 0,
     backgroundColor: "#fff",
     transform: [{ scale: 1 }],
   },
   gameCardPressed: {
-    transform: [{ scale: 0.97 }],
-    shadowOpacity: 0.08,
+    transform: [{ scale: 0.97 }, { translateY: 2 }],
+    shadowColor: undefined,
+    shadowOffset: undefined,
+    shadowOpacity: undefined,
+    shadowRadius: undefined,
+    elevation: 0,
   },
   gameCardGradient: {
     padding: 22,
