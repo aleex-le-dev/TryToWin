@@ -171,7 +171,7 @@ const Morpion = ({ navigation }) => {
           toastConfig.text2 = `+${points} points`;
         }
         Toast.show(toastConfig);
-        
+
         // Relancer automatiquement une nouvelle partie après 3 secondes
         setTimeout(() => {
           recommencerPartie();
@@ -197,11 +197,38 @@ const Morpion = ({ navigation }) => {
 
   const rendreCase = (index) => {
     const valeur = plateau[index];
-    const estCaseGagnante = gagnant && verifierGagnant(plateau) === valeur;
+    let estCaseGagnante = false;
+    let couleurGagnante = null;
+    if (gagnant) {
+      const lignesGagnantes = [
+        [0, 1, 2],
+        [3, 4, 5],
+        [6, 7, 8],
+        [0, 3, 6],
+        [1, 4, 7],
+        [2, 5, 8],
+        [0, 4, 8],
+        [2, 4, 6],
+      ];
+      for (let i = 0; i < lignesGagnantes.length; i++) {
+        const [a, b, c] = lignesGagnantes[i];
+        if (
+          plateau[a] &&
+          plateau[a] === plateau[b] &&
+          plateau[a] === plateau[c] &&
+          (index === a || index === b || index === c)
+        ) {
+          estCaseGagnante = true;
+          couleurGagnante =
+            plateau[a] === "O" ? styles.caseGagnanteO : styles.caseGagnanteX;
+          break;
+        }
+      }
+    }
     return (
       <TouchableOpacity
         key={index}
-        style={[styles.case, estCaseGagnante && styles.caseGagnante]}
+        style={[styles.case, estCaseGagnante && couleurGagnante]}
         onPress={() => gererClicCase(index)}
         disabled={partieTerminee}>
         <Text
@@ -325,6 +352,12 @@ const styles = StyleSheet.create({
   },
   caseGagnante: {
     backgroundColor: "#667eea",
+  },
+  caseGagnanteX: {
+    backgroundColor: "#667eea",
+  },
+  caseGagnanteO: {
+    backgroundColor: "#e74c3c",
   },
   texteGagnant: {
     color: "#fff",
