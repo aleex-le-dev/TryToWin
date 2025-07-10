@@ -8,10 +8,10 @@ import GameScreen from "../screens/jeux/GameScreen";
 import ProfileScreen from "../screens/profil/ProfileScreen";
 import GameDetailsScreen from "../screens/jeux/GameDetailsScreen";
 import SocialScreen from "../screens/social/SocialScreen";
-import Morpion from "../games/Morpion";
-import Puissance4 from "../games/Puissance4";
-import Othello from "../games/Othello";
-import Pendu from "../games/Pendu";
+import Morpion from "../games/morpion/Morpion";
+import Puissance4 from "../games/puissance4/Puissance4";
+import Othello from "../games/othello/Othello";
+import Pendu from "../games/pendu/Pendu";
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();

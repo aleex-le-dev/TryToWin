@@ -11,15 +11,15 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Toast from "react-native-toast-message";
-import GameLayout from "./GameLayout";
-import { GAME_POINTS } from "../constants/gamePoints";
+import GameLayout from "./../GameLayout";
+import { GAME_POINTS } from "../../constants/gamePoints";
 import {
   recordGameResult,
   getUserGameScore,
   getUserRankInLeaderboard,
   getUserRankInCountryLeaderboard,
-} from "../services/scoreService";
-import { useAuth } from "../hooks/useAuth";
+} from "../../services/scoreService";
+import { useAuth } from "../../hooks/useAuth";
 
 const WORDS = [
   "DEVELOPPEUR",

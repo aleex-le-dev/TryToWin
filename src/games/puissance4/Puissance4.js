@@ -6,10 +6,10 @@ import {
   recordGameResult,
   getUserGameScore,
   getUserRankInLeaderboard,
-} from "../services/scoreService";
-import { useAuth } from "../hooks/useAuth";
-import { GAME_POINTS, getSerieMultiplier } from "../constants/gamePoints";
-import GameLayout from "./GameLayout";
+} from "../../services/scoreService";
+import { useAuth } from "../../hooks/useAuth";
+import { GAME_POINTS, getSerieMultiplier } from "../../components/GamePointsConfig";
+import GameLayout from "./../GameLayout";
 
 const { width } = Dimensions.get("window");
 const BOARD_WIDTH = width - 24;
