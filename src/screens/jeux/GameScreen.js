@@ -8,6 +8,8 @@ import {
   Dimensions,
   FlatList,
   Image,
+  Animated,
+  Easing,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
@@ -18,6 +20,7 @@ import { useIsFocused } from "@react-navigation/native";
 import { gamesData } from "../../constants/gamesData";
 import { categories } from "../../constants/categories";
 import { getUserAllGameStats } from "../../services/scoreService";
+import { useRef } from "react";
 
 const { width } = Dimensions.get("window");
 
@@ -55,6 +58,140 @@ function GameCard({ item, onPress }) {
       </LinearGradient>
     </TouchableOpacity>
   );
+}
+
+// Composant effet shiny-text
+const ShinyText = ({ children, style }) => {
+  const [shineAnim] = useState(new Animated.Value(0));
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.timing(shineAnim, {
+        toValue: 1,
+        duration: 1800,
+        easing: Easing.linear,
+        useNativeDriver: true,
+      })
+    ).start();
+  }, []);
+
+  const translateX = shineAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [-60, 260], // Largeur du texte estimée
+  });
+
+  return (
+    <View
+      style={{
+        position: "relative",
+        overflow: "hidden",
+        alignSelf: "flex-start",
+      }}>
+      <Text style={style}>{children}</Text>
+      <Animated.View
+        pointerEvents='none'
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          width: "100%",
+          height: "100%",
+          transform: [{ translateX }],
+        }}>
+        <LinearGradient
+          colors={["transparent", "rgba(255,255,255,0.7)", "transparent"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={{ width: 60, height: "100%" }}
+        />
+      </Animated.View>
+    </View>
+  );
+};
+
+function ShinyLetter({ letter, style }) {
+  const [shineAnim] = useState(new Animated.Value(0));
+  useEffect(() => {
+    Animated.loop(
+      Animated.timing(shineAnim, {
+        toValue: 1,
+        duration: 1800,
+        easing: Easing.linear,
+        useNativeDriver: true,
+      })
+    ).start();
+  }, []);
+  const translateX = shineAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [-20, 40],
+  });
+  return (
+    <View style={{ position: "relative", display: "inline-block" }}>
+      <Text style={style}>{letter}</Text>
+      <Animated.View
+        pointerEvents='none'
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          width: 20,
+          height: "100%",
+          transform: [{ translateX }],
+        }}>
+        <LinearGradient
+          colors={["transparent", "rgba(255,255,255,0.7)", "transparent"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={{ width: 20, height: "100%" }}
+        />
+      </Animated.View>
+    </View>
+  );
+}
+
+function ShinyTextLetters({ children, style }) {
+  return (
+    <Text style={[style, { flexDirection: "row", flexWrap: "wrap" }]}>
+      {children.split("").map((char, i) => (
+        <ShinyLetter key={i} letter={char} style={style} />
+      ))}
+    </Text>
+  );
+}
+
+function useDecryptedText(
+  target,
+  duration = 1200,
+  charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
+) {
+  const [displayed, setDisplayed] = useState("");
+  const intervalRef = useRef();
+  useEffect(() => {
+    let frame = 0;
+    let resolved = Array(target.length).fill(false);
+    let current = Array(target.length).fill("");
+    const totalFrames = Math.max(1, Math.floor(duration / 16));
+    clearInterval(intervalRef.current);
+    intervalRef.current = setInterval(() => {
+      let done = true;
+      for (let i = 0; i < target.length; i++) {
+        if (!resolved[i]) {
+          if (Math.random() < frame / totalFrames) {
+            current[i] = target[i];
+            resolved[i] = true;
+          } else {
+            current[i] = charset[Math.floor(Math.random() * charset.length)];
+            done = false;
+          }
+        }
+      }
+      setDisplayed(current.join(""));
+      frame++;
+      if (done || frame > totalFrames + 5) clearInterval(intervalRef.current);
+    }, 16);
+    return () => clearInterval(intervalRef.current);
+  }, [target, duration, charset]);
+  return displayed;
 }
 
 // Écran d'accueil fusionné avec liste des jeux
@@ -185,6 +322,13 @@ const GameScreen = ({ navigation, resetCategoryTrigger, forceHomeReset }) => {
     if (isFocused) setSelectedCategory("Tous");
   }, [isFocused]);
 
+  const decryptedBonjour = useDecryptedText("Bonjour", 3000);
+  const decryptedName = useDecryptedText(
+    profile?.username ? profile.username + " 👋" : "",
+    3000
+  );
+  const decryptedReady = useDecryptedText("Prêt à jouer ?", 3000);
+
   return (
     <View style={styles.container}>
       <ScrollView ref={scrollViewRef} showsVerticalScrollIndicator={false}>
@@ -192,16 +336,11 @@ const GameScreen = ({ navigation, resetCategoryTrigger, forceHomeReset }) => {
         <LinearGradient colors={["#667eea", "#764ba2"]} style={styles.header}>
           <View style={styles.headerContent}>
             <View style={styles.greetingContainer}>
-              <Text style={styles.greeting}>Bonjour</Text>
+              <Text style={styles.greeting}>{decryptedBonjour}</Text>
               {profile?.username && (
-                <Text style={styles.userName}>
-                  {(() => {
-                    console.log("[GameScreen] Nom affiché:", profile.username);
-                    return profile.username + " 👋";
-                  })()}
-                </Text>
+                <Text style={styles.userName}>{decryptedName}</Text>
               )}
-              <Text style={styles.subtitle}>Prêt à jouer ?</Text>
+              <Text style={styles.subtitle}>{decryptedReady}</Text>
             </View>
             <View style={styles.headerStats}>
               <View style={styles.statItem}>
