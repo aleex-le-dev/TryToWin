@@ -47,10 +47,12 @@
 
 ## 📱 Aperçus de l'application
 
-![Aperçu 1](assets/apercu/apercu1.png)
-![Aperçu 2](assets/apercu/apercu2.png)
-![Aperçu 3](assets/apercu/apercu3.png)
-![Aperçu 4](assets/apercu/apercu4.png)
+<div style="display: flex; justify-content: space-between; flex-wrap: wrap;">
+  <img src="assets/apercu/apercu1.png" width="48%" alt="Aperçu 1">
+  <img src="assets/apercu/apercu2.png" width="48%" alt="Aperçu 2">
+  <img src="assets/apercu/apercu3.png" width="48%" alt="Aperçu 3">
+  <img src="assets/apercu/apercu4.png" width="48%" alt="Aperçu 4">
+</div>
 
 ## 🚀 Technologies utilisées
 
