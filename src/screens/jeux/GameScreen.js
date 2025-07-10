@@ -62,6 +62,7 @@ const GameScreen = ({ navigation, resetCategoryTrigger, forceHomeReset }) => {
   const { user, loading } = useAuth();
   const [selectedCategory, setSelectedCategory] = useState("Tous");
   const [profile, setProfile] = useState(null);
+  const [profileLoading, setProfileLoading] = useState(true);
   const [totalPoints, setTotalPoints] = useState(0);
   const isFocused = useIsFocused();
   const scrollViewRef = React.useRef(null);
@@ -73,16 +74,30 @@ const GameScreen = ({ navigation, resetCategoryTrigger, forceHomeReset }) => {
   // Récupération du profil utilisateur depuis Firestore
   useEffect(() => {
     const fetchProfile = async () => {
-      if (user?.uid) {
+      if (user?.id) {
+        setProfileLoading(true);
         try {
-          const docRef = doc(db, "users", user.uid);
+          console.log("[GameScreen] Chargement profil pour user.id:", user.id);
+          const docRef = doc(db, "users", user.id);
           const docSnap = await getDoc(docRef);
           if (docSnap.exists()) {
-            setProfile(docSnap.data());
+            const profileData = docSnap.data();
+            console.log("[GameScreen] Profil chargé:", profileData);
+            setProfile(profileData);
+          } else {
+            console.log(
+              "[GameScreen] Aucun profil trouvé pour user.id:",
+              user.id
+            );
           }
         } catch (error) {
-          // Erreur lors de la récupération du profil: errorr
+          console.error("[GameScreen] Erreur chargement profil:", error);
+        } finally {
+          setProfileLoading(false);
         }
+      } else {
+        console.log("[GameScreen] Pas d'user.id disponible");
+        setProfileLoading(false);
       }
     };
 
@@ -92,8 +107,8 @@ const GameScreen = ({ navigation, resetCategoryTrigger, forceHomeReset }) => {
   // Récupération du total de points utilisateur
   useEffect(() => {
     const fetchPoints = async () => {
-      if (user?.uid) {
-        const stats = await getUserAllGameStats(user.uid);
+      if (user?.id) {
+        const stats = await getUserAllGameStats(user.id);
         setTotalPoints(stats.totalPoints || 0);
       }
     };
@@ -177,16 +192,15 @@ const GameScreen = ({ navigation, resetCategoryTrigger, forceHomeReset }) => {
         <LinearGradient colors={["#667eea", "#764ba2"]} style={styles.header}>
           <View style={styles.headerContent}>
             <View style={styles.greetingContainer}>
-              <Text style={styles.greeting}>
-                Bonjour,{" "}
-                {loading
-                  ? "..."
-                  : profile?.username ||
-                    user?.displayName ||
-                    user?.email?.split("@")?.[0] ||
-                    "Joueur"}{" "}
-                ! 👋
-              </Text>
+              <Text style={styles.greeting}>Bonjour</Text>
+              {profile?.username && (
+                <Text style={styles.userName}>
+                  {(() => {
+                    console.log("[GameScreen] Nom affiché:", profile.username);
+                    return profile.username + " 👋";
+                  })()}
+                </Text>
+              )}
               <Text style={styles.subtitle}>Prêt à jouer ?</Text>
             </View>
             <View style={styles.headerStats}>
@@ -258,7 +272,12 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: "bold",
     color: "#fff",
-    marginBottom: 5,
+  },
+  userName: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "#fff",
+    marginTop: -2,
   },
   subtitle: {
     fontSize: 16,

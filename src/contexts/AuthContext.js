@@ -4,6 +4,7 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { auth } from "../utils/firebaseConfig";
 import { onAuthStateChanged } from "firebase/auth";
+import { User } from "../models/User";
 
 // Création du contexte d'authentification
 const AuthContext = createContext();
@@ -24,15 +25,15 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     // Écouter les changements d'état d'authentification
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       console.warn(
         "[DEBUG] Auth state changed:",
-        user ? user.email : "No user"
+        firebaseUser ? firebaseUser.email : "No user"
       );
-      if (user && !user.emailVerified) {
+      if (firebaseUser && !firebaseUser.emailVerified) {
         setUser(null);
       } else {
-        setUser(user);
+        setUser(firebaseUser ? User.fromFirebase(firebaseUser) : null);
       }
       setLoading(false);
     });
