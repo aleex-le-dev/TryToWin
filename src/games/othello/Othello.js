@@ -19,7 +19,10 @@ import {
   getUserRankInLeaderboard,
 } from "../../services/scoreService";
 import { useAuth } from "../../hooks/useAuth";
-import { GAME_POINTS, getSerieMultiplier } from "../../components/GamePointsConfig";
+import {
+  GAME_POINTS,
+  getSerieMultiplier,
+} from "../../components/GamePointsConfig";
 import GameLayout from "./../GameLayout";
 
 const { width } = Dimensions.get("window");
@@ -208,6 +211,11 @@ const Othello = ({ navigation }) => {
             topOffset: 40,
             visibilityTime: 3000,
           });
+
+          // Relancer automatiquement une nouvelle partie après 3 secondes
+          setTimeout(() => {
+            resetGame();
+          }, 3000);
         }
       } else {
         setCurrentPlayer(getOpponent(currentPlayer));

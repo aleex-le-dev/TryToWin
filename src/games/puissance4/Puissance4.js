@@ -8,7 +8,10 @@ import {
   getUserRankInLeaderboard,
 } from "../../services/scoreService";
 import { useAuth } from "../../hooks/useAuth";
-import { GAME_POINTS, getSerieMultiplier } from "../../components/GamePointsConfig";
+import {
+  GAME_POINTS,
+  getSerieMultiplier,
+} from "../../components/GamePointsConfig";
 import GameLayout from "./../GameLayout";
 
 const { width } = Dimensions.get("window");
@@ -185,6 +188,11 @@ const Puissance4 = ({ navigation }) => {
         toastConfig.text2 = `+${points} points`;
       }
       Toast.show(toastConfig);
+
+      // Relancer automatiquement une nouvelle partie après 3 secondes
+      setTimeout(() => {
+        resetGame();
+      }, 3000);
     }
   };
 

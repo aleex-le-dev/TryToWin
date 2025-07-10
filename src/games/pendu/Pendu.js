@@ -131,6 +131,11 @@ const Pendu = ({ navigation }) => {
       recordGameResult(user.id, "Pendu", result, 0, elapsedTime).then(() => {
         getUserGameScore(user.id, "Pendu").then(setStats);
         updateRanks();
+        
+        // Relancer automatiquement une nouvelle partie après 3 secondes
+        setTimeout(() => {
+          resetGame();
+        }, 3000);
       });
     }
   }, [gagne, perdu]);

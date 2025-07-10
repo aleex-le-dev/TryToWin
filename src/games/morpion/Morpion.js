@@ -171,6 +171,11 @@ const Morpion = ({ navigation }) => {
           toastConfig.text2 = `+${points} points`;
         }
         Toast.show(toastConfig);
+        
+        // Relancer automatiquement une nouvelle partie après 3 secondes
+        setTimeout(() => {
+          recommencerPartie();
+        }, 3000);
       } catch (error) {
         console.log("Erreur lors de la sauvegarde:", error);
       }
