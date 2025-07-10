@@ -252,26 +252,65 @@ export async function getUserAllGameStats(userId) {
  * @returns {Promise<Array>} Classement
  */
 export async function getLeaderboard(game, topN = 10, currentUser = null) {
-  if (!currentUser?.id) return [];
-
   try {
-    const userScoreDoc = await getDoc(
-      doc(db, "users", currentUser.id, "scores", game)
-    );
-    const userStats = userScoreDoc.exists() ? userScoreDoc.data() : {};
+    const usersSnap = await getDocs(collection(db, "users"));
+    const leaderboard = [];
 
-    const userProfileRef = doc(db, "users", currentUser.id);
-    const userProfileSnap = await getDoc(userProfileRef);
-    const userProfile = userProfileSnap.exists() ? userProfileSnap.data() : {};
-    const userCountry = userProfile.country || "FR";
+    for (const userDoc of usersSnap.docs) {
+      const userId = userDoc.id;
+      const userProfile = userDoc.data();
+      const scoreSnap = await getDoc(doc(db, "users", userId, "scores", game));
+      const data = scoreSnap.exists() ? scoreSnap.data() : {};
+      // Inclure tous les joueurs ayant au moins une partie OU l'utilisateur courant (même sans partie)
+      if (
+        (!data.totalGames || data.totalGames === 0) &&
+        (!currentUser || userId !== currentUser.id)
+      )
+        continue;
+      leaderboard.push({
+        userId,
+        name:
+          userProfile.username ||
+          userProfile.displayName ||
+          userProfile.email ||
+          "Joueur",
+        points: data.totalPoints || 0,
+        country: userProfile.country || "FR",
+        win: data.win || 0,
+        draw: data.draw || 0,
+        lose: data.lose || 0,
+        totalGames: data.totalGames || 0,
+        winRate: data.winRate || 0,
+        currentStreak: data.currentStreak || 0,
+        bestTime: data.bestTime || null,
+        avatar: userProfile.avatar || null,
+        email: userProfile.email || null,
+      });
+    }
 
-    const leaderboard = generateLeaderboard(
-      [],
+    // Ajout/actualisation de l'utilisateur courant si besoin
+    let userStats = null;
+    let userCountry = "FR";
+    if (currentUser?.id) {
+      const userScoreDoc = await getDoc(
+        doc(db, "users", currentUser.id, "scores", game)
+      );
+      userStats = userScoreDoc.exists() ? userScoreDoc.data() : {};
+      const userProfileRef = doc(db, "users", currentUser.id);
+      const userProfileSnap = await getDoc(userProfileRef);
+      const userProfile = userProfileSnap.exists()
+        ? userProfileSnap.data()
+        : {};
+      userCountry = userProfile.country || "FR";
+    }
+
+    const leaderboardWithCurrent = generateLeaderboard(
+      leaderboard,
       currentUser,
       userStats,
       userCountry
     );
-    return leaderboard.slice(0, topN);
+    return leaderboardWithCurrent.slice(0, topN);
   } catch (error) {
     return [];
   }
@@ -337,7 +376,7 @@ export async function getUserRankInLeaderboard(userId, game) {
     if (!userScoreDoc.exists()) return { rank: null, total: 0 };
 
     const userStats = userScoreDoc.data();
-    if (!userStats.totalPoints) return { rank: null, total: 0 };
+    // Afficher le rang même si totalPoints vaut 0, tant qu'il y a une entrée de score
 
     const userProfileRef = doc(db, "users", userId);
     const userProfileSnap = await getDoc(userProfileRef);
@@ -485,5 +524,26 @@ export async function initializeLeaderboardsForUser(userId) {
     }
   } catch (error) {
     // Erreur silencieuse pour ne pas bloquer l'initialisation
+  }
+}
+
+export async function ensureScoreEntry(userId, game) {
+  if (!userId || !game) return;
+  const scoreRef = doc(db, "users", userId, "scores", game);
+  const docSnap = await getDoc(scoreRef);
+  if (!docSnap.exists()) {
+    await setDoc(scoreRef, {
+      win: 0,
+      draw: 0,
+      lose: 0,
+      totalPoints: 0,
+      totalGames: 0,
+      totalDuration: 0,
+      winRate: 0,
+      lastUpdated: new Date().toISOString(),
+      lastPlayed: new Date().toISOString(),
+      currentStreak: 0,
+      bestTime: null,
+    });
   }
 }

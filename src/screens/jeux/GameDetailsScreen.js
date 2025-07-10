@@ -95,6 +95,8 @@ const GameDetailsScreen = ({ route, navigation }) => {
             setStatsLoading(true);
             setLeaderboardLoading(true);
 
+            // S'assurer que la table score existe
+            await ensureScoreEntry(user.id, gameId);
             // Charger les stats utilisateur
             const stats = await getUserGameScore(user.id, gameId);
             setUserStats(stats);
@@ -117,6 +119,7 @@ const GameDetailsScreen = ({ route, navigation }) => {
             setUserCountry(userCountry);
 
             // Charger le classement
+            await ensureScoreEntry(user.id, gameId);
             const leaderboard = await getLeaderboard(gameId, 51, user);
 
             // Récupérer les avatars des utilisateurs depuis Firestore
