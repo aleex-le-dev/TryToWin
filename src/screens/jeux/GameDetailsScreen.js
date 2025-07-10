@@ -18,8 +18,10 @@ import { useAuth } from "../../hooks/useAuth";
 import {
   getUserGameScore,
   getUserRankInLeaderboard,
+  getUserRankInCountryLeaderboard,
   recordGameResult,
   getLeaderboard,
+  ensureScoreEntry,
 } from "../../services/scoreService";
 import { useFocusEffect } from "@react-navigation/native";
 import { doc, getDoc } from "firebase/firestore";
@@ -55,6 +57,7 @@ const GameDetailsScreen = ({ route, navigation }) => {
     bestTime: null,
   });
   const [userRank, setUserRank] = useState(null);
+  const [userCountryRank, setUserCountryRank] = useState(null);
   const [totalPlayers, setTotalPlayers] = useState(null);
   const [statsLoading, setStatsLoading] = useState(true);
   const [leaderboardData, setLeaderboardData] = useState([]);
@@ -107,6 +110,17 @@ const GameDetailsScreen = ({ route, navigation }) => {
             setUserRank(rank);
             setTotalPlayers(total);
 
+            // Récupérer le rang dans le classement par pays
+            if (userCountry) {
+              const { rank: countryRank } =
+                await getUserRankInCountryLeaderboard(
+                  user.id,
+                  gameId,
+                  userCountry
+                );
+              setUserCountryRank(countryRank);
+            }
+
             // Récupérer le profil utilisateur pour obtenir le pays et le username
             const userProfileRef = doc(db, "users", user.id);
             const userProfileSnap = await getDoc(userProfileRef);
@@ -117,6 +131,7 @@ const GameDetailsScreen = ({ route, navigation }) => {
             const userUsername =
               userProfile.username || user.displayName || user.email || "Vous";
             setUserCountry(userCountry);
+            setSelectedCountry(userCountry);
 
             // Charger le classement
             await ensureScoreEntry(user.id, gameId);
@@ -348,11 +363,8 @@ const GameDetailsScreen = ({ route, navigation }) => {
     if (leaderboardType === "global") {
       return userRank;
     } else {
-      // Pour le classement par pays, calculer le rang dans les données filtrées
-      const userIndex = filteredLeaderboardData.findIndex(
-        (item) => item.isCurrentUser
-      );
-      return userIndex !== -1 ? userIndex + 1 : null;
+      // Pour le classement par pays, utiliser le rang calculé par le service
+      return userCountryRank;
     }
   };
 
@@ -537,6 +549,7 @@ const GameDetailsScreen = ({ route, navigation }) => {
               setLeaderboardType={setLeaderboardType}
               userCountry={userCountry}
               currentUserRank={currentUserRank}
+              userCountryRank={userCountryRank}
               game={game}
               filteredLeaderboardData={filteredLeaderboardData}
               centeredLeaderboardData={centeredLeaderboardData}

@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import SkeletonProfile from "./SkeletonProfile";
+import Toast from "react-native-toast-message";
 
 const GameLeaderboard = ({
   leaderboardData,
@@ -16,6 +17,7 @@ const GameLeaderboard = ({
   setLeaderboardType,
   userCountry,
   currentUserRank,
+  userCountryRank,
   game,
   filteredLeaderboardData,
   centeredLeaderboardData,
@@ -34,8 +36,12 @@ const GameLeaderboard = ({
       <View style={styles.leaderboardHeader}>
         <Text style={styles.leaderboardTitle}>Classement {game.title}</Text>
         <Text style={styles.leaderboardSubtitle}>
-          {currentUserRank
-            ? `Votre position : #${currentUserRank}`
+          {leaderboardType === "global"
+            ? currentUserRank
+              ? `Votre position : #${currentUserRank}`
+              : "Non classé"
+            : userCountryRank
+            ? `Votre position : #${userCountryRank}`
             : "Non classé"}
         </Text>
       </View>
@@ -60,28 +66,38 @@ const GameLeaderboard = ({
             Mondial
           </Text>
         </TouchableOpacity>
-        {userCountry && (
-          <TouchableOpacity
+        <TouchableOpacity
+          style={[
+            styles.leaderboardSwitchBtn,
+            leaderboardType === "country" && styles.leaderboardSwitchActive,
+            (!userCountry || userCountry === "") && { opacity: 0.5 },
+          ]}
+          // Toujours actif pour permettre le toast
+          disabled={false}
+          onPress={() => {
+            if (!userCountry || userCountry === "") {
+              Toast.show({
+                type: "info",
+                text1: "Veuillez entrer votre pays dans le profil",
+                position: "top",
+              });
+              return;
+            }
+            setLeaderboardType("country");
+            setPendingScrollToUserCountry(true);
+          }}>
+          <Text
             style={[
-              styles.leaderboardSwitchBtn,
-              leaderboardType === "country" && styles.leaderboardSwitchActive,
-            ]}
-            onPress={() => {
-              setLeaderboardType("country");
-              setPendingScrollToUserCountry(true);
-            }}>
-            <Text
-              style={[
-                styles.leaderboardSwitchText,
-                leaderboardType === "country" &&
-                  styles.leaderboardSwitchTextActive,
-              ]}>
-              {countries.find((c) => c.code === userCountry)?.flag || "🌍"}{" "}
-              {countries.find((c) => c.code === userCountry)?.name ||
-                userCountry}
-            </Text>
-          </TouchableOpacity>
-        )}
+              styles.leaderboardSwitchText,
+              leaderboardType === "country" &&
+                styles.leaderboardSwitchTextActive,
+              (!userCountry || userCountry === "") && { color: "#aaa" },
+            ]}>
+            {(countries.find((c) => c.code === userCountry)?.flag || "🌍") +
+              " " +
+              (countries.find((c) => c.code === userCountry)?.name || "Pays")}
+          </Text>
+        </TouchableOpacity>
       </View>
 
       {/* Liste du classement */}

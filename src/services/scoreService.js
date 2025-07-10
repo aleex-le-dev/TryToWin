@@ -261,12 +261,13 @@ export async function getLeaderboard(game, topN = 10, currentUser = null) {
       const userProfile = userDoc.data();
       const scoreSnap = await getDoc(doc(db, "users", userId, "scores", game));
       const data = scoreSnap.exists() ? scoreSnap.data() : {};
-      // Inclure tous les joueurs ayant au moins une partie OU l'utilisateur courant (même sans partie)
-      if (
-        (!data.totalGames || data.totalGames === 0) &&
-        (!currentUser || userId !== currentUser.id)
-      )
-        continue;
+
+      // Créer une entrée de score si elle n'existe pas
+      if (!scoreSnap.exists()) {
+        await ensureScoreEntry(userId, game);
+      }
+
+      // Inclure tous les joueurs (maintenant qu'ils ont tous une entrée de score)
       leaderboard.push({
         userId,
         name:
@@ -328,6 +329,13 @@ export async function getGlobalLeaderboard(topN = 10) {
 
     for (const userDoc of usersSnap.docs) {
       const userId = userDoc.id;
+
+      // S'assurer que l'utilisateur a des entrées de score pour tous les jeux
+      const games = ["Puissance4", "Othello", "Morpion", "Pendu"];
+      for (const game of games) {
+        await ensureScoreEntry(userId, game);
+      }
+
       const scoresSnap = await getDocs(
         collection(db, "users", userId, "scores")
       );
@@ -343,16 +351,15 @@ export async function getGlobalLeaderboard(topN = 10) {
         totalWins += data.win || 0;
       });
 
-      if (totalPoints > 0) {
-        leaderboard.push({
-          userId,
-          totalPoints,
-          totalGames,
-          totalWins,
-          winRate:
-            totalGames > 0 ? Math.round((totalWins / totalGames) * 100) : 0,
-        });
-      }
+      // Inclure tous les utilisateurs, même ceux avec 0 points
+      leaderboard.push({
+        userId,
+        totalPoints,
+        totalGames,
+        totalWins,
+        winRate:
+          totalGames > 0 ? Math.round((totalWins / totalGames) * 100) : 0,
+      });
     }
 
     leaderboard.sort((a, b) => b.totalPoints - a.totalPoints);
@@ -418,6 +425,13 @@ export async function getUserGlobalRank(userId) {
 
     for (const userDoc of usersSnap.docs) {
       const currentUserId = userDoc.id;
+
+      // S'assurer que l'utilisateur a des entrées de score pour tous les jeux
+      const games = ["Puissance4", "Othello", "Morpion", "Pendu"];
+      for (const game of games) {
+        await ensureScoreEntry(currentUserId, game);
+      }
+
       const scoresSnap = await getDocs(
         collection(db, "users", currentUserId, "scores")
       );
@@ -428,9 +442,8 @@ export async function getUserGlobalRank(userId) {
         totalPoints += data.totalPoints || 0;
       });
 
-      if (totalPoints > 0) {
-        leaderboard.push({ userId: currentUserId, totalPoints });
-      }
+      // Inclure tous les utilisateurs, même ceux avec 0 points
+      leaderboard.push({ userId: currentUserId, totalPoints });
     }
 
     leaderboard.sort((a, b) => b.totalPoints - a.totalPoints);
@@ -471,10 +484,14 @@ export async function getUserRankInCountryLeaderboard(userId, game, country) {
       const scoreSnap = await getDoc(
         doc(db, "users", userDoc.id, "scores", game)
       );
-      if (!scoreSnap.exists()) continue;
-      const data = scoreSnap.data();
-      if (!data.totalPoints) continue;
-      leaderboard.push({ userId: userDoc.id, totalPoints: data.totalPoints });
+      const data = scoreSnap.exists() ? scoreSnap.data() : {};
+      // Inclure tous les utilisateurs du pays qui ont une entrée de score
+      if (scoreSnap.exists()) {
+        leaderboard.push({
+          userId: userDoc.id,
+          totalPoints: data.totalPoints || 0,
+        });
+      }
     }
     leaderboard.sort((a, b) => b.totalPoints - a.totalPoints);
     const userIndex = leaderboard.findIndex((entry) => entry.userId === userId);
@@ -545,5 +562,43 @@ export async function ensureScoreEntry(userId, game) {
       currentStreak: 0,
       bestTime: null,
     });
+  }
+}
+
+/**
+ * Initialise les entrées de score pour tous les utilisateurs existants.
+ * À appeler une seule fois pour migrer les données existantes.
+ */
+export async function initializeAllUsersScoreEntries() {
+  try {
+    const games = ["Puissance4", "Othello", "Morpion", "Pendu"];
+    const usersSnap = await getDocs(collection(db, "users"));
+
+    for (const userDoc of usersSnap.docs) {
+      const userId = userDoc.id;
+
+      for (const game of games) {
+        const scoreRef = doc(db, "users", userId, "scores", game);
+        const docSnap = await getDoc(scoreRef);
+
+        if (!docSnap.exists()) {
+          await setDoc(scoreRef, {
+            win: 0,
+            draw: 0,
+            lose: 0,
+            totalPoints: 0,
+            totalGames: 0,
+            totalDuration: 0,
+            winRate: 0,
+            lastUpdated: new Date().toISOString(),
+            lastPlayed: new Date().toISOString(),
+            currentStreak: 0,
+            bestTime: null,
+          });
+        }
+      }
+    }
+  } catch (error) {
+    console.error("Erreur lors de l'initialisation des scores:", error);
   }
 }
