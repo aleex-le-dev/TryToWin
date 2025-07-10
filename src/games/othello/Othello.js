@@ -295,6 +295,30 @@ const Othello = ({ navigation }) => {
     else endMessage = `Égalité (${black} - ${white})`;
   }
 
+  const handleGameEnd = async (resultatBDD) => {
+    if (user?.id) {
+      await recordGameResult(user.id, "Othello", resultatBDD, 0, elapsedTime);
+      await actualiserStatsClassements();
+    }
+  };
+
+  const actualiserStatsClassements = async () => {
+    if (user?.id) {
+      try {
+        const s = await getUserGameScore(user.id, "Othello");
+        setStats(s);
+        const { rank, total } = await getUserRankInLeaderboard(
+          user.id,
+          "Othello"
+        );
+        setRank(rank);
+        setTotalPlayers(total);
+      } catch (error) {
+        console.log("Erreur lors de l'actualisation des stats:", error);
+      }
+    }
+  };
+
   return (
     <GameLayout
       title='Othello'

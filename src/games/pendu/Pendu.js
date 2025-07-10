@@ -128,17 +128,39 @@ const Pendu = ({ navigation }) => {
   useEffect(() => {
     if ((gagne || perdu) && user?.id) {
       const result = gagne ? "win" : "lose";
-      recordGameResult(user.id, "Pendu", result, 0, elapsedTime).then(() => {
-        getUserGameScore(user.id, "Pendu").then(setStats);
-        updateRanks();
-        
-        // Relancer automatiquement une nouvelle partie après 3 secondes
-        setTimeout(() => {
-          resetGame();
-        }, 3000);
-      });
+      recordGameResult(user.id, "Pendu", result, 0, elapsedTime).then(
+        async () => {
+          await actualiserStatsClassements();
+          // Relancer automatiquement une nouvelle partie après 3 secondes
+          setTimeout(() => {
+            resetGame();
+          }, 3000);
+        }
+      );
     }
   }, [gagne, perdu]);
+
+  const actualiserStatsClassements = async () => {
+    if (user?.id) {
+      try {
+        const stats = await getUserGameScore(user.id, "Pendu");
+        setStats(stats);
+        const { rank, total } = await getUserRankInLeaderboard(
+          user.id,
+          "Pendu"
+        );
+        setRank(rank);
+        setTotalPlayers(total);
+        const country = user.country || user.profile?.country || "FR";
+        const { rank: cRank, total: cTotal } =
+          await getUserRankInCountryLeaderboard(user.id, "Pendu", country);
+        setCountryRank(cRank);
+        setCountryTotal(cTotal);
+      } catch (error) {
+        console.log("Erreur lors de l'actualisation des stats:", error);
+      }
+    }
+  };
 
   const handleLettre = (lettre) => {
     if (gagne || perdu) return;

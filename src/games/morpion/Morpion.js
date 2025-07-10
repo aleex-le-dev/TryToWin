@@ -138,11 +138,9 @@ const Morpion = ({ navigation }) => {
     if (user?.id) {
       try {
         await recordGameResult(user.id, "Morpion", resultatBDD, 0, temps);
-        const nouvellesStats = await getUserGameScore(user.id, "Morpion");
-        setStatsJeu(nouvellesStats);
-        setScore(nouvellesStats.totalPoints || 0);
+        await actualiserStatsClassements();
         const points = GAME_POINTS["Morpion"][resultatBDD];
-        const mult = getSerieMultiplier(nouvellesStats.currentStreak);
+        const mult = getSerieMultiplier(statsJeu.currentStreak);
         const pointsAvecMultiplicateur =
           mult > 0 ? Math.round(points * (1 + mult)) : points;
         let toastConfig = {
@@ -154,7 +152,7 @@ const Morpion = ({ navigation }) => {
           toastConfig.type = "success";
           toastConfig.text1 = "Victoire !";
           if (mult > 0) {
-            toastConfig.text1 = `🔥 Victoire ! Série de ${nouvellesStats.currentStreak}`;
+            toastConfig.text1 = `🔥 Victoire ! Série de ${statsJeu.currentStreak}`;
             toastConfig.text2 = `+${pointsAvecMultiplicateur} points (x${(
               1 + mult
             ).toFixed(2)})`;
@@ -171,13 +169,35 @@ const Morpion = ({ navigation }) => {
           toastConfig.text2 = `+${points} points`;
         }
         Toast.show(toastConfig);
-
-        // Relancer automatiquement une nouvelle partie après 3 secondes
-        setTimeout(() => {
+        setTimeout(async () => {
+          await actualiserStatsClassements();
           recommencerPartie();
         }, 3000);
       } catch (error) {
         console.log("Erreur lors de la sauvegarde:", error);
+      }
+    }
+  };
+
+  const actualiserStatsClassements = async () => {
+    if (user?.id) {
+      try {
+        const stats = await getUserGameScore(user.id, "Morpion");
+        setStatsJeu(stats);
+        setScore(stats.totalPoints || 0);
+        const { rank, total } = await getUserRankInLeaderboard(
+          user.id,
+          "Morpion"
+        );
+        setRank(rank);
+        setTotalPlayers(total);
+        const country = user.country || user.profile?.country || "FR";
+        const { rank: cRank, total: cTotal } =
+          await getUserRankInCountryLeaderboard(user.id, "Morpion", country);
+        setCountryRank(cRank);
+        setCountryTotal(cTotal);
+      } catch (error) {
+        console.log("Erreur lors de l'actualisation des stats:", error);
       }
     }
   };

@@ -153,16 +153,9 @@ const Puissance4 = ({ navigation }) => {
   const handleGameEnd = async (result) => {
     if (user?.id) {
       await recordGameResult(user.id, "Puissance4", result, 0, 0);
-      const s = await getUserGameScore(user.id, "Puissance4");
-      setStats(s);
-      const { rank, total } = await getUserRankInLeaderboard(
-        user.id,
-        "Puissance4"
-      );
-      setRank(rank);
-      setTotalPlayers(total);
+      await actualiserStatsClassements();
       const points = GAME_POINTS["Puissance4"][result];
-      const mult = getSerieMultiplier(s.currentStreak);
+      const mult = getSerieMultiplier(stats.currentStreak);
       const pointsAvecMultiplicateur =
         mult > 0 ? Math.round(points * (1 + mult)) : points;
       let toastConfig = {
@@ -173,7 +166,7 @@ const Puissance4 = ({ navigation }) => {
         visibilityTime: 3000,
       };
       if (result === "win" && mult > 0) {
-        toastConfig.text1 = `🔥 Victoire ! Série de ${s.currentStreak}`;
+        toastConfig.text1 = `🔥 Victoire ! Série de ${stats.currentStreak}`;
         toastConfig.text2 = `+${pointsAvecMultiplicateur} points (x${(
           1 + mult
         ).toFixed(2)})`;
@@ -188,11 +181,27 @@ const Puissance4 = ({ navigation }) => {
         toastConfig.text2 = `+${points} points`;
       }
       Toast.show(toastConfig);
-
-      // Relancer automatiquement une nouvelle partie après 3 secondes
-      setTimeout(() => {
+      setTimeout(async () => {
+        await actualiserStatsClassements();
         resetGame();
       }, 3000);
+    }
+  };
+
+  const actualiserStatsClassements = async () => {
+    if (user?.id) {
+      try {
+        const s = await getUserGameScore(user.id, "Puissance4");
+        setStats(s);
+        const { rank, total } = await getUserRankInLeaderboard(
+          user.id,
+          "Puissance4"
+        );
+        setRank(rank);
+        setTotalPlayers(total);
+      } catch (error) {
+        console.log("Erreur lors de l'actualisation des stats:", error);
+      }
     }
   };
 
