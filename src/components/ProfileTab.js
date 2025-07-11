@@ -236,7 +236,6 @@ const ProfileTab = ({
             <View style={{ height: 8 }} />
             {/* Affichage conditionnel emoji ou image pour le meilleur jeu */}
             {(() => {
-              // Si l'utilisateur a des points, il a forcément un meilleur jeu
               if (userStats.totalScore > 0 && userStats.bestGame) {
                 const gameData = gamesData.find(
                   (g) => g.id === userStats.bestGame
@@ -265,8 +264,26 @@ const ProfileTab = ({
                   );
                 }
               }
-              // Si pas de points ou pas de meilleur jeu, ne rien afficher
-              return null;
+              // Si pas de points ou pas de meilleur jeu, afficher "Pas de jeux"
+              return (
+                <View
+                  style={{
+                    flex: 1,
+                    justifyContent: "center",
+                    alignItems: "center",
+                    minHeight: 32,
+                  }}>
+                  <Text
+                    style={{
+                      fontSize: 14,
+                      color: "#aaa",
+                      marginBottom: 10,
+                      textAlign: "center",
+                    }}>
+                    Pas de jeux préférés
+                  </Text>
+                </View>
+              );
             })()}
             <Text style={{ fontSize: 11, color: "#6c757d" }}>
               {userStats.totalScore > 0 && userStats.bestGame

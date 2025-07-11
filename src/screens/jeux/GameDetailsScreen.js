@@ -361,10 +361,13 @@ const GameDetailsScreen = ({ route, navigation }) => {
     if (!user?.id) return null;
 
     if (leaderboardType === "global") {
-      return userRank;
+      const idx = leaderboardData.findIndex((item) => item.isCurrentUser);
+      return idx !== -1 ? idx + 1 : null;
     } else {
-      // Pour le classement par pays, utiliser le rang calculé par le service
-      return userCountryRank;
+      const idx = filteredLeaderboardData.findIndex(
+        (item) => item.isCurrentUser
+      );
+      return idx !== -1 ? idx + 1 : null;
     }
   };
 

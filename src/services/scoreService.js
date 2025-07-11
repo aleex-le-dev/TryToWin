@@ -290,28 +290,8 @@ export async function getLeaderboard(game, topN = 10, currentUser = null) {
     }
 
     // Ajout/actualisation de l'utilisateur courant si besoin
-    let userStats = null;
-    let userCountry = "FR";
-    if (currentUser?.id) {
-      const userScoreDoc = await getDoc(
-        doc(db, "users", currentUser.id, "scores", game)
-      );
-      userStats = userScoreDoc.exists() ? userScoreDoc.data() : {};
-      const userProfileRef = doc(db, "users", currentUser.id);
-      const userProfileSnap = await getDoc(userProfileRef);
-      const userProfile = userProfileSnap.exists()
-        ? userProfileSnap.data()
-        : {};
-      userCountry = userProfile.country || "FR";
-    }
-
-    const leaderboardWithCurrent = generateLeaderboard(
-      leaderboard,
-      currentUser,
-      userStats,
-      userCountry
-    );
-    return leaderboardWithCurrent.slice(0, topN);
+    const leaderboardSorted = generateLeaderboard(leaderboard);
+    return leaderboardSorted;
   } catch (error) {
     return [];
   }

@@ -31,18 +31,18 @@ const GameLeaderboard = ({
   scrollToUserInWorld,
   countries,
 }) => {
+  // Calcul dynamique de la position utilisateur dans la liste affichée
+  const userIndex = centeredLeaderboardData.findIndex(
+    (item) => item.isCurrentUser
+  );
+  const userPosition = userIndex !== -1 ? userIndex + 1 : "-";
+
   return (
     <View style={styles.leaderboardContent}>
       <View style={styles.leaderboardHeader}>
         <Text style={styles.leaderboardTitle}>Classement {game.title}</Text>
         <Text style={styles.leaderboardSubtitle}>
-          {leaderboardType === "global"
-            ? currentUserRank
-              ? `Votre position : #${currentUserRank}`
-              : "Non classé"
-            : userCountryRank
-            ? `Votre position : #${userCountryRank}`
-            : "Non classé"}
+          {`Votre position : #${userPosition}`}
         </Text>
       </View>
 
