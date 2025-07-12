@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useEffect, useRef } from "react";
 import { View, Text, Animated, StyleSheet } from "react-native";
 
 const FirstTurnOverlay = ({
@@ -7,38 +7,36 @@ const FirstTurnOverlay = ({
   playerSymbol,
   onAnimationComplete,
 }) => {
+  const slideAnim = useRef(new Animated.Value(-100)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const scaleAnim = useRef(new Animated.Value(0.8)).current;
 
   useEffect(() => {
     if (isVisible) {
-      // Animation d'apparition
+      // Animation d'entrée
       Animated.parallel([
-        Animated.timing(fadeAnim, {
-          toValue: 1,
-          duration: 500,
+        Animated.timing(slideAnim, {
+          toValue: 0,
+          duration: 600,
           useNativeDriver: true,
         }),
-        Animated.spring(scaleAnim, {
+        Animated.timing(fadeAnim, {
           toValue: 1,
-          tension: 100,
-          friction: 8,
+          duration: 600,
           useNativeDriver: true,
         }),
       ]).start();
 
-      // Animation de disparition après 2 secondes
+      // Animation de sortie après 2 secondes
       setTimeout(() => {
         Animated.parallel([
-          Animated.timing(fadeAnim, {
-            toValue: 0,
-            duration: 500,
+          Animated.timing(slideAnim, {
+            toValue: -100,
+            duration: 600,
             useNativeDriver: true,
           }),
-          Animated.spring(scaleAnim, {
-            toValue: 0.8,
-            tension: 100,
-            friction: 8,
+          Animated.timing(fadeAnim, {
+            toValue: 0,
+            duration: 600,
             useNativeDriver: true,
           }),
         ]).start(() => {
@@ -55,83 +53,76 @@ const FirstTurnOverlay = ({
   return (
     <Animated.View
       style={[
-        styles.overlay,
+        styles.container,
         {
+          transform: [{ translateY: slideAnim }],
           opacity: fadeAnim,
         },
       ]}>
-      <Animated.View
-        style={[
-          styles.content,
-          {
-            transform: [{ scale: scaleAnim }],
-          },
-        ]}>
-        <Text style={styles.title}>Premier tour</Text>
-        <View style={styles.playerInfo}>
-          <Text style={styles.playerName}>{playerName}</Text>
-          <Text style={styles.playerSymbol}>{playerSymbol}</Text>
+      <View style={styles.notification}>
+        <View style={styles.iconContainer}>
+          <Text style={styles.icon}>🎮</Text>
         </View>
-        <Text style={styles.subtitle}>commence la partie</Text>
-      </Animated.View>
+        <View style={styles.content}>
+          <Text style={styles.title}>C'est parti !</Text>
+          <Text style={styles.message}>
+            {playerName} commence avec {playerSymbol}
+          </Text>
+        </View>
+      </View>
     </Animated.View>
   );
 };
 
 const styles = StyleSheet.create({
-  overlay: {
+  container: {
     position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: "rgba(0, 0, 0, 0.7)",
-    justifyContent: "center",
-    alignItems: "center",
+    top: 50,
+    left: 16,
+    right: 16,
     zIndex: 1000,
   },
-  content: {
+  notification: {
     backgroundColor: "#fff",
-    borderRadius: 20,
-    padding: 30,
+    borderRadius: 16,
+    padding: 16,
+    flexDirection: "row",
     alignItems: "center",
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
-      height: 10,
+      height: 8,
     },
-    shadowOpacity: 0.3,
-    shadowRadius: 20,
-    elevation: 10,
-    minWidth: 200,
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    elevation: 12,
+    borderLeftWidth: 4,
+    borderLeftColor: "#667eea",
+  },
+  iconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#667eea",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 12,
+  },
+  icon: {
+    fontSize: 20,
+  },
+  content: {
+    flex: 1,
   },
   title: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#667eea",
-    marginBottom: 15,
-    textAlign: "center",
-  },
-  playerInfo: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 10,
-  },
-  playerName: {
-    fontSize: 24,
+    fontSize: 16,
     fontWeight: "bold",
     color: "#333",
-    marginRight: 10,
+    marginBottom: 2,
   },
-  playerSymbol: {
-    fontSize: 32,
-    fontWeight: "bold",
-    color: "#667eea",
-  },
-  subtitle: {
-    fontSize: 16,
+  message: {
+    fontSize: 14,
     color: "#666",
-    textAlign: "center",
   },
 });
 
