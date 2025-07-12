@@ -17,6 +17,7 @@ import {
 import { useAuth } from "../../hooks/useAuth";
 import { GAME_POINTS, getSerieMultiplier } from "../../constants/gamePoints";
 import GameLayout from "../GameLayout";
+import GameResultOverlay from "../../components/GameResultOverlay";
 import { getIaMove } from "./ia";
 
 const { width } = Dimensions.get("window");
@@ -32,6 +33,13 @@ const Morpion = ({ navigation }) => {
   const [tourIA, setTourIA] = useState(false);
   const [iaCommence, setIaCommence] = useState(false);
   const [showFirstTurnOverlay, setShowFirstTurnOverlay] = useState(false);
+  const [showResultOverlay, setShowResultOverlay] = useState(false);
+  const [resultData, setResultData] = useState({
+    result: null,
+    points: 0,
+    multiplier: 0,
+    streak: 0,
+  });
   const [statsJeu, setStatsJeu] = useState({
     win: 0,
     draw: 0,
@@ -89,7 +97,8 @@ const Morpion = ({ navigation }) => {
 
   useEffect(() => {
     nouvellePartie();
-    // Ne pas afficher l'overlay au démarrage initial
+    // Afficher l'overlay au démarrage initial
+    setShowFirstTurnOverlay(true);
   }, []);
 
   // Faire jouer l'IA si c'est son tour de commencer
@@ -310,45 +319,13 @@ const Morpion = ({ navigation }) => {
           pointsAvecMultiplicateur
         );
 
-        // Configuration simple du toast
-        if (resultatBDD === "win") {
-          Toast.show({
-            type: "success",
-            text1:
-              mult > 0
-                ? `🔥 Victoire ! Série de ${statsJeu.currentStreak}`
-                : "Victoire !",
-            text2:
-              mult > 0
-                ? `+${pointsAvecMultiplicateur} points (x${(1 + mult).toFixed(
-                    2
-                  )})`
-                : `+${points} points`,
-            position: "top",
-            visibilityTime: 4000,
-          });
-        } else if (resultatBDD === "lose") {
-          Toast.show({
-            type: "error",
-            text1: "Défaite",
-            text2: `+${points} points`,
-            position: "top",
-            visibilityTime: 4000,
-          });
-        } else {
-          Toast.show({
-            type: "info",
-            text1: "Match nul",
-            text2: `+${points} points`,
-            position: "top",
-            visibilityTime: 4000,
-          });
-        }
-        // Redémarrage automatique après 3 secondes
-        setTimeout(() => {
-          nouvellePartie();
-          setShowFirstTurnOverlay(true);
-        }, 3000);
+        setResultData({
+          result: resultatBDD,
+          points: pointsAvecMultiplicateur,
+          multiplier: mult,
+          streak: statsJeu.currentStreak,
+        });
+        setShowResultOverlay(true);
       } catch (error) {
         console.log("🎮 MORPION: Erreur lors de la sauvegarde:", error);
       }
@@ -412,6 +389,15 @@ const Morpion = ({ navigation }) => {
     } else {
       setTourIA(false); // Le joueur commence
     }
+  };
+
+  const handleResultOverlayComplete = () => {
+    setShowResultOverlay(false);
+    // Redémarrage automatique après l'overlay
+    setTimeout(() => {
+      nouvellePartie();
+      setShowFirstTurnOverlay(true);
+    }, 500);
   };
 
   const handleFirstTurnOverlayComplete = (quiCommence = iaCommence) => {
@@ -516,6 +502,14 @@ const Morpion = ({ navigation }) => {
         }>
         <View style={styles.containerJeu}>{rendrePlateau()}</View>
       </GameLayout>
+      <GameResultOverlay
+        isVisible={showResultOverlay}
+        result={resultData.result}
+        points={resultData.points}
+        multiplier={resultData.multiplier}
+        streak={resultData.streak}
+        onAnimationComplete={handleResultOverlayComplete}
+      />
       <Toast />
     </>
   );

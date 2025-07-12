@@ -13,6 +13,7 @@ import {
   getSerieMultiplier,
 } from "../../components/GamePointsConfig";
 import GameLayout from "./../GameLayout";
+import GameResultOverlay from "../../components/GameResultOverlay";
 
 const { width } = Dimensions.get("window");
 const BOARD_WIDTH = width - 24;
@@ -30,6 +31,13 @@ const Puissance4 = ({ navigation }) => {
   const [gameOver, setGameOver] = useState(false);
   const [winner, setWinner] = useState(null);
   const [showFirstTurnOverlay, setShowFirstTurnOverlay] = useState(false);
+  const [showResultOverlay, setShowResultOverlay] = useState(false);
+  const [resultData, setResultData] = useState({
+    result: null,
+    points: 0,
+    multiplier: 0,
+    streak: 0,
+  });
   const [stats, setStats] = useState({
     win: 0,
     draw: 0,
@@ -67,7 +75,8 @@ const Puissance4 = ({ navigation }) => {
       }
     };
     chargerStats();
-    // Ne pas afficher l'overlay au démarrage initial
+    // Afficher l'overlay au démarrage initial
+    setShowFirstTurnOverlay(true);
   }, [user?.id]);
 
   const isColumnFull = (col) => {
@@ -161,34 +170,14 @@ const Puissance4 = ({ navigation }) => {
       const mult = getSerieMultiplier(stats.currentStreak);
       const pointsAvecMultiplicateur =
         mult > 0 ? Math.round(points * (1 + mult)) : points;
-      let toastConfig = {
-        type:
-          result === "win" ? "success" : result === "draw" ? "info" : "error",
-        position: "top",
-        topOffset: 40,
-        visibilityTime: 3000,
-      };
-      if (result === "win" && mult > 0) {
-        toastConfig.text1 = `🔥 Victoire ! Série de ${stats.currentStreak}`;
-        toastConfig.text2 = `+${pointsAvecMultiplicateur} points (x${(
-          1 + mult
-        ).toFixed(2)})`;
-      } else if (result === "win") {
-        toastConfig.text1 = "Victoire enregistrée !";
-        toastConfig.text2 = `+${points} points`;
-      } else if (result === "draw") {
-        toastConfig.text1 = "Match nul !";
-        toastConfig.text2 = `+${points} points`;
-      } else {
-        toastConfig.text1 = "Défaite enregistrée";
-        toastConfig.text2 = `+${points} points`;
-      }
-      Toast.show(toastConfig);
-      // Redémarrage automatique après 3 secondes
-      setTimeout(() => {
-        resetGame();
-        setShowFirstTurnOverlay(true);
-      }, 3000);
+
+      setResultData({
+        result: result,
+        points: pointsAvecMultiplicateur,
+        multiplier: mult,
+        streak: stats.currentStreak,
+      });
+      setShowResultOverlay(true);
     }
   };
 
@@ -235,6 +224,15 @@ const Puissance4 = ({ navigation }) => {
   const handleFirstTurnOverlayComplete = (quiCommence = iaCommence) => {
     setShowFirstTurnOverlay(false);
     // Plus besoin de toast car l'overlay affiche déjà le bon message
+  };
+
+  const handleResultOverlayComplete = () => {
+    setShowResultOverlay(false);
+    // Redémarrage automatique après l'overlay
+    setTimeout(() => {
+      resetGame();
+      setShowFirstTurnOverlay(true);
+    }, 500);
   };
 
   const renderBoard = () => {
@@ -296,6 +294,14 @@ const Puissance4 = ({ navigation }) => {
         handleFirstTurnOverlayComplete(iaCommence)
       }>
       <View style={styles.containerJeu}>{renderBoard()}</View>
+      <GameResultOverlay
+        isVisible={showResultOverlay}
+        result={resultData.result}
+        points={resultData.points}
+        multiplier={resultData.multiplier}
+        streak={resultData.streak}
+        onAnimationComplete={handleResultOverlayComplete}
+      />
       <Toast />
     </GameLayout>
   );

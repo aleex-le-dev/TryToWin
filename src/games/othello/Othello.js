@@ -24,6 +24,7 @@ import {
   getSerieMultiplier,
 } from "../../components/GamePointsConfig";
 import GameLayout from "./../GameLayout";
+import GameResultOverlay from "../../components/GameResultOverlay";
 
 const { width } = Dimensions.get("window");
 const BOARD_SIZE = 8;
@@ -140,6 +141,13 @@ const Othello = ({ navigation }) => {
     getValidMoves(initialBoard(), 1)
   );
   const [showFirstTurnOverlay, setShowFirstTurnOverlay] = useState(false);
+  const [showResultOverlay, setShowResultOverlay] = useState(false);
+  const [resultData, setResultData] = useState({
+    result: null,
+    points: 0,
+    multiplier: 0,
+    streak: 0,
+  });
   const [stats, setStats] = useState({
     win: 0,
     draw: 0,
@@ -177,7 +185,8 @@ const Othello = ({ navigation }) => {
       }
     };
     chargerStats();
-    // Ne pas afficher l'overlay au démarrage initial
+    // Afficher l'overlay au démarrage initial
+    setShowFirstTurnOverlay(true);
   }, [user?.id]);
 
   useEffect(() => {
@@ -196,30 +205,17 @@ const Othello = ({ navigation }) => {
           if (winnerValue === 1) resultatBDD = "win";
           else if (winnerValue === 2) resultatBDD = "lose";
           const points = GAME_POINTS["Othello"][resultatBDD];
-          Toast.show({
-            type:
-              resultatBDD === "win"
-                ? "success"
-                : resultatBDD === "lose"
-                ? "error"
-                : "info",
-            text1:
-              resultatBDD === "win"
-                ? "Victoire !"
-                : resultatBDD === "lose"
-                ? "Défaite"
-                : "Égalité",
-            text2: `+${points} points`,
-            position: "top",
-            topOffset: 40,
-            visibilityTime: 3000,
-          });
+          const mult = getSerieMultiplier(stats.currentStreak);
+          const pointsAvecMultiplicateur =
+            mult > 0 ? Math.round(points * (1 + mult)) : points;
 
-          // Relancer automatiquement une nouvelle partie après 3 secondes
-          setTimeout(() => {
-            resetGame();
-            setShowFirstTurnOverlay(true);
-          }, 3000);
+          setResultData({
+            result: resultatBDD,
+            points: pointsAvecMultiplicateur,
+            multiplier: mult,
+            streak: stats.currentStreak,
+          });
+          setShowResultOverlay(true);
         }
       } else {
         setCurrentPlayer(getOpponent(currentPlayer));
@@ -298,6 +294,15 @@ const Othello = ({ navigation }) => {
   const handleFirstTurnOverlayComplete = (quiCommence = iaCommence) => {
     setShowFirstTurnOverlay(false);
     // Plus besoin de toast car l'overlay affiche déjà le bon message
+  };
+
+  const handleResultOverlayComplete = () => {
+    setShowResultOverlay(false);
+    // Redémarrage automatique après l'overlay
+    setTimeout(() => {
+      resetGame();
+      setShowFirstTurnOverlay(true);
+    }, 500);
   };
 
   // Calcul du score
@@ -431,6 +436,14 @@ const Othello = ({ navigation }) => {
           </View>
         )}
       </View>
+      <GameResultOverlay
+        isVisible={showResultOverlay}
+        result={resultData.result}
+        points={resultData.points}
+        multiplier={resultData.multiplier}
+        streak={resultData.streak}
+        onAnimationComplete={handleResultOverlayComplete}
+      />
       <Toast />
     </GameLayout>
   );
