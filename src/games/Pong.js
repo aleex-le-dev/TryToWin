@@ -19,6 +19,7 @@ import GameLayout from "./GameLayout";
 const Pong = ({ navigation }) => {
   const { user } = useAuth();
   const [partieTerminee, setPartieTerminee] = useState(false);
+  const [showFirstTurnOverlay, setShowFirstTurnOverlay] = useState(false);
   const [stats, setStats] = useState({
     win: 0,
     draw: 0,
@@ -41,6 +42,8 @@ const Pong = ({ navigation }) => {
       }
     };
     chargerStats();
+    // Afficher l'overlay du premier tour au démarrage
+    setShowFirstTurnOverlay(true);
   }, [user?.id]);
 
   const enregistrerVictoire = async () => {
@@ -76,7 +79,16 @@ const Pong = ({ navigation }) => {
       }
 
       Toast.show(toastConfig);
+      
+      // Redémarrage automatique après 3 secondes
+      setTimeout(() => {
+        setShowFirstTurnOverlay(true);
+      }, 3000);
     }
+  };
+
+  const handleFirstTurnOverlayComplete = () => {
+    setShowFirstTurnOverlay(false);
   };
 
   return (
@@ -84,7 +96,11 @@ const Pong = ({ navigation }) => {
       title='Pong'
       stats={stats}
       streak={stats.currentStreak}
-      onBack={() => navigation.goBack()}>
+      onBack={() => navigation.goBack()}
+      showFirstTurnOverlay={showFirstTurnOverlay}
+      firstTurnPlayerName='Vous'
+      firstTurnPlayerSymbol='🏓'
+      onFirstTurnOverlayComplete={handleFirstTurnOverlayComplete}>
       <View style={styles.container}>
         <Text style={styles.title}>Pong</Text>
         {/* Plateau de jeu à implémenter ici */}

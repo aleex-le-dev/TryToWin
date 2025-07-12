@@ -345,7 +345,10 @@ const Morpion = ({ navigation }) => {
             visibilityTime: 4000,
           });
         }
-        // Pas de redémarrage automatique - l'utilisateur clique sur "Nouvelle partie"
+        // Redémarrage automatique après 3 secondes
+        setTimeout(() => {
+          nouvellePartie();
+        }, 3000);
       } catch (error) {
         console.log("🎮 MORPION: Erreur lors de la sauvegarde:", error);
       }

@@ -184,9 +184,10 @@ const Puissance4 = ({ navigation }) => {
         toastConfig.text2 = `+${points} points`;
       }
       Toast.show(toastConfig);
-      setTimeout(async () => {
-        await actualiserStatsClassements();
+      // Redémarrage automatique après 3 secondes
+      setTimeout(() => {
         resetGame();
+        setShowFirstTurnOverlay(true);
       }, 3000);
     }
   };

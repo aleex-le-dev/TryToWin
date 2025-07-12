@@ -137,6 +137,7 @@ const Pendu = ({ navigation }) => {
           // Relancer automatiquement une nouvelle partie après 3 secondes
           setTimeout(() => {
             resetGame();
+            setShowFirstTurnOverlay(true);
           }, 3000);
         }
       );
