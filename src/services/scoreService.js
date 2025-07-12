@@ -124,14 +124,15 @@ export async function recordGameResult(
       toastConfig.text2 = `+${pointsGagnes} points`;
     }
 
-    Toast.show(toastConfig);
+    // (SUPPRESSION TOAST)
+    // Toast.show(toastConfig);
   } catch (error) {
-    Toast.show({
-      type: "error",
-      text1: "Erreur",
-      text2: "Impossible d'enregistrer le score",
-      position: "top",
-    });
+    // Toast.show({
+    //   type: "error",
+    //   text1: "Erreur",
+    //   text2: "Impossible d'enregistrer le score",
+    //   position: "top",
+    // });
   }
 }
 

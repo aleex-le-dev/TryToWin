@@ -229,8 +229,6 @@ const GameLayout = ({
           )}
         </View>
       }
-      {/* Toast global pour tous les jeux */}
-      <Toast />
     </View>
   );
 };
