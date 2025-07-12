@@ -14,6 +14,7 @@ const GameResultOverlay = ({
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
+    let timeout;
     if (isVisible) {
       Animated.parallel([
         Animated.spring(scaleAnim, {
@@ -30,7 +31,7 @@ const GameResultOverlay = ({
       ]).start();
 
       // Auto-hide after 3 seconds
-      setTimeout(() => {
+      timeout = setTimeout(() => {
         Animated.parallel([
           Animated.timing(scaleAnim, {
             toValue: 0,
@@ -49,6 +50,9 @@ const GameResultOverlay = ({
         });
       }, 3000);
     }
+    return () => {
+      if (timeout) clearTimeout(timeout);
+    };
   }, [isVisible]);
 
   if (!isVisible) return null;

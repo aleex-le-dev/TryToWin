@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { View, TouchableOpacity, StyleSheet, Dimensions } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Toast from "react-native-toast-message";
@@ -15,6 +15,7 @@ import {
 import GameLayout from "./../GameLayout";
 import GameResultOverlay from "../../components/GameResultOverlay";
 import { getIaMove } from "./ia";
+import Svg, { Line } from "react-native-svg";
 
 const { width } = Dimensions.get("window");
 const BOARD_WIDTH = width - 24;
@@ -53,6 +54,7 @@ const Puissance4 = ({ navigation }) => {
   const [elapsedTime, setElapsedTime] = useState(0);
   const [iaCommence, setIaCommence] = useState(false);
   const [tourIA, setTourIA] = useState(false);
+  const showResultOverlayRef = useRef(false);
 
   useEffect(() => {
     let interval = null;
@@ -63,6 +65,10 @@ const Puissance4 = ({ navigation }) => {
     }
     return () => clearInterval(interval);
   }, [gameOver]);
+
+  useEffect(() => {
+    console.log("Nouvelle partie démarrée");
+  }, [board]);
 
   // Faire jouer l'IA si c'est son tour
   useEffect(() => {
@@ -92,6 +98,15 @@ const Puissance4 = ({ navigation }) => {
     setShowFirstTurnOverlay(true);
   }, [user?.id]);
 
+  useEffect(() => {
+    if (resultData.result !== null) {
+      console.log(
+        "useEffect: resultData.result détecté, forçage setShowResultOverlay(true)"
+      );
+      setShowResultOverlay(true);
+    }
+  }, [resultData.result]);
+
   const isColumnFull = (col) => {
     return board[0][col] !== null;
   };
@@ -112,11 +127,12 @@ const Puissance4 = ({ navigation }) => {
     const newBoard = board.map((row) => [...row]);
     newBoard[row][col] = currentPlayer;
     setBoard(newBoard);
+    console.log("JOUEUR joue colonne", col, "ligne", row);
     const winningLine = checkWin(newBoard, row, col, currentPlayer);
     if (winningLine) {
       setWinner(currentPlayer);
       setWinningCells(winningLine);
-      console.log("🎯 WINNING CELLS:", JSON.stringify(winningLine)); // LOG DEBUG
+      console.log('VICTOIRE JOUEUR détectée, appel handleGameEnd("win")');
       setGameOver(true);
       handleGameEnd(currentPlayer === 1 ? "win" : "lose");
       return;
@@ -132,10 +148,10 @@ const Puissance4 = ({ navigation }) => {
   };
 
   const faireJouerIA = async () => {
-    console.log("🎯 IA: Début du tour de l'IA");
+    console.log("IA: Début du tour de l'IA");
     try {
       const coupIA = await getIaMove(board, 2);
-      console.log("🎯 IA: Coup choisi:", coupIA);
+      console.log("IA: Coup choisi:", coupIA);
 
       if (coupIA !== null && !isColumnFull(coupIA)) {
         const row = getLowestEmptyCell(coupIA);
@@ -143,6 +159,7 @@ const Puissance4 = ({ navigation }) => {
           const newBoard = board.map((r) => [...r]);
           newBoard[row][coupIA] = 2; // L'IA joue toujours 2 (jaune)
           setBoard(newBoard);
+          console.log("IA joue colonne", coupIA, "ligne", row);
 
           const winningLine = checkWin(newBoard, row, coupIA, 2);
           if (winningLine) {
@@ -163,12 +180,12 @@ const Puissance4 = ({ navigation }) => {
           setTourIA(false);
         }
       } else {
-        console.log("🎯 IA: Coup invalide, retour au joueur");
+        console.log("IA: Coup invalide, retour au joueur");
         setCurrentPlayer(1);
         setTourIA(false);
       }
     } catch (error) {
-      console.log("🎯 IA: Erreur lors du coup de l'IA:", error);
+      console.log("IA: Erreur lors du coup de l'IA:", error);
       setCurrentPlayer(1);
       setTourIA(false);
     }
@@ -227,22 +244,33 @@ const Puissance4 = ({ navigation }) => {
   };
 
   const handleGameEnd = async (result) => {
+    console.log("handleGameEnd appelé avec", result);
+    let pointsAvecMultiplicateur = 0;
+    let mult = 0;
     if (user?.id) {
       await recordGameResult(user.id, "Puissance4", result, 0, 0);
       await actualiserStatsClassements();
       const points = GAME_POINTS["Puissance4"][result];
-      const mult = getSerieMultiplier(stats.currentStreak);
-      const pointsAvecMultiplicateur =
+      mult = getSerieMultiplier(stats.currentStreak);
+      pointsAvecMultiplicateur =
         mult > 0 ? Math.round(points * (1 + mult)) : points;
-
-      setResultData({
-        result: result,
-        points: pointsAvecMultiplicateur,
-        multiplier: mult,
-        streak: stats.currentStreak,
-      });
-      setShowResultOverlay(true);
     }
+    setResultData({
+      result: result,
+      points: pointsAvecMultiplicateur,
+      multiplier: mult,
+      streak: stats.currentStreak,
+    });
+    console.log(
+      "setShowResultOverlay(true) AVANT",
+      showResultOverlayRef.current
+    );
+    setShowResultOverlay(true);
+    showResultOverlayRef.current = true;
+    console.log(
+      "setShowResultOverlay(true) APRES",
+      showResultOverlayRef.current
+    );
   };
 
   const actualiserStatsClassements = async () => {
@@ -274,6 +302,7 @@ const Puissance4 = ({ navigation }) => {
     setWinningCells([]);
     setElapsedTime(0);
     setTourIA(false);
+    // Ne pas toucher à showResultOverlay ici !
     // Alterner qui commence
     const nouvelleValeur = !iaCommence;
     setIaCommence(nouvelleValeur);
@@ -291,67 +320,49 @@ const Puissance4 = ({ navigation }) => {
   };
 
   const handleResultOverlayComplete = () => {
+    console.log("handleResultOverlayComplete appelé");
     setShowResultOverlay(false);
-    // Redémarrage automatique après l'overlay
+    showResultOverlayRef.current = false;
     setTimeout(() => {
+      console.log("resetGame appelé depuis handleResultOverlayComplete");
       resetGame();
       setShowFirstTurnOverlay(true);
     }, 500);
   };
 
-  const renderWinningLine = () => {
+  const renderWinningLineSVG = () => {
     if (!winningCells || winningCells.length < 2) return null;
-    // Déterminer la direction
-    const [a, b] = winningCells;
-    const dx = b[0] - a[0];
-    const dy = b[1] - a[1];
     let sorted = [...winningCells];
-    if (dx === 0) {
-      // Horizontal : trier par colonne
-      sorted.sort((c1, c2) => c1[1] - c2[1]);
-    } else if (dy === 0) {
-      // Vertical : trier par ligne
-      sorted.sort((c1, c2) => c1[0] - c2[0]);
-    } else {
-      // Diagonale : trier par ligne puis colonne
-      sorted.sort((c1, c2) => c1[0] - c2[0] || c1[1] - c2[1]);
-    }
+    sorted.sort((a, b) => a[1] - b[1] || a[0] - b[0]);
     const [start, end] = [sorted[0], sorted[sorted.length - 1]];
-    // Calculer les positions en pixels
     const getPos = ([row, col]) => ({
       x: col * CELL_SIZE + CELL_SIZE / 2,
       y: row * CELL_SIZE + CELL_SIZE / 2,
     });
     const startPos = getPos(start);
     const endPos = getPos(end);
-    const dxPx = endPos.x - startPos.x;
-    const dyPx = endPos.y - startPos.y;
-    const length = Math.sqrt(dxPx * dxPx + dyPx * dyPx);
-    const angle = (Math.atan2(dyPx, dxPx) * 180) / Math.PI;
     return (
-      <View
-        pointerEvents='none'
+      <Svg
         style={{
           position: "absolute",
-          left: startPos.x,
-          top: startPos.y,
-          width: length,
-          height: 4,
-          backgroundColor: "#FFD700",
-          borderRadius: 2,
-          transform: [
-            { translateX: 0 },
-            { translateY: -2 },
-            { rotate: `${angle}deg` },
-          ],
-          zIndex: 10,
-          shadowColor: "#FFD700",
-          shadowOffset: { width: 0, height: 0 },
-          shadowOpacity: 0.8,
-          shadowRadius: 8,
-          elevation: 10,
-        }}
-      />
+          left: 0,
+          top: 0,
+          width: BOARD_WIDTH,
+          height: BOARD_HEIGHT,
+          zIndex: 20,
+          pointerEvents: "none",
+        }}>
+        <Line
+          x1={startPos.x}
+          y1={startPos.y}
+          x2={endPos.x}
+          y2={endPos.y}
+          stroke='#FFD700'
+          strokeWidth={6}
+          strokeLinecap='round'
+          strokeLinejoin='round'
+        />
+      </Svg>
     );
   };
 
@@ -390,57 +401,70 @@ const Puissance4 = ({ navigation }) => {
             })}
           </View>
         ))}
-        {renderWinningLine()}
+        {renderWinningLineSVG()}
       </View>
     );
   };
 
+  // DEBUG : log état overlay
+  console.log(
+    "showResultOverlay:",
+    showResultOverlay,
+    "resultData:",
+    resultData
+  );
   return (
-    <GameLayout
-      title='Puissance4'
-      stats={stats}
-      streak={stats.currentStreak}
-      onBack={() => navigation.goBack()}
-      currentTurnLabel={
-        gameOver
-          ? "Partie terminée"
-          : currentPlayer === 1
-          ? "Votre tour"
-          : "Tour de l'IA"
-      }
-      currentSymbol={
-        gameOver
-          ? winner === 1
+    <>
+      <GameLayout
+        title='Puissance4'
+        stats={stats}
+        streak={stats.currentStreak}
+        onBack={() => navigation.goBack()}
+        currentTurnLabel={
+          gameOver
+            ? "Partie terminée"
+            : currentPlayer === 1
+            ? "Votre tour"
+            : "Tour de l'IA"
+        }
+        currentSymbol={
+          gameOver
+            ? winner === 1
+              ? "🔴"
+              : winner === 2
+              ? "🟡"
+              : "-"
+            : currentPlayer === 1
             ? "🔴"
-            : winner === 2
-            ? "🟡"
-            : "-"
-          : currentPlayer === 1
-          ? "🔴"
-          : "🟡"
-      }
-      timerLabel={`${Math.floor(elapsedTime / 60)}:${(elapsedTime % 60)
-        .toString()
-        .padStart(2, "0")}`}
-      onPressMainActionButton={resetGame}
-      showFirstTurnOverlay={showFirstTurnOverlay}
-      firstTurnPlayerName={iaCommence ? "L'IA" : "Vous"}
-      firstTurnPlayerSymbol={iaCommence ? "🟡" : "🔴"}
-      onFirstTurnOverlayComplete={() =>
-        handleFirstTurnOverlayComplete(iaCommence)
-      }>
-      <View style={styles.containerJeu}>{renderBoard()}</View>
+            : "🟡"
+        }
+        timerLabel={`${Math.floor(elapsedTime / 60)}:${(elapsedTime % 60)
+          .toString()
+          .padStart(2, "0")}`}
+        onPressMainActionButton={resetGame}
+        showFirstTurnOverlay={showFirstTurnOverlay}
+        firstTurnPlayerName={iaCommence ? "L'IA" : "Vous"}
+        firstTurnPlayerSymbol={iaCommence ? "🟡" : "🔴"}
+        onFirstTurnOverlayComplete={() =>
+          handleFirstTurnOverlayComplete(iaCommence)
+        }>
+        <View style={styles.containerJeu}>{renderBoard()}</View>
+      </GameLayout>
+      {console.log(
+        "GameResultOverlay rendu, showResultOverlay:",
+        showResultOverlay,
+        "resultData:",
+        resultData
+      )}
       <GameResultOverlay
-        isVisible={showResultOverlay}
+        isVisible={showResultOverlay || resultData.result !== null}
         result={resultData.result}
         points={resultData.points}
         multiplier={resultData.multiplier}
         streak={resultData.streak}
         onAnimationComplete={handleResultOverlayComplete}
       />
-      {/* Je supprime toute utilisation de Toast.show ou Toast pour les résultats de partie */}
-      {/* Je laisse uniquement <GameResultOverlay ... /> pour l'affichage du résultat */}
-    </GameLayout>
+    </>
   );
 };
 

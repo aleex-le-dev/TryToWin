@@ -454,14 +454,6 @@ export const getIaMove = async (board, player = 2) => {
     const validMoves = getValidMoves(board);
     if (validMoves.length === 0) return null;
 
-    let bestMove = validMoves[0];
-    let bestValue = -Infinity;
-    const depth = getAdaptiveDepth(board);
-
-    if (IA_CONFIG.debug.enabled) {
-      console.log(`🎯 IA: Profondeur adaptative: ${depth}`);
-    }
-
     // 1. Vérifier d'abord s'il y a un coup gagnant (priorité absolue)
     for (const col of validMoves) {
       const row = getLowestEmptyCell(board, col);
@@ -469,9 +461,7 @@ export const getIaMove = async (board, player = 2) => {
         const newBoard = board.map((r) => [...r]);
         newBoard[row][col] = player;
         if (checkWin(newBoard, row, col, player)) {
-          if (IA_CONFIG.debug.logDecisions) {
-            console.log(`🎯 IA: Coup gagnant trouvé: colonne ${col}`);
-          }
+          console.log("IA: coup gagnant direct détecté", col);
           return col;
         }
       }
@@ -485,16 +475,13 @@ export const getIaMove = async (board, player = 2) => {
         const newBoard = board.map((r) => [...r]);
         newBoard[row][col] = opponent;
         if (checkWin(newBoard, row, col, opponent)) {
-          if (IA_CONFIG.debug.logDecisions) {
-            console.log(`🎯 IA: Blocage de victoire adverse: colonne ${col}`);
-          }
+          console.log("IA: blocage de victoire adverse", col);
           return col;
         }
       }
     }
 
-    // 2b. Empêcher toute défaite immédiate (double menace)
-    // Pour chaque coup possible, simuler le coup, puis vérifier si le joueur peut gagner au coup suivant
+    // 3. Empêcher toute défaite immédiate ET fork (double menace)
     let safeMoves = [];
     for (const col of validMoves) {
       const row = getLowestEmptyCell(board, col);
@@ -508,8 +495,47 @@ export const getIaMove = async (board, player = 2) => {
           if (oppRow !== -1) {
             const oppBoard = newBoard.map((r) => [...r]);
             oppBoard[oppRow][oppCol] = opponent;
+            // Si le joueur gagne immédiatement après ce coup, ce coup de l'IA est interdit
             if (checkWin(oppBoard, oppRow, oppCol, opponent)) {
               danger = true;
+              console.log(
+                "IA: coup interdit (danger immédiat)",
+                col,
+                "car joueur gagne en jouant",
+                oppCol
+              );
+              break;
+            }
+            // Fork/double menace : simuler tous les coups de l'IA après la réponse du joueur
+            let forkCount = 0;
+            const iaMovesAfter = getValidMoves(oppBoard);
+            for (const iaCol of iaMovesAfter) {
+              const iaRow = getLowestEmptyCell(oppBoard, iaCol);
+              if (iaRow !== -1) {
+                const iaBoard = oppBoard.map((r) => [...r]);
+                iaBoard[iaRow][iaCol] = player;
+                // Après ce coup de l'IA, le joueur a-t-il encore une victoire immédiate ?
+                const oppMovesAfter = getValidMoves(iaBoard);
+                for (const oppCol2 of oppMovesAfter) {
+                  const oppRow2 = getLowestEmptyCell(iaBoard, oppCol2);
+                  if (oppRow2 !== -1) {
+                    const oppBoard2 = iaBoard.map((r) => [...r]);
+                    oppBoard2[oppRow2][oppCol2] = opponent;
+                    if (checkWin(oppBoard2, oppRow2, oppCol2, opponent)) {
+                      forkCount++;
+                    }
+                  }
+                }
+              }
+            }
+            if (forkCount >= 2) {
+              danger = true;
+              console.log(
+                "IA: coup interdit (fork/double menace)",
+                col,
+                "car joueur peut forker après",
+                oppCol
+              );
               break;
             }
           }
@@ -518,80 +544,12 @@ export const getIaMove = async (board, player = 2) => {
       }
     }
     if (safeMoves.length > 0) {
-      // Choisir le meilleur coup parmi les coups sûrs
-      let bestSafeMove = safeMoves[0];
-      let bestSafeValue = -Infinity;
-      for (const col of safeMoves) {
-        const row = getLowestEmptyCell(board, col);
-        if (row !== -1) {
-          const newBoard = board.map((r) => [...r]);
-          newBoard[row][col] = player;
-          const value = minimax(
-            newBoard,
-            depth - 1,
-            -Infinity,
-            Infinity,
-            false,
-            player
-          );
-          if (value > bestSafeValue) {
-            bestSafeValue = value;
-            bestSafeMove = col;
-          }
-        }
-      }
-      if (IA_CONFIG.debug.logDecisions) {
-        console.log(
-          `🎯 IA: Coup sûr choisi (anti-défaite immédiate): colonne ${bestSafeMove}`
-        );
-      }
-      return bestSafeMove;
+      console.log("IA: coups sûrs trouvés", safeMoves);
+      return safeMoves[0];
     }
-
-    // 3. Privilégier le centre si disponible (stratégie wikiHow #1)
-    if (validMoves.includes(3) && !isColumnFull(board, 3)) {
-      if (IA_CONFIG.debug.logDecisions) {
-        console.log(`🎯 IA: Privilégier le centre: colonne 3`);
-      }
-      return 3;
-    }
-
-    // 4. Utiliser minimax pour trouver le meilleur coup
-    for (const col of validMoves) {
-      const row = getLowestEmptyCell(board, col);
-      if (row !== -1) {
-        const newBoard = board.map((r) => [...r]);
-        newBoard[row][col] = player;
-        const value = minimax(
-          newBoard,
-          depth - 1,
-          -Infinity,
-          Infinity,
-          false,
-          player
-        );
-
-        if (IA_CONFIG.debug.logScores) {
-          console.log(`🎯 IA: Colonne ${col} - Score: ${value}`);
-        }
-
-        if (value > bestValue) {
-          bestValue = value;
-          bestMove = col;
-        }
-      }
-    }
-
-    if (IA_CONFIG.debug.logDecisions) {
-      console.log(
-        `🎯 IA: Meilleur coup choisi: colonne ${bestMove} (score: ${bestValue})`
-      );
-    }
-
-    return bestMove;
+    console.log("IA: aucun coup sûr, je joue aléatoirement");
+    return validMoves[Math.floor(Math.random() * validMoves.length)];
   } catch (error) {
-    console.log("Erreur dans getIaMove:", error);
-    // En cas d'erreur, retourner un coup aléatoire
     const validMoves = getValidMoves(board);
     return validMoves[Math.floor(Math.random() * validMoves.length)];
   }
