@@ -1,8 +1,9 @@
-import React, { useRef } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { View, Text, TouchableOpacity, Animated } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import Toast from "react-native-toast-message";
+import FirstTurnOverlay from "../components/FirstTurnOverlay";
 
 // Fonction utilitaire pour convertir un code pays en emoji drapeau
 function countryCodeToFlag(code) {
@@ -30,6 +31,10 @@ const GameLayout = ({
   countryRank,
   countryTotal,
   countryCode,
+  showFirstTurnOverlay = false, // Nouvelle prop pour contrôler l'overlay
+  firstTurnPlayerName = "Vous", // Nom du joueur qui commence
+  firstTurnPlayerSymbol = "X", // Symbole du joueur qui commence
+  onFirstTurnOverlayComplete, // Callback quand l'overlay se termine
 }) => {
   // Tableau de stats
   const rendreStatistiques = () => {
@@ -80,6 +85,14 @@ const GameLayout = ({
 
   return (
     <View style={{ flex: 1, backgroundColor: "#f8f9fa" }}>
+      {/* Overlay du premier tour */}
+      <FirstTurnOverlay
+        isVisible={showFirstTurnOverlay}
+        playerName={firstTurnPlayerName}
+        playerSymbol={firstTurnPlayerSymbol}
+        onAnimationComplete={onFirstTurnOverlayComplete}
+      />
+
       {/* Header */}
       <LinearGradient
         colors={["#667eea", "#764ba2"]}

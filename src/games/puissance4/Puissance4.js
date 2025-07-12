@@ -29,6 +29,7 @@ const Puissance4 = ({ navigation }) => {
   const [currentPlayer, setCurrentPlayer] = useState(1); // 1 = rouge, 2 = jaune
   const [gameOver, setGameOver] = useState(false);
   const [winner, setWinner] = useState(null);
+  const [showFirstTurnOverlay, setShowFirstTurnOverlay] = useState(false);
   const [stats, setStats] = useState({
     win: 0,
     draw: 0,
@@ -65,6 +66,8 @@ const Puissance4 = ({ navigation }) => {
       }
     };
     chargerStats();
+    // Afficher l'overlay du premier tour au démarrage
+    setShowFirstTurnOverlay(true);
   }, [user?.id]);
 
   const isColumnFull = (col) => {
@@ -222,6 +225,10 @@ const Puissance4 = ({ navigation }) => {
     }, 100);
   };
 
+  const handleFirstTurnOverlayComplete = () => {
+    setShowFirstTurnOverlay(false);
+  };
+
   const renderBoard = () => {
     return (
       <View style={styles.boardEffect}>
@@ -273,7 +280,11 @@ const Puissance4 = ({ navigation }) => {
       timerLabel={`${Math.floor(elapsedTime / 60)}:${(elapsedTime % 60)
         .toString()
         .padStart(2, "0")}`}
-      onPressMainActionButton={resetGame}>
+      onPressMainActionButton={resetGame}
+      showFirstTurnOverlay={showFirstTurnOverlay}
+      firstTurnPlayerName='Vous'
+      firstTurnPlayerSymbol='🔴'
+      onFirstTurnOverlayComplete={handleFirstTurnOverlayComplete}>
       <View style={styles.containerJeu}>{renderBoard()}</View>
       <Toast />
     </GameLayout>

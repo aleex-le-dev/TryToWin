@@ -139,6 +139,7 @@ const Othello = ({ navigation }) => {
   const [validMoves, setValidMoves] = useState(
     getValidMoves(initialBoard(), 1)
   );
+  const [showFirstTurnOverlay, setShowFirstTurnOverlay] = useState(false);
   const [stats, setStats] = useState({
     win: 0,
     draw: 0,
@@ -175,6 +176,8 @@ const Othello = ({ navigation }) => {
       }
     };
     chargerStats();
+    // Afficher l'overlay du premier tour au démarrage
+    setShowFirstTurnOverlay(true);
   }, [user?.id]);
 
   useEffect(() => {
@@ -284,6 +287,10 @@ const Othello = ({ navigation }) => {
     setValidMoves(getValidMoves(initialBoard(), 1));
   };
 
+  const handleFirstTurnOverlayComplete = () => {
+    setShowFirstTurnOverlay(false);
+  };
+
   // Calcul du score
   const { black, white } = countTokens(board);
 
@@ -346,7 +353,11 @@ const Othello = ({ navigation }) => {
       timerLabel={`${Math.floor(elapsedTime / 60)}:${(elapsedTime % 60)
         .toString()
         .padStart(2, "0")}`}
-      onPressMainActionButton={resetGame}>
+      onPressMainActionButton={resetGame}
+      showFirstTurnOverlay={showFirstTurnOverlay}
+      firstTurnPlayerName='Vous'
+      firstTurnPlayerSymbol='⚫'
+      onFirstTurnOverlayComplete={handleFirstTurnOverlayComplete}>
       <View style={styles.containerJeu}>
         {renderBoard()}
         {gameOver && (

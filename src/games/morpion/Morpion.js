@@ -31,6 +31,7 @@ const Morpion = ({ navigation }) => {
   const [enPartie, setEnPartie] = useState(false);
   const [tourIA, setTourIA] = useState(false);
   const [iaCommence, setIaCommence] = useState(false);
+  const [showFirstTurnOverlay, setShowFirstTurnOverlay] = useState(false);
   const [statsJeu, setStatsJeu] = useState({
     win: 0,
     draw: 0,
@@ -88,6 +89,8 @@ const Morpion = ({ navigation }) => {
 
   useEffect(() => {
     nouvellePartie();
+    // Afficher l'overlay du premier tour au démarrage
+    setShowFirstTurnOverlay(true);
   }, []);
 
   // Faire jouer l'IA si c'est son tour de commencer
@@ -312,8 +315,16 @@ const Morpion = ({ navigation }) => {
         if (resultatBDD === "win") {
           Toast.show({
             type: "success",
-            text1: mult > 0 ? `🔥 Victoire ! Série de ${statsJeu.currentStreak}` : "Victoire !",
-            text2: mult > 0 ? `+${pointsAvecMultiplicateur} points (x${(1 + mult).toFixed(2)})` : `+${points} points`,
+            text1:
+              mult > 0
+                ? `🔥 Victoire ! Série de ${statsJeu.currentStreak}`
+                : "Victoire !",
+            text2:
+              mult > 0
+                ? `+${pointsAvecMultiplicateur} points (x${(1 + mult).toFixed(
+                    2
+                  )})`
+                : `+${points} points`,
             position: "top",
             visibilityTime: 4000,
           });
@@ -373,18 +384,17 @@ const Morpion = ({ navigation }) => {
     setTempsEcoule(0);
     setEnPartie(true);
 
-    // Alterner qui commence
-    if (iaCommence) {
-      setTourIA(false); // Le joueur commence
-      setIaCommence(false);
-    } else {
-      setTourIA(true); // L'IA commence
-      setIaCommence(true);
-    }
+    // Le joueur commence toujours
+    setTourIA(false);
+    setIaCommence(false);
   };
 
   const nouvellePartie = () => {
     recommencerPartie();
+  };
+
+  const handleFirstTurnOverlayComplete = () => {
+    setShowFirstTurnOverlay(false);
   };
 
   const rendreCase = (index) => {
@@ -460,26 +470,30 @@ const Morpion = ({ navigation }) => {
 
   return (
     <>
-    <GameLayout
-      title='Morpion'
-      stats={statsJeu}
-      streak={statsJeu.currentStreak}
-      onBack={() => navigation.goBack()}
-      currentTurnLabel={tourIA ? "Tour de l'IA" : "Votre tour"}
-      currentSymbol={tourIA ? "O" : "X"}
-      timerLabel={`${Math.floor(tempsEcoule / 60)}:${(tempsEcoule % 60)
-        .toString()
-        .padStart(2, "0")}`}
-      onPressMainActionButton={nouvellePartie}
-      rank={rank}
-      totalPlayers={totalPlayers}
-      countryRank={countryRank}
-      countryTotal={countryTotal}
-      countryCode={user?.country || user?.profile?.country || "FR"}>
-      <View style={styles.containerJeu}>{rendrePlateau()}</View>
-    </GameLayout>
-    <Toast />
-  </>
+      <GameLayout
+        title='Morpion'
+        stats={statsJeu}
+        streak={statsJeu.currentStreak}
+        onBack={() => navigation.goBack()}
+        currentTurnLabel={tourIA ? "Tour de l'IA" : "Votre tour"}
+        currentSymbol={tourIA ? "O" : "X"}
+        timerLabel={`${Math.floor(tempsEcoule / 60)}:${(tempsEcoule % 60)
+          .toString()
+          .padStart(2, "0")}`}
+        onPressMainActionButton={nouvellePartie}
+        rank={rank}
+        totalPlayers={totalPlayers}
+        countryRank={countryRank}
+        countryTotal={countryTotal}
+        countryCode={user?.country || user?.profile?.country || "FR"}
+        showFirstTurnOverlay={showFirstTurnOverlay}
+        firstTurnPlayerName='Vous'
+        firstTurnPlayerSymbol='X'
+        onFirstTurnOverlayComplete={handleFirstTurnOverlayComplete}>
+        <View style={styles.containerJeu}>{rendrePlateau()}</View>
+      </GameLayout>
+      <Toast />
+    </>
   );
 };
 

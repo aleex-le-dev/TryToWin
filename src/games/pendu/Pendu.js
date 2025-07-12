@@ -76,6 +76,7 @@ const Pendu = ({ navigation }) => {
   const [perdu, setPerdu] = useState(false);
   const [input, setInput] = useState("");
   const [elapsedTime, setElapsedTime] = useState(0);
+  const [showFirstTurnOverlay, setShowFirstTurnOverlay] = useState(false);
   const [stats, setStats] = useState({
     win: 0,
     draw: 0,
@@ -107,6 +108,8 @@ const Pendu = ({ navigation }) => {
       getUserGameScore(user.id, "Pendu").then(setStats);
       updateRanks();
     }
+    // Afficher l'overlay du premier tour au démarrage
+    setShowFirstTurnOverlay(true);
   }, [user?.id]);
 
   useEffect(() => {
@@ -183,6 +186,10 @@ const Pendu = ({ navigation }) => {
     setPerdu(false);
     setInput("");
     setElapsedTime(0);
+  };
+
+  const handleFirstTurnOverlayComplete = () => {
+    setShowFirstTurnOverlay(false);
   };
 
   const renderPendu = () => {
@@ -266,7 +273,11 @@ const Pendu = ({ navigation }) => {
         gagne ? "Gagné !" : perdu ? "Perdu !" : "À vous de jouer"
       }
       currentSymbol={<Ionicons name='help-circle' size={22} color='#1976d2' />}
-      onPressMainActionButton={resetGame}>
+      onPressMainActionButton={resetGame}
+      showFirstTurnOverlay={showFirstTurnOverlay}
+      firstTurnPlayerName='Vous'
+      firstTurnPlayerSymbol='🎯'
+      onFirstTurnOverlayComplete={handleFirstTurnOverlayComplete}>
       <View style={styles.containerJeu}>
         <Text style={styles.erreurs}>
           Erreurs : {erreurs} / {MAX_ERRORS}
