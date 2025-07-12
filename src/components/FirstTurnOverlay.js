@@ -12,7 +12,6 @@ const FirstTurnOverlay = ({
 
   useEffect(() => {
     if (isVisible) {
-      // Animation d'entrée
       Animated.parallel([
         Animated.timing(slideAnim, {
           toValue: 0,
@@ -25,8 +24,6 @@ const FirstTurnOverlay = ({
           useNativeDriver: true,
         }),
       ]).start();
-
-      // Animation de sortie après 2 secondes
       setTimeout(() => {
         Animated.parallel([
           Animated.timing(slideAnim, {
@@ -60,13 +57,9 @@ const FirstTurnOverlay = ({
         },
       ]}>
       <View style={styles.notification}>
-        <View style={styles.iconContainer}>
-          <Text style={styles.icon}>🎮</Text>
-        </View>
-        <View style={styles.content}>
-          <Text style={styles.title}>C'est parti !</Text>
-          <Text style={styles.message}>
-            {playerName} commence avec {playerSymbol}
+        <View style={styles.contentCentered}>
+          <Text style={styles.title}>
+            {playerName === "L'IA" ? "L'IA commence" : "À vous de jouer"}
           </Text>
         </View>
       </View>
@@ -85,8 +78,7 @@ const styles = StyleSheet.create({
   notification: {
     backgroundColor: "#fff",
     borderRadius: 16,
-    padding: 16,
-    flexDirection: "row",
+    padding: 20,
     alignItems: "center",
     shadowColor: "#000",
     shadowOffset: {
@@ -99,30 +91,15 @@ const styles = StyleSheet.create({
     borderLeftWidth: 4,
     borderLeftColor: "#667eea",
   },
-  iconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "#667eea",
-    justifyContent: "center",
+  contentCentered: {
     alignItems: "center",
-    marginRight: 12,
-  },
-  icon: {
-    fontSize: 20,
-  },
-  content: {
-    flex: 1,
+    justifyContent: "center",
   },
   title: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: "bold",
     color: "#333",
-    marginBottom: 2,
-  },
-  message: {
-    fontSize: 14,
-    color: "#666",
+    textAlign: "center",
   },
 });
 

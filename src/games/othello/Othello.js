@@ -151,6 +151,7 @@ const Othello = ({ navigation }) => {
   const [rank, setRank] = useState(null);
   const [totalPlayers, setTotalPlayers] = useState(null);
   const [elapsedTime, setElapsedTime] = useState(0);
+  const [iaCommence, setIaCommence] = useState(false);
 
   useEffect(() => {
     let interval = null;
@@ -176,8 +177,7 @@ const Othello = ({ navigation }) => {
       }
     };
     chargerStats();
-    // Afficher l'overlay du premier tour au démarrage
-    setShowFirstTurnOverlay(true);
+    // Ne pas afficher l'overlay au démarrage initial
   }, [user?.id]);
 
   useEffect(() => {
@@ -281,15 +281,23 @@ const Othello = ({ navigation }) => {
 
   const resetGame = () => {
     setBoard(initialBoard());
-    setCurrentPlayer(1);
     setGameOver(false);
     setWinner(null);
     setElapsedTime(0);
     setValidMoves(getValidMoves(initialBoard(), 1));
+    // Alterner qui commence
+    const nouvelleValeur = !iaCommence;
+    setIaCommence(nouvelleValeur);
+    if (nouvelleValeur) {
+      setCurrentPlayer(2); // L'IA commence (blanc)
+    } else {
+      setCurrentPlayer(1); // Joueur commence (noir)
+    }
   };
 
-  const handleFirstTurnOverlayComplete = () => {
+  const handleFirstTurnOverlayComplete = (quiCommence = iaCommence) => {
     setShowFirstTurnOverlay(false);
+    // Plus besoin de toast car l'overlay affiche déjà le bon message
   };
 
   // Calcul du score
@@ -356,9 +364,11 @@ const Othello = ({ navigation }) => {
         .padStart(2, "0")}`}
       onPressMainActionButton={resetGame}
       showFirstTurnOverlay={showFirstTurnOverlay}
-      firstTurnPlayerName='Vous'
-      firstTurnPlayerSymbol='⚫'
-      onFirstTurnOverlayComplete={handleFirstTurnOverlayComplete}>
+      firstTurnPlayerName={iaCommence ? "L'IA" : "Vous"}
+      firstTurnPlayerSymbol={iaCommence ? "⚪" : "⚫"}
+      onFirstTurnOverlayComplete={() =>
+        handleFirstTurnOverlayComplete(iaCommence)
+      }>
       <View style={styles.containerJeu}>
         {renderBoard()}
         {gameOver && (

@@ -89,8 +89,7 @@ const Morpion = ({ navigation }) => {
 
   useEffect(() => {
     nouvellePartie();
-    // Afficher l'overlay du premier tour au démarrage
-    setShowFirstTurnOverlay(true);
+    // Ne pas afficher l'overlay au démarrage initial
   }, []);
 
   // Faire jouer l'IA si c'est son tour de commencer
@@ -348,6 +347,7 @@ const Morpion = ({ navigation }) => {
         // Redémarrage automatique après 3 secondes
         setTimeout(() => {
           nouvellePartie();
+          setShowFirstTurnOverlay(true);
         }, 3000);
       } catch (error) {
         console.log("🎮 MORPION: Erreur lors de la sauvegarde:", error);
@@ -387,17 +387,36 @@ const Morpion = ({ navigation }) => {
     setTempsEcoule(0);
     setEnPartie(true);
 
-    // Le joueur commence toujours
-    setTourIA(false);
-    setIaCommence(false);
+    // Alterner qui commence
+    const nouvelleValeur = !iaCommence;
+    setIaCommence(nouvelleValeur);
+    if (nouvelleValeur) {
+      setTourIA(true); // L'IA commence
+    } else {
+      setTourIA(false); // Le joueur commence
+    }
   };
 
   const nouvellePartie = () => {
-    recommencerPartie();
+    setPlateau(Array(9).fill(null));
+    setPartieTerminee(false);
+    setGagnant(null);
+    setTempsEcoule(0);
+    setEnPartie(true);
+
+    // Alterner qui commence
+    const nouvelleValeur = !iaCommence;
+    setIaCommence(nouvelleValeur);
+    if (nouvelleValeur) {
+      setTourIA(true); // L'IA commence
+    } else {
+      setTourIA(false); // Le joueur commence
+    }
   };
 
-  const handleFirstTurnOverlayComplete = () => {
+  const handleFirstTurnOverlayComplete = (quiCommence = iaCommence) => {
     setShowFirstTurnOverlay(false);
+    // Plus besoin de toast car l'overlay affiche déjà le bon message
   };
 
   const rendreCase = (index) => {
@@ -490,9 +509,11 @@ const Morpion = ({ navigation }) => {
         countryTotal={countryTotal}
         countryCode={user?.country || user?.profile?.country || "FR"}
         showFirstTurnOverlay={showFirstTurnOverlay}
-        firstTurnPlayerName='Vous'
-        firstTurnPlayerSymbol='X'
-        onFirstTurnOverlayComplete={handleFirstTurnOverlayComplete}>
+        firstTurnPlayerName={iaCommence ? "L'IA" : "Vous"}
+        firstTurnPlayerSymbol={iaCommence ? "O" : "X"}
+        onFirstTurnOverlayComplete={() =>
+          handleFirstTurnOverlayComplete(iaCommence)
+        }>
         <View style={styles.containerJeu}>{rendrePlateau()}</View>
       </GameLayout>
       <Toast />
