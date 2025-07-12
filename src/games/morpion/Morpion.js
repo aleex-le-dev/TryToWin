@@ -17,18 +17,19 @@ import {
 import { useAuth } from "../../hooks/useAuth";
 import { GAME_POINTS, getSerieMultiplier } from "../../constants/gamePoints";
 import GameLayout from "../GameLayout";
+import { getIaMove } from "./ia";
 
 const { width } = Dimensions.get("window");
 
 const Morpion = ({ navigation }) => {
   const { user } = useAuth();
   const [plateau, setPlateau] = useState(Array(9).fill(null));
-  const [tourJoueur, setTourJoueur] = useState(true);
   const [partieTerminee, setPartieTerminee] = useState(false);
   const [gagnant, setGagnant] = useState(null);
   const [score, setScore] = useState(0);
   const [tempsEcoule, setTempsEcoule] = useState(0);
   const [enPartie, setEnPartie] = useState(false);
+  const [tourIA, setTourIA] = useState(false);
   const [statsJeu, setStatsJeu] = useState({
     win: 0,
     draw: 0,
@@ -62,7 +63,10 @@ const Morpion = ({ navigation }) => {
           setCountryRank(cRank);
           setCountryTotal(cTotal);
         } catch (error) {
-          console.log("Erreur lors du chargement des stats:", error);
+          console.log(
+            "🎮 MORPION: Erreur lors du chargement des stats:",
+            error
+          );
         }
       }
     };
@@ -76,7 +80,9 @@ const Morpion = ({ navigation }) => {
         setTempsEcoule((prev) => prev + 1);
       }, 1000);
     }
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+    };
   }, [enPartie, partieTerminee]);
 
   useEffect(() => {
@@ -108,25 +114,154 @@ const Morpion = ({ navigation }) => {
   };
 
   const gererClicCase = (index) => {
-    if (plateau[index] || partieTerminee) return;
+    console.log("👤 JOUEUR: Clic sur l'index", index);
+    console.log("👤 JOUEUR: État actuel du plateau:", plateau);
+
+    if (plateau[index] || partieTerminee) {
+      console.log("👤 JOUEUR: Coup invalide - case occupée ou partie terminée");
+      return;
+    }
+
     const nouveauPlateau = plateau.slice();
-    nouveauPlateau[index] = tourJoueur ? "X" : "O";
+    nouveauPlateau[index] = "X"; // Le joueur joue toujours X
     setPlateau(nouveauPlateau);
-    setTourJoueur(!tourJoueur);
+    console.log("👤 JOUEUR: X placé à l'index", index);
+    console.log("👤 JOUEUR: Nouveau plateau:", nouveauPlateau);
+
+    // Vérifier si le joueur a gagné
     const gagnant = verifierGagnant(nouveauPlateau);
     if (gagnant) {
+      console.log("👤 JOUEUR: Victoire du joueur !");
       setGagnant(gagnant);
       setPartieTerminee(true);
       setEnPartie(false);
       gererFinPartie(gagnant, tempsEcoule);
-    } else if (verifierMatchNul(nouveauPlateau)) {
+      return;
+    }
+
+    // Vérifier match nul
+    if (verifierMatchNul(nouveauPlateau)) {
+      console.log("👤 JOUEUR: Match nul après coup du joueur");
       setPartieTerminee(true);
       setEnPartie(false);
       gererFinPartie("nul", tempsEcoule);
+      return;
+    }
+
+    console.log("👤 JOUEUR: Partie continue, appel de l'IA...");
+    setTourIA(true); // Indiquer que c'est le tour de l'IA
+
+    // Faire jouer l'IA avec setTimeout pour éviter les problèmes d'async
+    setTimeout(() => {
+      faireJouerIA(nouveauPlateau);
+    }, 100);
+  };
+
+  const faireJouerIA = async (plateauActuel) => {
+    console.log("🎯 IA: Début du tour de l'IA");
+    console.log("🎯 IA: État du plateau:", plateauActuel);
+
+    try {
+      console.log("🎯 IA: Appel de getIaMove...");
+      const coupIA = await getIaMove(plateauActuel);
+      console.log("🎯 IA: Réponse reçue:", coupIA);
+      console.log("🎯 IA: Type de réponse:", typeof coupIA);
+
+      if (coupIA && typeof coupIA === "string") {
+        console.log("🎯 IA: Parsing des coordonnées...");
+
+        // Nettoyer la réponse et extraire les coordonnées
+        const reponseNettoyee = coupIA.trim().replace(/[^\d,]/g, "");
+        console.log("🎯 IA: Réponse nettoyée:", reponseNettoyee);
+
+        const coordonnees = reponseNettoyee.split(",");
+        if (coordonnees.length === 2) {
+          const ligne = parseInt(coordonnees[0]);
+          const colonne = parseInt(coordonnees[1]);
+          const indexIA = ligne * 3 + colonne;
+          console.log(
+            "🎯 IA: Coordonnées parsées - ligne:",
+            ligne,
+            "colonne:",
+            colonne,
+            "index:",
+            indexIA
+          );
+
+          if (
+            ligne >= 0 &&
+            ligne <= 2 &&
+            colonne >= 0 &&
+            colonne <= 2 &&
+            indexIA >= 0 &&
+            indexIA < 9 &&
+            plateauActuel[indexIA] === null
+          ) {
+            console.log("🎯 IA: Placement du coup O à l'index", indexIA);
+            const plateauAvecIA = plateauActuel.slice();
+            plateauAvecIA[indexIA] = "O";
+            setPlateau(plateauAvecIA);
+            console.log("🎯 IA: Plateau mis à jour:", plateauAvecIA);
+
+            // Vérifier si l'IA a gagné
+            const gagnantIA = verifierGagnant(plateauAvecIA);
+            if (gagnantIA) {
+              console.log("🎯 IA: L'IA a gagné !");
+              setGagnant(gagnantIA);
+              setPartieTerminee(true);
+              setEnPartie(false);
+              gererFinPartie(gagnantIA, tempsEcoule);
+              return;
+            }
+
+            // Vérifier match nul après coup de l'IA
+            if (verifierMatchNul(plateauAvecIA)) {
+              console.log("🎯 IA: Match nul après coup de l'IA");
+              setPartieTerminee(true);
+              setEnPartie(false);
+              gererFinPartie("nul", tempsEcoule);
+              return;
+            }
+
+            console.log("🎯 IA: Tour terminé, retour au joueur");
+            setTourIA(false); // Retour au tour du joueur
+          } else {
+            console.log(
+              "🎯 IA: Coordonnées invalides - ligne:",
+              ligne,
+              "colonne:",
+              colonne,
+              "index:",
+              indexIA,
+              "case libre:",
+              plateauActuel[indexIA] === null
+            );
+            setTourIA(false); // Retour au tour du joueur en cas d'erreur
+          }
+        } else {
+          console.log(
+            "🎯 IA: Format de coordonnées invalide:",
+            reponseNettoyee
+          );
+          setTourIA(false); // Retour au tour du joueur en cas d'erreur
+        }
+      } else {
+        console.log("🎯 IA: Réponse invalide de l'IA:", coupIA);
+        setTourIA(false); // Retour au tour du joueur en cas d'erreur
+      }
+    } catch (error) {
+      console.log("🎯 IA: Erreur lors du coup de l'IA:", error);
+      setTourIA(false); // Retour au tour du joueur en cas d'erreur
     }
   };
 
   const gererFinPartie = async (resultat, temps) => {
+    console.log(
+      "🎮 MORPION: Fin de partie - resultat:",
+      resultat,
+      "temps:",
+      temps
+    );
     let resultatBDD = "lose";
     if (resultat === "X") {
       resultatBDD = "win";
@@ -135,14 +270,26 @@ const Morpion = ({ navigation }) => {
     } else {
       resultatBDD = "draw";
     }
+    console.log("🎮 MORPION: Résultat BDD:", resultatBDD);
+
     if (user?.id) {
       try {
+        console.log("🎮 MORPION: Sauvegarde du résultat...");
         await recordGameResult(user.id, "Morpion", resultatBDD, 0, temps);
         await actualiserStatsClassements();
         const points = GAME_POINTS["Morpion"][resultatBDD];
         const mult = getSerieMultiplier(statsJeu.currentStreak);
         const pointsAvecMultiplicateur =
           mult > 0 ? Math.round(points * (1 + mult)) : points;
+        console.log(
+          "🎮 MORPION: Points calculés:",
+          points,
+          "multiplicateur:",
+          mult,
+          "total:",
+          pointsAvecMultiplicateur
+        );
+
         let toastConfig = {
           position: "top",
           topOffset: 40,
@@ -168,14 +315,18 @@ const Morpion = ({ navigation }) => {
           toastConfig.text1 = "Match nul";
           toastConfig.text2 = `+${points} points`;
         }
+        console.log("🎮 MORPION: Affichage toast:", toastConfig);
         Toast.show(toastConfig);
         setTimeout(async () => {
+          console.log("🎮 MORPION: Redémarrage automatique dans 3s");
           await actualiserStatsClassements();
           recommencerPartie();
         }, 3000);
       } catch (error) {
-        console.log("Erreur lors de la sauvegarde:", error);
+        console.log("🎮 MORPION: Erreur lors de la sauvegarde:", error);
       }
+    } else {
+      console.log("🎮 MORPION: Aucun utilisateur connecté, pas de sauvegarde");
     }
   };
 
@@ -204,11 +355,11 @@ const Morpion = ({ navigation }) => {
 
   const recommencerPartie = () => {
     setPlateau(Array(9).fill(null));
-    setTourJoueur(true);
     setPartieTerminee(false);
     setGagnant(null);
     setTempsEcoule(0);
     setEnPartie(true);
+    setTourIA(false); // Commencer par le tour du joueur
   };
 
   const nouvellePartie = () => {
@@ -293,26 +444,14 @@ const Morpion = ({ navigation }) => {
       streak={statsJeu.currentStreak}
       onBack={() => navigation.goBack()}
       currentTurnLabel={
-        partieTerminee
-          ? gagnant === "X"
-            ? "Vous avez gagné !"
-            : gagnant === "O"
-            ? "L'IA a gagné"
-            : "Match nul"
-          : tourJoueur
-          ? "Votre tour"
-          : "Tour de l'IA"
+        tourIA
+          ? "Tour de l'IA"
+          : "Votre tour"
       }
       currentSymbol={
-        partieTerminee
-          ? gagnant === "X"
-            ? "X"
-            : gagnant === "O"
-            ? "O"
-            : "-"
-          : tourJoueur
-          ? "X"
-          : "O"
+        tourIA
+          ? "O"
+          : "X"
       }
       timerLabel={`${Math.floor(tempsEcoule / 60)}:${(tempsEcoule % 60)
         .toString()

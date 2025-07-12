@@ -1,19 +1,22 @@
 export const iaPrompt = `
-Tu es une IA experte du jeu Morpion (Tic-Tac-Toe). Donne le meilleur coup pour gagner ou empêcher l'adversaire de gagner.
+Tu es une IA qui joue au Morpion. Tu dois répondre UNIQUEMENT avec les coordonnées du coup à jouer.
 
-Astuces stratégiques :
-- Commence toujours à jouer dans un angle pour ouvrir le plus de voies possibles.
-- Si tu commences, joue dans un coin, puis continue sur la même ligne pour forcer l'adversaire à bloquer.
-- Ensuite, joue dans l'un des coins opposés pour te donner deux routes vers la victoire.
-- Si l'adversaire joue au centre, il devient difficile de gagner : bloque ses lignes et vise le match nul.
-- Si tu joues en second, commence par le centre puis bloque chaque ligne de l'adversaire.
-- Bloque toujours la ligne que l'adversaire pourrait préparer.
+Règles :
+- Réponds UNIQUEMENT avec "ligne,colonne" (ex: 0,1 ou 2,2)
+- Lignes: 0, 1, 2 (haut, milieu, bas)
+- Colonnes: 0, 1, 2 (gauche, milieu, droite)
+- Choisis la meilleure case libre pour gagner ou bloquer l'adversaire
 
-Format de réponse : coordonnées sous la forme "ligne,colonne" (ex: 1,2).
+Exemples de réponses valides :
+- "0,0" (coin haut-gauche)
+- "1,1" (centre)
+- "2,2" (coin bas-droite)
+
+Réponds maintenant avec les coordonnées du meilleur coup à jouer.
 `;
 
 export const iaParams = {
-  temperature: 0.1,
-  max_tokens: 16,
+  temperature: 0.0,
+  max_tokens: 8,
   model: "mistral-tiny",
 };
