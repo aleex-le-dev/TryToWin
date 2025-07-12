@@ -30,6 +30,7 @@ const Morpion = ({ navigation }) => {
   const [tempsEcoule, setTempsEcoule] = useState(0);
   const [enPartie, setEnPartie] = useState(false);
   const [tourIA, setTourIA] = useState(false);
+  const [iaCommence, setIaCommence] = useState(false);
   const [statsJeu, setStatsJeu] = useState({
     win: 0,
     draw: 0,
@@ -89,6 +90,21 @@ const Morpion = ({ navigation }) => {
     nouvellePartie();
   }, []);
 
+  // Faire jouer l'IA si c'est son tour de commencer
+  useEffect(() => {
+    if (
+      tourIA &&
+      enPartie &&
+      !partieTerminee &&
+      plateau.every((cell) => cell === null)
+    ) {
+      console.log("🎯 IA: C'est le tour de l'IA de commencer");
+      setTimeout(() => {
+        faireJouerIA(plateau);
+      }, 500);
+    }
+  }, [tourIA, enPartie, partieTerminee, plateau]);
+
   const verifierGagnant = (cases) => {
     const lignesGagnantes = [
       [0, 1, 2],
@@ -117,8 +133,10 @@ const Morpion = ({ navigation }) => {
     console.log("👤 JOUEUR: Clic sur l'index", index);
     console.log("👤 JOUEUR: État actuel du plateau:", plateau);
 
-    if (plateau[index] || partieTerminee) {
-      console.log("👤 JOUEUR: Coup invalide - case occupée ou partie terminée");
+    if (plateau[index] || partieTerminee || tourIA) {
+      console.log(
+        "👤 JOUEUR: Coup invalide - case occupée, partie terminée ou tour de l'IA"
+      );
       return;
     }
 
@@ -290,38 +308,33 @@ const Morpion = ({ navigation }) => {
           pointsAvecMultiplicateur
         );
 
-        let toastConfig = {
-          position: "top",
-          topOffset: 40,
-          visibilityTime: 3000,
-        };
+        // Configuration simple du toast
         if (resultatBDD === "win") {
-          toastConfig.type = "success";
-          toastConfig.text1 = "Victoire !";
-          if (mult > 0) {
-            toastConfig.text1 = `🔥 Victoire ! Série de ${statsJeu.currentStreak}`;
-            toastConfig.text2 = `+${pointsAvecMultiplicateur} points (x${(
-              1 + mult
-            ).toFixed(2)})`;
-          } else {
-            toastConfig.text2 = `+${points} points`;
-          }
+          Toast.show({
+            type: "success",
+            text1: mult > 0 ? `🔥 Victoire ! Série de ${statsJeu.currentStreak}` : "Victoire !",
+            text2: mult > 0 ? `+${pointsAvecMultiplicateur} points (x${(1 + mult).toFixed(2)})` : `+${points} points`,
+            position: "top",
+            visibilityTime: 4000,
+          });
         } else if (resultatBDD === "lose") {
-          toastConfig.type = "error";
-          toastConfig.text1 = "Défaite";
-          toastConfig.text2 = `+${points} points`;
+          Toast.show({
+            type: "error",
+            text1: "Défaite",
+            text2: `+${points} points`,
+            position: "top",
+            visibilityTime: 4000,
+          });
         } else {
-          toastConfig.type = "info";
-          toastConfig.text1 = "Match nul";
-          toastConfig.text2 = `+${points} points`;
+          Toast.show({
+            type: "info",
+            text1: "Match nul",
+            text2: `+${points} points`,
+            position: "top",
+            visibilityTime: 4000,
+          });
         }
-        console.log("🎮 MORPION: Affichage toast:", toastConfig);
-        Toast.show(toastConfig);
-        setTimeout(async () => {
-          console.log("🎮 MORPION: Redémarrage automatique dans 3s");
-          await actualiserStatsClassements();
-          recommencerPartie();
-        }, 3000);
+        // Pas de redémarrage automatique - l'utilisateur clique sur "Nouvelle partie"
       } catch (error) {
         console.log("🎮 MORPION: Erreur lors de la sauvegarde:", error);
       }
@@ -359,7 +372,15 @@ const Morpion = ({ navigation }) => {
     setGagnant(null);
     setTempsEcoule(0);
     setEnPartie(true);
-    setTourIA(false); // Commencer par le tour du joueur
+
+    // Alterner qui commence
+    if (iaCommence) {
+      setTourIA(false); // Le joueur commence
+      setIaCommence(false);
+    } else {
+      setTourIA(true); // L'IA commence
+      setIaCommence(true);
+    }
   };
 
   const nouvellePartie = () => {
@@ -438,21 +459,14 @@ const Morpion = ({ navigation }) => {
   };
 
   return (
+    <>
     <GameLayout
       title='Morpion'
       stats={statsJeu}
       streak={statsJeu.currentStreak}
       onBack={() => navigation.goBack()}
-      currentTurnLabel={
-        tourIA
-          ? "Tour de l'IA"
-          : "Votre tour"
-      }
-      currentSymbol={
-        tourIA
-          ? "O"
-          : "X"
-      }
+      currentTurnLabel={tourIA ? "Tour de l'IA" : "Votre tour"}
+      currentSymbol={tourIA ? "O" : "X"}
       timerLabel={`${Math.floor(tempsEcoule / 60)}:${(tempsEcoule % 60)
         .toString()
         .padStart(2, "0")}`}
@@ -463,8 +477,9 @@ const Morpion = ({ navigation }) => {
       countryTotal={countryTotal}
       countryCode={user?.country || user?.profile?.country || "FR"}>
       <View style={styles.containerJeu}>{rendrePlateau()}</View>
-      <Toast />
     </GameLayout>
+    <Toast />
+  </>
   );
 };
 
