@@ -9,7 +9,7 @@
 - **Puissance 4** - Alignez 4 pions pour gagner
 - **Othello** - Retournez les pions adverses
 - **Morpion / TicTacToe** - 3 en ligne pour gagner (avec IA Mistral)
-- **Échecs** - Affrontez un adversaire sur un plateau d'échecs classique
+
 
 ### 🤖 Intelligence Artificielle
 

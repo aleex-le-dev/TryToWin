@@ -17,13 +17,7 @@ export const GAME_POINTS = {
     draw: 2,
     lose: 1,
   },
-  Echec: {
-    win: 10,
-    draw: 5,
-    lose: 0,
-    streakBonus: 2,
-    description: "Points attribués pour une partie d'échecs.",
-  },
+
 };
 
 // Configuration du multiplicateur de points par série (bonus à partir de 5 victoires)

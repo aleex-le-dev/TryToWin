@@ -290,7 +290,7 @@ export async function getGlobalLeaderboard(topN = 10) {
       const userId = userDoc.id;
 
       // S'assurer que l'utilisateur a des entrées de score pour tous les jeux
-      const games = ["Puissance4", "Othello", "Morpion", "Echec"];
+      const games = ["Puissance4", "Othello", "Morpion"];
       for (const game of games) {
         await ensureScoreEntry(userId, game);
       }
@@ -404,7 +404,7 @@ export async function getUserGlobalRank(userId) {
       const currentUserId = userDoc.id;
 
       // S'assurer que l'utilisateur a des entrées de score pour tous les jeux
-      const games = ["Puissance4", "Othello", "Morpion", "Echec"];
+      const games = ["Puissance4", "Othello", "Morpion"];
       for (const game of games) {
         await ensureScoreEntry(currentUserId, game);
       }
@@ -494,7 +494,7 @@ export async function initializeLeaderboardsForUser(userId) {
   if (!userId) return;
 
   try {
-    const games = ["Puissance4", "Othello", "Morpion", "Echec"];
+    const games = ["Puissance4", "Othello", "Morpion"];
 
     for (const game of games) {
       const scoreRef = doc(db, "users", userId, "scores", game);
@@ -544,7 +544,7 @@ export async function ensureScoreEntry(userId, game) {
  */
 export async function initializeAllUsersScoreEntries() {
   try {
-    const games = ["Puissance4", "Othello", "Morpion", "Echec"];
+    const games = ["Puissance4", "Othello", "Morpion"];
     const usersSnap = await getDocs(collection(db, "users"));
 
     for (const userDoc of usersSnap.docs) {

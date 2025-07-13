@@ -31,9 +31,9 @@ export const gamesData = [
   {
     id: "Echec",
     title: "Échecs",
-    description: "Affrontez un adversaire sur un plateau d'échecs classique.",
+    description: "Affrontez l'IA sur un plateau d'échecs classique.",
     category: "Stratégie",
-    image: require("../../assets/jeux/echec.png"),
+    image: "♟️",
     color: "#8B4513",
     gameType: "grid",
   },
