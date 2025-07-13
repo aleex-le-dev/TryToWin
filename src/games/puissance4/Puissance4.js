@@ -107,6 +107,12 @@ const Puissance4 = ({ navigation }) => {
     }
   }, [resultData.result]);
 
+  // DEBUG: Forcer l'affichage de l'overlay
+  useEffect(() => {
+    console.log("DEBUG: showResultOverlay changé:", showResultOverlay);
+    console.log("DEBUG: resultData.result:", resultData.result);
+  }, [showResultOverlay, resultData.result]);
+
   const isColumnFull = (col) => {
     return board[0][col] !== null;
   };
@@ -255,22 +261,16 @@ const Puissance4 = ({ navigation }) => {
       pointsAvecMultiplicateur =
         mult > 0 ? Math.round(points * (1 + mult)) : points;
     }
+    console.log("setResultData avec result:", result);
     setResultData({
       result: result,
       points: pointsAvecMultiplicateur,
       multiplier: mult,
       streak: stats.currentStreak,
     });
-    console.log(
-      "setShowResultOverlay(true) AVANT",
-      showResultOverlayRef.current
-    );
+    console.log("FORÇAGE setShowResultOverlay(true)");
     setShowResultOverlay(true);
     showResultOverlayRef.current = true;
-    console.log(
-      "setShowResultOverlay(true) APRES",
-      showResultOverlayRef.current
-    );
   };
 
   const actualiserStatsClassements = async () => {
@@ -408,7 +408,7 @@ const Puissance4 = ({ navigation }) => {
 
   // DEBUG : log état overlay
   console.log(
-    "showResultOverlay:",
+    "RENDU FINAL - showResultOverlay:",
     showResultOverlay,
     "resultData:",
     resultData
@@ -450,20 +450,31 @@ const Puissance4 = ({ navigation }) => {
         }>
         <View style={styles.containerJeu}>{renderBoard()}</View>
       </GameLayout>
-      {console.log(
-        "GameResultOverlay rendu, showResultOverlay:",
-        showResultOverlay,
-        "resultData:",
-        resultData
+      {/* Overlay résultat centré, toujours au-dessus */}
+      {showResultOverlay && (
+        <View
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 9999,
+            justifyContent: "center",
+            alignItems: "center",
+            pointerEvents: "box-none",
+          }}>
+          <GameResultOverlay
+            isVisible={true}
+            result={resultData.result}
+            points={resultData.points}
+            multiplier={resultData.multiplier}
+            streak={resultData.streak}
+            onAnimationComplete={handleResultOverlayComplete}
+          />
+        </View>
       )}
-      <GameResultOverlay
-        isVisible={showResultOverlay || resultData.result !== null}
-        result={resultData.result}
-        points={resultData.points}
-        multiplier={resultData.multiplier}
-        streak={resultData.streak}
-        onAnimationComplete={handleResultOverlayComplete}
-      />
+      <Toast />
     </>
   );
 };
