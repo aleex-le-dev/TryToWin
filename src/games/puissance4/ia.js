@@ -102,17 +102,17 @@ export async function getIaMove(boardState) {
     return IA_UTILS.indexToCoordinates(opponentThreats[0]);
   }
 
-  // Priorité 5: Jouer au centre
-  const centerColumns = [3]; // Colonne centrale
-  for (const col of centerColumns) {
+  // Priorité 5: Jouer au centre UNIQUEMENT si le plateau est vide
+  if (boardState.every((cell) => cell === null)) {
+    const col = 3;
     const index = IA_UTILS.getLowestEmptyCell(boardState, col);
     if (index !== null && validMoves.includes(index)) {
-      console.log("🎯 IA AVANCÉE: Jouer au centre");
+      console.log("🎯 IA AVANCÉE: Premier coup au centre");
       return IA_UTILS.indexToCoordinates(index);
     }
   }
 
-  // Priorité 6: Utiliser minimax pour les coups complexes
+  // Utiliser minimax pour tous les autres coups
   let bestMove = validMoves[0];
   let bestValue = -Infinity;
   const depth = Math.min(IA_CONFIG.MINIMAX.MAX_DEPTH, validMoves.length);

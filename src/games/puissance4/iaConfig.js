@@ -146,7 +146,7 @@ export const IA_CONFIG = {
   // Configuration de l'algorithme minimax
   MINIMAX: {
     USE_ALPHA_BETA: true,
-    MAX_DEPTH: 8,
+    MAX_DEPTH: 5,
     EVALUATION_FUNCTION: "POSITION_SCORE",
   },
 
