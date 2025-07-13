@@ -617,15 +617,10 @@ const Puissance4 = ({ navigation }) => {
         disabled={
           partieTerminee || tourIA || obtenirColonneLibre(col) === null
         }>
-        <Text
-          style={[
-            styles.texteCase,
-            valeur === "X" && styles.texteX,
-            valeur === "O" && styles.texteO,
-            estCaseGagnante && styles.texteGagnant,
-          ]}>
-          {valeur}
-        </Text>
+        {/* Jeton jaune pour le joueur (X), rouge pour l'IA (O) */}
+        {valeur === "X" && <View style={styles.yellowToken} />}
+        {valeur === "O" && <View style={styles.redToken} />}
+        {/* ... existing code ... */}
       </TouchableOpacity>
     );
   };
@@ -655,7 +650,31 @@ const Puissance4 = ({ navigation }) => {
         streak={statsJeu.currentStreak}
         onBack={() => navigation.goBack()}
         currentTurnLabel={tourIA ? "Tour de l'IA" : "Votre tour"}
-        currentSymbol={tourIA ? "O" : "X"}
+        currentSymbol={
+          tourIA ? (
+            <View
+              style={{
+                width: 18,
+                height: 18,
+                borderRadius: 9,
+                backgroundColor: "#E53935",
+                borderWidth: 2,
+                borderColor: "#B71C1C",
+              }}
+            />
+          ) : (
+            <View
+              style={{
+                width: 18,
+                height: 18,
+                borderRadius: 9,
+                backgroundColor: "#FFD600",
+                borderWidth: 2,
+                borderColor: "#B8860B",
+              }}
+            />
+          )
+        }
         timerLabel={`${Math.floor(tempsEcoule / 60)}:${(tempsEcoule % 60)
           .toString()
           .padStart(2, "0")}`}
@@ -667,7 +686,31 @@ const Puissance4 = ({ navigation }) => {
         countryCode={user?.country || user?.profile?.country || "FR"}
         showFirstTurnOverlay={showFirstTurnOverlay}
         firstTurnPlayerName={iaCommence ? "L'IA" : "Vous"}
-        firstTurnPlayerSymbol={iaCommence ? "O" : "X"}
+        firstTurnPlayerSymbol={
+          iaCommence ? (
+            <View
+              style={{
+                width: 18,
+                height: 18,
+                borderRadius: 9,
+                backgroundColor: "#E53935",
+                borderWidth: 2,
+                borderColor: "#B71C1C",
+              }}
+            />
+          ) : (
+            <View
+              style={{
+                width: 18,
+                height: 18,
+                borderRadius: 9,
+                backgroundColor: "#FFD600",
+                borderWidth: 2,
+                borderColor: "#B8860B",
+              }}
+            />
+          )
+        }
         onFirstTurnOverlayComplete={() =>
           handleFirstTurnOverlayComplete(iaCommence)
         }>
@@ -765,6 +808,22 @@ const styles = StyleSheet.create({
   colonnePleine: {
     backgroundColor: "#e9ecef",
     opacity: 0.5,
+  },
+  yellowToken: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "#FFD600",
+    borderWidth: 2,
+    borderColor: "#B8860B",
+  },
+  redToken: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "#E53935",
+    borderWidth: 2,
+    borderColor: "#B71C1C",
   },
 });
 
