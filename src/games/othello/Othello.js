@@ -252,39 +252,23 @@ const Othello = ({ navigation }) => {
   const renderBoard = () => {
     return (
       <View style={styles.board}>
-        {board.map((rowArr, rowIndex) => (
-          <View key={rowIndex} style={styles.row}>
-            {rowArr.map((cell, colIndex) => {
+        {board.map((rowArr, row) => (
+          <View key={row} style={styles.row}>
+            {rowArr.map((cell, col) => {
               const isValid = validMoves.some(
-                ([r, c]) => r === rowIndex && c === colIndex
+                ([r, c]) => r === row && c === col
               );
+              // On affiche l'aperçu (point noir) seulement si c'est le joueur humain
+              const showPreview = isValid && currentPlayer === 1;
               return (
                 <TouchableOpacity
-                  key={`${rowIndex}-${colIndex}`}
+                  key={col}
                   style={styles.cell}
-                  onPress={() => handleCellPress(rowIndex, colIndex)}
-                  disabled={gameOver || !isValid}
-                  activeOpacity={0.7}>
-                  {cell && (
-                    <View
-                      style={[
-                        styles.token,
-                        cell === 1 ? styles.blackToken : styles.whiteToken,
-                      ]}
-                    />
-                  )}
-                  {/* Indicateur de coup possible */}
-                  {!cell && isValid && !gameOver && (
-                    <View
-                      style={{
-                        width: CELL_SIZE / 3,
-                        height: CELL_SIZE / 3,
-                        borderRadius: CELL_SIZE / 6,
-                        backgroundColor: "#222",
-                        alignSelf: "center",
-                      }}
-                    />
-                  )}
+                  onPress={() => handleCellPress(row, col)}
+                  disabled={gameOver || !isValid || currentPlayer !== 1}>
+                  {cell === 1 && <View style={styles.blackDisc} />}
+                  {cell === 2 && <View style={styles.whiteDisc} />}
+                  {showPreview && <View style={styles.previewDot} />}
                 </TouchableOpacity>
               );
             })}
@@ -548,6 +532,27 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     borderWidth: 1,
     borderColor: "#222",
+  },
+  blackDisc: {
+    width: CELL_SIZE - 10,
+    height: CELL_SIZE - 10,
+    borderRadius: (CELL_SIZE - 10) / 2,
+    backgroundColor: "#222",
+  },
+  whiteDisc: {
+    width: CELL_SIZE - 10,
+    height: CELL_SIZE - 10,
+    borderRadius: (CELL_SIZE - 10) / 2,
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: "#222",
+  },
+  previewDot: {
+    width: CELL_SIZE / 3,
+    height: CELL_SIZE / 3,
+    borderRadius: CELL_SIZE / 6,
+    backgroundColor: "#222",
+    alignSelf: "center",
   },
 });
 
