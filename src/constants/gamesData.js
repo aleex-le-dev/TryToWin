@@ -28,13 +28,4 @@ export const gamesData = [
     color: "#45B7D1",
     gameType: "grid",
   },
-  {
-    id: "Pendu",
-    title: "Pendu",
-    description: "Devinez le mot avant d'être pendu",
-    category: "Logique",
-    image: "🎯",
-    color: "#FFB6C1",
-    gameType: "arcade",
-  },
 ];

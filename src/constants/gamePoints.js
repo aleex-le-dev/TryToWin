@@ -17,11 +17,6 @@ export const GAME_POINTS = {
     draw: 2,
     lose: 1,
   },
-  Pendu: {
-    win: 15,
-    draw: 5,
-    lose: 1,
-  },
 };
 
 // Configuration du multiplicateur de points par série (bonus à partir de 5 victoires)

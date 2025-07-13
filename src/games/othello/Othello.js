@@ -19,10 +19,7 @@ import {
   getUserRankInLeaderboard,
 } from "../../services/scoreService";
 import { useAuth } from "../../hooks/useAuth";
-import {
-  GAME_POINTS,
-  getSerieMultiplier,
-} from "../../components/GamePointsConfig";
+import { GAME_POINTS, getSerieMultiplier } from "../../constants/gamePoints";
 import GameLayout from "./../GameLayout";
 import GameResultOverlay from "../../components/GameResultOverlay";
 import { getIaMove } from "./ia";
@@ -160,6 +157,7 @@ const Othello = ({ navigation }) => {
   const [rank, setRank] = useState(null);
   const [totalPlayers, setTotalPlayers] = useState(null);
   const [iaCommence, setIaCommence] = useState(false);
+  const [iaMovePreview, setIaMovePreview] = useState(null);
 
   useEffect(() => {
     const chargerStats = async () => {
@@ -191,21 +189,25 @@ const Othello = ({ navigation }) => {
         setWinner(winnerValue);
         // Toast points
         if (user?.id) {
-          let resultatBDD = "draw";
-          if (winnerValue === 1) resultatBDD = "win";
-          else if (winnerValue === 2) resultatBDD = "lose";
-          const points = GAME_POINTS["Othello"][resultatBDD];
-          const mult = getSerieMultiplier(stats.currentStreak);
-          const pointsAvecMultiplicateur =
-            mult > 0 ? Math.round(points * (1 + mult)) : points;
-
-          setResultData({
-            result: resultatBDD,
-            points: pointsAvecMultiplicateur,
-            multiplier: mult,
-            streak: stats.currentStreak,
-          });
-          setShowResultOverlay(true);
+          (async () => {
+            let resultatBDD = "draw";
+            // Le joueur humain joue avec les pions noirs (1) si l'IA ne commence pas, sinon avec les pions blancs (2)
+            const humanPlayer = iaCommence ? 2 : 1;
+            if (winnerValue === humanPlayer) resultatBDD = "win";
+            else if (winnerValue !== 0) resultatBDD = "lose";
+            const points = GAME_POINTS["Othello"][resultatBDD];
+            const mult = getSerieMultiplier(stats.currentStreak);
+            const pointsAvecMultiplicateur = mult > 0 ? Math.round(points * (1 + mult)) : points;
+            await recordGameResult(user.id, "Othello", resultatBDD, 0);
+            await actualiserStatsClassements();
+            setResultData({
+              result: resultatBDD,
+              points: pointsAvecMultiplicateur,
+              multiplier: mult,
+              streak: stats.currentStreak,
+            });
+            setShowResultOverlay(true);
+          })();
         }
       } else {
         setCurrentPlayer(getOpponent(currentPlayer));
@@ -222,10 +224,13 @@ const Othello = ({ navigation }) => {
         const iaMove = await getIaMove(flatBoard);
         if (iaMove) {
           const [row, col] = iaMove.split(",").map(Number);
+          // Afficher le coup de l'IA pendant 1 seconde avant de le jouer
+          setIaMovePreview([row, col]);
           setTimeout(() => {
             setBoard(applyMove(board, row, col, 2));
             setCurrentPlayer(1);
-          }, 100);
+            setIaMovePreview(null);
+          }, 1000);
         }
       })();
     }
@@ -239,6 +244,9 @@ const Othello = ({ navigation }) => {
   };
 
   const renderBoard = () => {
+    // Le joueur humain joue avec les pions noirs (1) si l'IA ne commence pas, sinon avec les pions blancs (2)
+    const humanPlayer = iaCommence ? 2 : 1;
+
     return (
       <View style={styles.board}>
         {board.map((rowArr, row) => (
@@ -247,17 +255,25 @@ const Othello = ({ navigation }) => {
               const isValid = validMoves.some(
                 ([r, c]) => r === row && c === col
               );
-              // On affiche l'aperçu (point noir) seulement si c'est le joueur humain
-              const showPreview = isValid && currentPlayer === 1;
+              // On affiche l'aperçu seulement si c'est le tour du joueur humain
+              const showPreview = isValid && currentPlayer === humanPlayer;
+              // On affiche le coup de l'IA en surlignage
+              const showIaPreview =
+                iaMovePreview &&
+                iaMovePreview[0] === row &&
+                iaMovePreview[1] === col;
               return (
                 <TouchableOpacity
                   key={col}
                   style={styles.cell}
                   onPress={() => handleCellPress(row, col)}
-                  disabled={gameOver || !isValid || currentPlayer !== 1}>
+                  disabled={
+                    gameOver || !isValid || currentPlayer !== humanPlayer
+                  }>
                   {cell === 1 && <View style={styles.blackDisc} />}
                   {cell === 2 && <View style={styles.whiteDisc} />}
                   {showPreview && <View style={styles.previewDot} />}
+                  {showIaPreview && <View style={styles.iaPreviewDot} />}
                 </TouchableOpacity>
               );
             })}
@@ -301,8 +317,9 @@ const Othello = ({ navigation }) => {
   // Message de fin de partie
   let endMessage = null;
   if (gameOver) {
-    if (winner === 1) endMessage = `Victoire Noir (${black} - ${white})`;
-    else if (winner === 2) endMessage = `Victoire Blanc (${white} - ${black})`;
+    const humanPlayer = iaCommence ? 2 : 1;
+    if (winner === humanPlayer) endMessage = `Victoire ! (${black} - ${white})`;
+    else if (winner !== 0) endMessage = `Défaite (${black} - ${white})`;
     else endMessage = `Égalité (${black} - ${white})`;
   }
 
@@ -442,11 +459,11 @@ const Othello = ({ navigation }) => {
                     textShadowOffset: { width: 0, height: 1 },
                     textShadowRadius: 2,
                   }}>
-                  {winner === 1
-                    ? "Victoire des Noirs"
-                    : winner === 2
-                    ? "Victoire des Blancs"
-                    : "Égalité"}
+                  {winner === 0
+                    ? "Égalité"
+                    : winner === (iaCommence ? 2 : 1)
+                    ? "Victoire !"
+                    : "Défaite"}
                 </Text>
                 <Text
                   style={{
@@ -537,6 +554,15 @@ const styles = StyleSheet.create({
     borderRadius: CELL_SIZE / 6,
     backgroundColor: "#222",
     alignSelf: "center",
+  },
+  iaPreviewDot: {
+    width: CELL_SIZE / 3,
+    height: CELL_SIZE / 3,
+    borderRadius: CELL_SIZE / 6,
+    backgroundColor: "#ff6b6b",
+    alignSelf: "center",
+    borderWidth: 2,
+    borderColor: "#fff",
   },
 });
 
