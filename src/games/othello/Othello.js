@@ -25,6 +25,7 @@ import {
 } from "../../components/GamePointsConfig";
 import GameLayout from "./../GameLayout";
 import GameResultOverlay from "../../components/GameResultOverlay";
+import { getIaMove } from "./ia";
 
 const { width } = Dimensions.get("window");
 const BOARD_SIZE = 8;
@@ -220,8 +221,26 @@ const Othello = ({ navigation }) => {
       } else {
         setCurrentPlayer(getOpponent(currentPlayer));
       }
+      return;
     }
-  }, [board, currentPlayer]);
+    // Appel IA si c'est à l'IA de jouer (joueur 2)
+    if (currentPlayer === 2 && !gameOver) {
+      (async () => {
+        // Conversion board 2D -> 1D (null, 'X', 'O')
+        const flatBoard = board
+          .flat()
+          .map((v) => (v === 1 ? "X" : v === 2 ? "O" : null));
+        const iaMove = await getIaMove(flatBoard);
+        if (iaMove) {
+          const [row, col] = iaMove.split(",").map(Number);
+          setTimeout(() => {
+            setBoard(applyMove(board, row, col, 2));
+            setCurrentPlayer(1);
+          }, 100);
+        }
+      })();
+    }
+  }, [board, currentPlayer, gameOver]);
 
   const handleCellPress = (row, col) => {
     if (gameOver || !isValidMove(board, row, col, currentPlayer)) return;
@@ -341,101 +360,144 @@ const Othello = ({ navigation }) => {
   };
 
   return (
-    <GameLayout
-      title='Othello'
-      stats={stats}
-      streak={stats.currentStreak}
-      onBack={() => navigation.goBack()}
-      currentTurnLabel={
-        gameOver
-          ? winner === 0
-            ? "Égalité"
-            : "Partie terminée"
-          : `Tour du joueur`
-      }
-      currentSymbol={
-        gameOver
-          ? winner === 1
+    <>
+      <GameLayout
+        title='Othello'
+        stats={stats}
+        streak={stats.currentStreak}
+        onBack={() => navigation.goBack()}
+        currentTurnLabel={
+          gameOver
+            ? winner === 0
+              ? "Égalité"
+              : "Partie terminée"
+            : `Tour du joueur`
+        }
+        currentSymbol={
+          gameOver
+            ? winner === 1
+              ? "⚫"
+              : winner === 2
+              ? "⚪"
+              : "-"
+            : currentPlayer === 1
             ? "⚫"
-            : winner === 2
-            ? "⚪"
-            : "-"
-          : currentPlayer === 1
-          ? "⚫"
-          : "⚪"
-      }
-      timerLabel={`${Math.floor(elapsedTime / 60)}:${(elapsedTime % 60)
-        .toString()
-        .padStart(2, "0")}`}
-      onPressMainActionButton={resetGame}
-      showFirstTurnOverlay={showFirstTurnOverlay}
-      firstTurnPlayerName={iaCommence ? "L'IA" : "Vous"}
-      firstTurnPlayerSymbol={iaCommence ? "⚪" : "⚫"}
-      onFirstTurnOverlayComplete={() =>
-        handleFirstTurnOverlayComplete(iaCommence)
-      }>
-      <View style={styles.containerJeu}>
-        {renderBoard()}
-        {gameOver && (
+            : "⚪"
+        }
+        timerLabel={`${Math.floor(elapsedTime / 60)}:${(elapsedTime % 60)
+          .toString()
+          .padStart(2, "0")}`}
+        onPressMainActionButton={resetGame}
+        showFirstTurnOverlay={showFirstTurnOverlay}
+        firstTurnPlayerName={iaCommence ? "L'IA" : "Vous"}
+        firstTurnPlayerSymbol={iaCommence ? "⚪" : "⚫"}
+        onFirstTurnOverlayComplete={() =>
+          handleFirstTurnOverlayComplete(iaCommence)
+        }>
+        {/* Score en direct sous le bloc info */}
+        <View
+          style={{
+            flexDirection: "row",
+            justifyContent: "center",
+            alignItems: "center",
+            marginBottom: 8,
+          }}>
           <View
             style={{
-              position: "absolute",
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              backgroundColor: "rgba(0,0,0,0.25)",
-              justifyContent: "center",
+              flexDirection: "row",
               alignItems: "center",
-              zIndex: 10,
+              marginRight: 16,
             }}>
             <View
               style={{
-                backgroundColor: "rgba(255,255,255,0.8)",
-                borderRadius: 18,
-                paddingVertical: 24,
-                paddingHorizontal: 36,
-                alignItems: "center",
-                shadowColor: "#000",
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.12,
-                shadowRadius: 8,
-                elevation: 4,
-              }}>
-              <Text
-                style={{
-                  color: "#222",
-                  fontSize: 36,
-                  fontWeight: "bold",
-                  marginBottom: 18,
-                  textAlign: "center",
-                  textShadowColor: "rgba(0,0,0,0.08)",
-                  textShadowOffset: { width: 0, height: 1 },
-                  textShadowRadius: 2,
-                }}>
-                {winner === 1
-                  ? "Victoire des Noirs"
-                  : winner === 2
-                  ? "Victoire des Blancs"
-                  : "Égalité"}
-              </Text>
-              <Text
-                style={{
-                  color: "#1976d2",
-                  fontSize: 48,
-                  fontWeight: "bold",
-                  textAlign: "center",
-                  letterSpacing: 4,
-                  textShadowColor: "rgba(0,0,0,0.08)",
-                  textShadowOffset: { width: 0, height: 1 },
-                  textShadowRadius: 2,
-                }}>
-                {black} - {white}
-              </Text>
-            </View>
+                width: 18,
+                height: 18,
+                borderRadius: 9,
+                backgroundColor: "#222",
+                marginRight: 4,
+              }}
+            />
+            <Text style={{ fontWeight: "bold", fontSize: 16 }}>{black}</Text>
           </View>
-        )}
-      </View>
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <View
+              style={{
+                width: 18,
+                height: 18,
+                borderRadius: 9,
+                backgroundColor: "#fff",
+                borderWidth: 1,
+                borderColor: "#222",
+                marginRight: 4,
+              }}
+            />
+            <Text style={{ fontWeight: "bold", fontSize: 16 }}>{white}</Text>
+          </View>
+        </View>
+        {/* Plateau de jeu */}
+        <View style={styles.containerJeu}>
+          {renderBoard()}
+          {gameOver && (
+            <View
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                backgroundColor: "rgba(0,0,0,0.25)",
+                justifyContent: "center",
+                alignItems: "center",
+                zIndex: 10,
+              }}>
+              <View
+                style={{
+                  backgroundColor: "rgba(255,255,255,0.8)",
+                  borderRadius: 18,
+                  paddingVertical: 24,
+                  paddingHorizontal: 36,
+                  alignItems: "center",
+                  shadowColor: "#000",
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.12,
+                  shadowRadius: 8,
+                  elevation: 4,
+                }}>
+                <Text
+                  style={{
+                    color: "#222",
+                    fontSize: 36,
+                    fontWeight: "bold",
+                    marginBottom: 18,
+                    textAlign: "center",
+                    textShadowColor: "rgba(0,0,0,0.08)",
+                    textShadowOffset: { width: 0, height: 1 },
+                    textShadowRadius: 2,
+                  }}>
+                  {winner === 1
+                    ? "Victoire des Noirs"
+                    : winner === 2
+                    ? "Victoire des Blancs"
+                    : "Égalité"}
+                </Text>
+                <Text
+                  style={{
+                    color: "#1976d2",
+                    fontSize: 48,
+                    fontWeight: "bold",
+                    textAlign: "center",
+                    letterSpacing: 4,
+                    textShadowColor: "rgba(0,0,0,0.08)",
+                    textShadowOffset: { width: 0, height: 1 },
+                    textShadowRadius: 2,
+                  }}>
+                  {black} - {white}
+                </Text>
+              </View>
+            </View>
+          )}
+        </View>
+      </GameLayout>
       <GameResultOverlay
         isVisible={showResultOverlay}
         result={resultData.result}
@@ -445,7 +507,7 @@ const Othello = ({ navigation }) => {
         onAnimationComplete={handleResultOverlayComplete}
       />
       <Toast />
-    </GameLayout>
+    </>
   );
 };
 
