@@ -273,7 +273,7 @@ const GameScreen = ({ navigation, resetCategoryTrigger, forceHomeReset }) => {
       onPress={() => {
         // Passe simplement l'id = title
         navigation.navigate("GameDetails", {
-          game: { ...item, id: item.title },
+          game: { ...item, id: item.id },
         });
       }}
     />

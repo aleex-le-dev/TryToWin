@@ -11,7 +11,13 @@ import {
 import { logInfo, logSuccess } from "./src/utils/errorHandler";
 import { ToastProvider } from "./src/contexts/ToastContext";
 import SettingsScreen from "./src/screens/social/SettingsScreen";
+import { LogBox } from "react-native";
 
+// Ignorer les avertissements Reanimated de react-native-chessboard
+LogBox.ignoreLogs([
+  "[Reanimated] Reading from `value` during component render",
+  "[Reanimated] Reading from `value` during component render. Please ensure that you don't access the `value` property nor use `get` method of a shared value while React is rendering a component.",
+]);
 
 // Application principale TryToWin
 export default function App() {
@@ -36,7 +42,7 @@ export default function App() {
         <AuthProvider>
           <AppNavigator />
           <Toast />
-          
+
           <StatusBar style='light' />
         </AuthProvider>
       </SafeAreaProvider>

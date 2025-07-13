@@ -104,6 +104,15 @@ const GameLeaderboard = ({
       <View style={styles.leaderboardList}>
         {loading ? (
           <SkeletonProfile />
+        ) : centeredLeaderboardData.length === 0 ? (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyStateText}>
+              Aucun joueur n'a encore joué à ce jeu
+            </Text>
+            <Text style={styles.emptyStateSubtext}>
+              Soyez le premier à marquer des points !
+            </Text>
+          </View>
         ) : (
           <FlatList
             ref={flatListRef}
@@ -363,6 +372,22 @@ const styles = {
     fontSize: 12,
     color: "#666",
     marginTop: 2,
+  },
+  emptyState: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: 50,
+  },
+  emptyStateText: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#333",
+    marginBottom: 10,
+  },
+  emptyStateSubtext: {
+    fontSize: 16,
+    color: "#666",
   },
 };
 

@@ -28,4 +28,13 @@ export const gamesData = [
     color: "#45B7D1",
     gameType: "grid",
   },
+  {
+    id: "Echec",
+    title: "Échecs",
+    description: "Affrontez un adversaire sur un plateau d'échecs classique.",
+    category: "Stratégie",
+    image: require("../../assets/jeux/echec.png"),
+    color: "#8B4513",
+    gameType: "grid",
+  },
 ];

@@ -86,6 +86,8 @@ const GameDetailsScreen = ({ route, navigation }) => {
   // Utiliser l'identifiant technique Firestore du jeu
   const gameId = game.id || game.title;
 
+  console.log(`[DEBUG] GameDetailsScreen - gameId: ${gameId}, game:`, game);
+
   // Charger les statistiques de l'utilisateur et le classement pour ce jeu
   useFocusEffect(
     React.useCallback(() => {
@@ -133,6 +135,12 @@ const GameDetailsScreen = ({ route, navigation }) => {
             // Charger le classement
             await ensureScoreEntry(user.id, gameId);
             const leaderboard = await getLeaderboard(gameId, 51, user);
+
+            console.log(
+              `[DEBUG] Classement chargé pour ${gameId}:`,
+              leaderboard.length,
+              "joueurs"
+            );
 
             // Récupérer les avatars des utilisateurs depuis Firestore
             const processedLeaderboard = await Promise.all(
@@ -182,10 +190,20 @@ const GameDetailsScreen = ({ route, navigation }) => {
               })
             );
             setLeaderboardData(processedLeaderboard);
+            console.log(
+              `[DEBUG] Classement traité pour ${gameId}:`,
+              processedLeaderboard.length,
+              "joueurs"
+            );
           } catch (error) {
+            console.log(
+              `[DEBUG] Erreur lors du chargement pour ${gameId}:`,
+              error
+            );
           } finally {
             setStatsLoading(false);
             setLeaderboardLoading(false);
+            console.log(`[DEBUG] Loading terminé pour ${gameId}`);
           }
         }
       };
@@ -247,7 +265,8 @@ const GameDetailsScreen = ({ route, navigation }) => {
     setLoading(true);
     setTimeout(() => {
       setLoading(false);
-      navigation.navigate(game.id);
+      // Utiliser gameId qui est correctement défini
+      navigation.navigate(gameId);
     }, 1500);
   };
 
@@ -438,7 +457,8 @@ const GameDetailsScreen = ({ route, navigation }) => {
   return (
     <View style={styles.container}>
       {loading && (
-        <View style={styles.fullScreenLoading}>
+        <View
+          style={[styles.fullScreenLoading, { backgroundColor: game.color }]}>
           <ActivityIndicator size='large' color='#fff' />
           <Text style={styles.loadingText}>Chargement du jeu...</Text>
         </View>
@@ -880,7 +900,6 @@ const styles = StyleSheet.create({
   },
   fullScreenLoading: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "#2363eb",
     justifyContent: "center",
     alignItems: "center",
     zIndex: 100,
