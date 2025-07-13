@@ -114,9 +114,7 @@ const Puissance4 = ({ navigation }) => {
       plateau.every((cell) => cell === null)
     ) {
       console.log("🎯 IA: C'est le tour de l'IA de commencer");
-      setTimeout(() => {
-        faireJouerIA(plateau);
-      }, 500);
+      faireJouerIA(plateau);
     }
   }, [tourIA, enPartie, partieTerminee, plateau]);
 
@@ -610,10 +608,15 @@ const Puissance4 = ({ navigation }) => {
         }
       }
     }
+    const col = index % 7;
     return (
-      <View
+      <TouchableOpacity
         key={index}
-        style={[styles.case, estCaseGagnante && couleurGagnante]}>
+        style={[styles.case, estCaseGagnante && couleurGagnante]}
+        onPress={() => gererClicCase(col)}
+        disabled={
+          partieTerminee || tourIA || obtenirColonneLibre(col) === null
+        }>
         <Text
           style={[
             styles.texteCase,
@@ -623,7 +626,7 @@ const Puissance4 = ({ navigation }) => {
           ]}>
           {valeur}
         </Text>
-      </View>
+      </TouchableOpacity>
     );
   };
 
