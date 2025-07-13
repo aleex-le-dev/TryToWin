@@ -360,19 +360,37 @@ export async function getUserRankInLeaderboard(userId, game) {
   if (!userId || !game) return { rank: null, total: 0 };
 
   try {
+    // Récupérer tous les utilisateurs et leurs scores pour le jeu
+    const usersSnap = await getDocs(collection(db, "users"));
+    const players = [];
+    for (const userDoc of usersSnap.docs) {
+      const userProfile = userDoc.data();
+      const scoreSnap = await getDoc(
+        doc(db, "users", userDoc.id, "scores", game)
+      );
+      const data = scoreSnap.exists() ? scoreSnap.data() : {};
+      // Inclure tous les utilisateurs qui ont une entrée de score
+      if (scoreSnap.exists()) {
+        players.push({
+          userId: userDoc.id,
+          points: data.totalPoints || 0,
+          country: userProfile.country || "FR",
+          displayName: userProfile.username || userProfile.displayName || "",
+          email: userProfile.email || "",
+        });
+      }
+    }
+
     const userScoreDoc = await getDoc(doc(db, "users", userId, "scores", game));
     if (!userScoreDoc.exists()) return { rank: null, total: 0 };
-
     const userStats = userScoreDoc.data();
-    // Afficher le rang même si totalPoints vaut 0, tant qu'il y a une entrée de score
-
     const userProfileRef = doc(db, "users", userId);
     const userProfileSnap = await getDoc(userProfileRef);
     const userProfile = userProfileSnap.exists() ? userProfileSnap.data() : {};
     const userCountry = userProfile.country || "FR";
 
     const leaderboard = generateLeaderboard(
-      [],
+      players,
       {
         id: userId,
         displayName: userProfile.username || userProfile.displayName || "Vous",
