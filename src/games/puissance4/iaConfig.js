@@ -1,269 +1,296 @@
-// Configuration de l'IA pour Puissance 4
-// Basée sur les stratégies de https://fr.wikihow.com/gagner-une-partie-de-Puissance-4
+// Configuration de l'IA pour le Puissance 4
+// Définit les stratégies et priorités pour jouer de manière optimale
 
 export const IA_CONFIG = {
-  // Stratégies prioritaires selon wikiHow
-  strategies: {
-    // 1. Contrôler le centre (stratégie fondamentale)
-    controlCenter: {
-      priority: 1000,
-      description:
-        "Contrôler le centre de la grille pour maximiser les opportunités",
-      centerColumns: [3], // Colonne centrale (0-indexed)
-      bonusScore: 50,
-    },
+  // Profondeur de recherche pour l'algorithme minimax
+  SEARCH_DEPTH: 42,
 
-    // 2. Bloquer l'adversaire (défense)
-    blockOpponent: {
-      priority: 900,
-      description: "Empêcher l'adversaire de gagner",
-      immediateWinBlock: 5000,
-      potentialWinBlock: 500,
-    },
-
-    // 3. Créer des opportunités de victoire (attaque)
-    createWinningOpportunities: {
-      priority: 800,
-      description: "Créer des séries de 3 pions alignés",
-      threeInLine: 1000,
-      twoInLine: 100,
-    },
-
-    // 4. Attaque à plusieurs sens
-    multiDirectionAttack: {
-      priority: 700,
-      description: "Créer des menaces dans plusieurs directions",
-      bonusScore: 200,
-    },
-
-    // 5. Disposition en "7"
-    sevenFormation: {
-      priority: 600,
-      description:
-        "Former un 7 avec les pions pour créer des opportunités multiples",
-      bonusScore: 150,
-    },
-
-    // 6. Attaque à sept sens
-    sevenDirectionAttack: {
-      priority: 500,
-      description: "Créer des menaces dans sept directions différentes",
-      bonusScore: 300,
-    },
+  // Scores pour l'évaluation des positions
+  SCORES: {
+    VICTORY: 1000000,
+    DEFEAT: -1000000,
+    DRAW: 0,
+    CENTER: 3,
+    NEAR_CENTER: 2,
+    EDGE: 1,
   },
 
-  // Positions stratégiques selon wikiHow
-  strategicPositions: {
-    // Centre de la grille (position la plus importante)
-    center: {
-      row: 5,
-      col: 3,
-      score: 100,
-    },
-
-    // Positions autour du centre
-    nearCenter: [
-      { row: 5, col: 2, score: 80 },
-      { row: 5, col: 4, score: 80 },
-      { row: 4, col: 3, score: 70 },
-    ],
-
-    // Positions pour créer des diagonales
-    diagonalPositions: [
-      { row: 5, col: 1, score: 60 },
-      { row: 5, col: 5, score: 60 },
-      { row: 4, col: 2, score: 50 },
-      { row: 4, col: 4, score: 50 },
-    ],
+  // Priorités des coups (du plus important au moins important)
+  PRIORITIES: {
+    WIN_MOVE: 1, // Coup gagnant immédiat
+    BLOCK_MOVE: 2, // Bloquer la victoire de l'adversaire
+    THREAT_CREATE: 3, // Créer une menace (3 en ligne)
+    THREAT_BLOCK: 4, // Bloquer une menace de l'adversaire
+    CENTER: 5, // Jouer au centre
+    NEAR_CENTER: 6, // Jouer près du centre
+    EDGE: 7, // Jouer sur un bord
+    RANDOM: 8, // Coup aléatoire
   },
 
-  // Scores pour différents patterns
-  patternScores: {
-    // Victoire immédiate
-    immediateWin: 1000000,
+  // Positions stratégiques
+  POSITIONS: {
+    CENTER: 3, // Colonne centrale
+    NEAR_CENTER: [2, 4], // Colonnes près du centre
+    EDGES: [0, 1, 5, 6], // Colonnes sur les bords
+  },
 
-    // Bloquer victoire adverse
-    blockOpponentWin: 50000,
+  // Lignes gagnantes (combinaisons de 4 cases)
+  WINNING_LINES: [
+    // Lignes horizontales
+    [0, 1, 2, 3],
+    [1, 2, 3, 4],
+    [2, 3, 4, 5],
+    [3, 4, 5, 6],
+    [7, 8, 9, 10],
+    [8, 9, 10, 11],
+    [9, 10, 11, 12],
+    [10, 11, 12, 13],
+    [14, 15, 16, 17],
+    [15, 16, 17, 18],
+    [16, 17, 18, 19],
+    [17, 18, 19, 20],
+    [21, 22, 23, 24],
+    [22, 23, 24, 25],
+    [23, 24, 25, 26],
+    [24, 25, 26, 27],
+    [28, 29, 30, 31],
+    [29, 30, 31, 32],
+    [30, 31, 32, 33],
+    [31, 32, 33, 34],
+    [35, 36, 37, 38],
+    [36, 37, 38, 39],
+    [37, 38, 39, 40],
+    [38, 39, 40, 41],
 
-    // Créer une série de 3
-    createThreeInLine: 1000,
+    // Lignes verticales
+    [0, 7, 14, 21],
+    [7, 14, 21, 28],
+    [14, 21, 28, 35],
+    [1, 8, 15, 22],
+    [8, 15, 22, 29],
+    [15, 22, 29, 36],
+    [2, 9, 16, 23],
+    [9, 16, 23, 30],
+    [16, 23, 30, 37],
+    [3, 10, 17, 24],
+    [10, 17, 24, 31],
+    [17, 24, 31, 38],
+    [4, 11, 18, 25],
+    [11, 18, 25, 32],
+    [18, 25, 32, 39],
+    [5, 12, 19, 26],
+    [12, 19, 26, 33],
+    [19, 26, 33, 40],
+    [6, 13, 20, 27],
+    [13, 20, 27, 34],
+    [20, 27, 34, 41],
 
-    // Bloquer série de 3 adverse
-    blockThreeInLine: 500,
+    // Diagonales montantes (haut-gauche vers bas-droite)
+    [3, 9, 15, 21],
+    [4, 10, 16, 22],
+    [5, 11, 17, 23],
+    [6, 12, 18, 24],
+    [10, 16, 22, 28],
+    [11, 17, 23, 29],
+    [12, 18, 24, 30],
+    [13, 19, 25, 31],
+    [17, 23, 29, 35],
+    [18, 24, 30, 36],
+    [19, 25, 31, 37],
+    [20, 26, 32, 38],
 
-    // Créer une série de 2
-    createTwoInLine: 100,
+    // Diagonales descendantes (haut-droite vers bas-gauche)
+    [3, 11, 19, 27],
+    [2, 10, 18, 26],
+    [1, 9, 17, 25],
+    [0, 8, 16, 24],
+    [10, 18, 26, 34],
+    [9, 17, 25, 33],
+    [8, 16, 24, 32],
+    [7, 15, 23, 31],
+    [17, 25, 33, 41],
+    [16, 24, 32, 40],
+    [15, 23, 31, 39],
+    [14, 22, 30, 38],
+  ],
 
-    // Bloquer série de 2 adverse
-    blockTwoInLine: 50,
+  // Stratégies avancées
+  STRATEGIES: {
+    // Créer une menace (3 en ligne avec possibilité de gagner)
+    CREATE_THREAT: {
+      description:
+        "Créer une position avec 3 en ligne et possibilité de gagner",
+      priority: 3,
+    },
 
-    // Position centrale
-    centerPosition: 50,
+    // Bloquer une menace
+    BLOCK_THREAT: {
+      description: "Empêcher l'adversaire de créer une menace",
+      priority: 4,
+    },
 
-    // Position stratégique
-    strategicPosition: 30,
+    // Forcer l'adversaire à bloquer
+    FORCE_BLOCK: {
+      description: "Créer une menace qui force l'adversaire à bloquer",
+      priority: 5,
+    },
+
+    // Jouer de manière défensive
+    DEFENSIVE: {
+      description:
+        "Jouer de manière défensive quand pas d'opportunité d'attaque",
+      priority: 6,
+    },
   },
 
   // Configuration de l'algorithme minimax
-  minimaxConfig: {
-    defaultDepth: 4,
-    maxDepth: 6,
-    alphaBetaPruning: true,
-
-    // Profondeur adaptative selon la complexité
-    adaptiveDepth: {
-      earlyGame: 3, // Moins de 10 coups
-      midGame: 4, // 10-20 coups
-      lateGame: 5, // Plus de 20 coups
-    },
+  MINIMAX: {
+    USE_ALPHA_BETA: true,
+    MAX_DEPTH: 8,
+    EVALUATION_FUNCTION: "POSITION_SCORE",
   },
 
-  // Heuristiques spéciales selon wikiHow
-  heuristics: {
-    // Éviter de créer des "trous vides" dangereux
-    avoidDangerousGaps: {
-      enabled: true,
-      penalty: -100,
-    },
-
-    // Privilégier les coups qui créent des connexions multiples
-    multipleConnections: {
-      enabled: true,
-      bonusPerConnection: 20,
-    },
-
-    // Évaluer la hauteur des pions (plus bas = mieux)
-    heightEvaluation: {
-      enabled: true,
-      penaltyPerHeight: -5,
-    },
-  },
-
-  // Messages de debug pour comprendre les décisions de l'IA
-  debug: {
-    enabled: true,
-    logDecisions: true,
-    logScores: true,
+  // Messages de debug
+  DEBUG: {
+    ENABLED: true,
+    SHOW_PRIORITIES: true,
+    SHOW_EVALUATION: true,
+    SHOW_STRATEGY: true,
   },
 };
 
-// Fonctions utilitaires pour les stratégies
-export const strategyHelpers = {
-  // Vérifier si une position est au centre
-  isCenterPosition: (row, col) => {
-    return col === 3;
-  },
-
-  // Vérifier si une position est près du centre
-  isNearCenter: (row, col) => {
-    return col >= 2 && col <= 4 && row >= 4;
-  },
-
-  // Calculer la hauteur d'un pion (distance du bas)
-  getHeight: (row) => {
-    return 5 - row;
-  },
-
-  // Vérifier si un coup crée des connexions multiples
-  countConnections: (board, row, col, player) => {
-    let connections = 0;
-    const directions = [
-      [0, 1],
-      [1, 0],
-      [1, 1],
-      [1, -1],
-    ];
-
-    for (const [dx, dy] of directions) {
-      let count = 1;
-
-      // Compter dans une direction
-      for (let i = 1; i < 4; i++) {
-        const newRow = row + i * dx;
-        const newCol = col + i * dy;
-        if (
-          newRow >= 0 &&
-          newRow < 6 &&
-          newCol >= 0 &&
-          newCol < 7 &&
-          board[newRow][newCol] === player
-        ) {
-          count++;
-        } else break;
+// Fonctions utilitaires pour l'IA
+export const IA_UTILS = {
+  // Vérifier si une position est gagnante
+  checkWin: (board, player) => {
+    for (const line of IA_CONFIG.WINNING_LINES) {
+      const [a, b, c, d] = line;
+      if (
+        board[a] === player &&
+        board[b] === player &&
+        board[c] === player &&
+        board[d] === player
+      ) {
+        return line;
       }
+    }
+    return null;
+  },
 
-      // Compter dans l'autre direction
-      for (let i = 1; i < 4; i++) {
-        const newRow = row - i * dx;
-        const newCol = col - i * dy;
-        if (
-          newRow >= 0 &&
-          newRow < 6 &&
-          newCol >= 0 &&
-          newCol < 7 &&
-          board[newRow][newCol] === player
-        ) {
-          count++;
-        } else break;
+  // Obtenir les cases libres
+  getEmptyCells: (board) => {
+    return board
+      .map((cell, index) => (cell === null ? index : -1))
+      .filter((index) => index !== -1);
+  },
+
+  // Obtenir les coups valides (colonnes avec de la place)
+  getValidMoves: (board) => {
+    const validMoves = [];
+    for (let col = 0; col < 7; col++) {
+      const index = IA_UTILS.getLowestEmptyCell(board, col);
+      if (index !== null) {
+        validMoves.push(index);
       }
+    }
+    return validMoves;
+  },
 
-      if (count >= 2) connections++;
+  // Obtenir la case la plus basse disponible dans une colonne
+  getLowestEmptyCell: (board, col) => {
+    for (let row = 5; row >= 0; row--) {
+      const index = row * 7 + col;
+      if (board[index] === null) {
+        return index;
+      }
+    }
+    return null; // Colonne pleine
+  },
+
+  // Évaluer la valeur d'une position
+  evaluatePosition: (board, player) => {
+    const opponent = player === "X" ? "O" : "X";
+    let score = 0;
+
+    // Vérifier les lignes gagnantes
+    for (const line of IA_CONFIG.WINNING_LINES) {
+      const [a, b, c, d] = line;
+      const lineCells = [board[a], board[b], board[c], board[d]];
+
+      const playerCount = lineCells.filter((cell) => cell === player).length;
+      const opponentCount = lineCells.filter(
+        (cell) => cell === opponent
+      ).length;
+      const emptyCount = lineCells.filter((cell) => cell === null).length;
+
+      // Score pour les lignes complètes
+      if (playerCount === 4) score += IA_CONFIG.SCORES.VICTORY;
+      else if (opponentCount === 4) score -= IA_CONFIG.SCORES.VICTORY;
+      // Score pour les lignes partielles
+      else if (playerCount === 3 && emptyCount === 1) score += 1000;
+      else if (opponentCount === 3 && emptyCount === 1) score -= 1000;
+      else if (playerCount === 2 && emptyCount === 2) score += 100;
+      else if (opponentCount === 2 && emptyCount === 2) score -= 100;
+      else if (playerCount === 1 && emptyCount === 3) score += 10;
+      else if (opponentCount === 1 && emptyCount === 3) score -= 10;
     }
 
-    return connections;
-  },
-
-  // Vérifier si un coup crée un "trou vide" dangereux
-  createsDangerousGap: (board, row, col) => {
-    // Un trou vide est dangereux s'il permet à l'adversaire de gagner
-    if (row === 0) return false; // Pas de trou au-dessus
-
-    // Vérifier si le trou au-dessus permet une victoire adverse
-    const opponent = board[row][col] === 1 ? 2 : 1;
-    const tempBoard = board.map((r) => [...r]);
-    tempBoard[row - 1][col] = opponent;
-
-    // Vérifier si l'adversaire peut gagner avec ce trou
-    const directions = [
-      [0, 1],
-      [1, 0],
-      [1, 1],
-      [1, -1],
-    ];
-    for (const [dx, dy] of directions) {
-      let count = 1;
-
-      for (let i = 1; i < 4; i++) {
-        const newRow = row - 1 + i * dx;
-        const newCol = col + i * dy;
-        if (
-          newRow >= 0 &&
-          newRow < 6 &&
-          newCol >= 0 &&
-          newCol < 7 &&
-          tempBoard[newRow][newCol] === opponent
-        ) {
-          count++;
-        } else break;
+    // Bonus pour les positions stratégiques
+    for (let row = 0; row < 6; row++) {
+      for (let col = 0; col < 7; col++) {
+        const index = row * 7 + col;
+        if (board[index] === player) {
+          if (col === IA_CONFIG.POSITIONS.CENTER) {
+            score += IA_CONFIG.SCORES.CENTER;
+          } else if (IA_CONFIG.POSITIONS.NEAR_CENTER.includes(col)) {
+            score += IA_CONFIG.SCORES.NEAR_CENTER;
+          } else if (IA_CONFIG.POSITIONS.EDGES.includes(col)) {
+            score += IA_CONFIG.SCORES.EDGE;
+          }
+        }
       }
-
-      for (let i = 1; i < 4; i++) {
-        const newRow = row - 1 - i * dx;
-        const newCol = col - i * dy;
-        if (
-          newRow >= 0 &&
-          newRow < 6 &&
-          newCol >= 0 &&
-          newCol < 7 &&
-          tempBoard[newRow][newCol] === opponent
-        ) {
-          count++;
-        } else break;
-      }
-
-      if (count >= 4) return true;
     }
 
-    return false;
+    return score;
+  },
+
+  // Détecter les menaces (3 en ligne avec possibilité de gagner)
+  detectThreats: (board, player) => {
+    const threats = [];
+    const validMoves = IA_UTILS.getValidMoves(board);
+
+    for (const move of validMoves) {
+      const testBoard = board.slice();
+      testBoard[move] = player;
+
+      // Vérifier si ce coup crée une menace
+      for (const line of IA_CONFIG.WINNING_LINES) {
+        const [a, b, c, d] = line;
+        if (
+          testBoard[a] === player &&
+          testBoard[b] === player &&
+          testBoard[c] === player &&
+          testBoard[d] === player
+        ) {
+          threats.push(move);
+          break;
+        }
+      }
+    }
+
+    return threats;
+  },
+
+  // Convertir index en coordonnées
+  indexToCoordinates: (index) => {
+    const row = Math.floor(index / 7);
+    const col = index % 7;
+    return `${row},${col}`;
+  },
+
+  // Convertir coordonnées en index
+  coordinatesToIndex: (coordinates) => {
+    const [row, col] = coordinates.split(",").map(Number);
+    return row * 7 + col;
   },
 };

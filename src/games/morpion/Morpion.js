@@ -324,7 +324,7 @@ const Morpion = ({ navigation }) => {
           points: pointsAvecMultiplicateur,
           multiplier: mult,
           streak: statsJeu.currentStreak,
-        });
+          });
         setShowResultOverlay(true);
       } catch (error) {
         console.log("🎮 MORPION: Erreur lors de la sauvegarde:", error);
@@ -478,21 +478,21 @@ const Morpion = ({ navigation }) => {
 
   return (
     <>
-      <GameLayout
-        title='Morpion'
-        stats={statsJeu}
-        streak={statsJeu.currentStreak}
-        onBack={() => navigation.goBack()}
-        currentTurnLabel={tourIA ? "Tour de l'IA" : "Votre tour"}
-        currentSymbol={tourIA ? "O" : "X"}
-        timerLabel={`${Math.floor(tempsEcoule / 60)}:${(tempsEcoule % 60)
-          .toString()
-          .padStart(2, "0")}`}
-        onPressMainActionButton={nouvellePartie}
-        rank={rank}
-        totalPlayers={totalPlayers}
-        countryRank={countryRank}
-        countryTotal={countryTotal}
+    <GameLayout
+      title='Morpion'
+      stats={statsJeu}
+      streak={statsJeu.currentStreak}
+      onBack={() => navigation.goBack()}
+      currentTurnLabel={tourIA ? "Tour de l'IA" : "Votre tour"}
+      currentSymbol={tourIA ? "O" : "X"}
+      timerLabel={`${Math.floor(tempsEcoule / 60)}:${(tempsEcoule % 60)
+        .toString()
+        .padStart(2, "0")}`}
+      onPressMainActionButton={nouvellePartie}
+      rank={rank}
+      totalPlayers={totalPlayers}
+      countryRank={countryRank}
+      countryTotal={countryTotal}
         countryCode={user?.country || user?.profile?.country || "FR"}
         showFirstTurnOverlay={showFirstTurnOverlay}
         firstTurnPlayerName={iaCommence ? "L'IA" : "Vous"}
@@ -500,8 +500,8 @@ const Morpion = ({ navigation }) => {
         onFirstTurnOverlayComplete={() =>
           handleFirstTurnOverlayComplete(iaCommence)
         }>
-        <View style={styles.containerJeu}>{rendrePlateau()}</View>
-      </GameLayout>
+      <View style={styles.containerJeu}>{rendrePlateau()}</View>
+    </GameLayout>
       <GameResultOverlay
         isVisible={showResultOverlay}
         result={resultData.result}
@@ -510,8 +510,8 @@ const Morpion = ({ navigation }) => {
         streak={resultData.streak}
         onAnimationComplete={handleResultOverlayComplete}
       />
-      <Toast />
-    </>
+    <Toast />
+  </>
   );
 };
 

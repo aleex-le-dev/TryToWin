@@ -1,38 +1,37 @@
-import React, { useState, useEffect, useRef } from "react";
-import { View, TouchableOpacity, StyleSheet, Dimensions } from "react-native";
+import React, { useState, useEffect } from "react";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  Dimensions,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Toast from "react-native-toast-message";
 import {
   recordGameResult,
   getUserGameScore,
   getUserRankInLeaderboard,
+  getUserRankInCountryLeaderboard,
 } from "../../services/scoreService";
 import { useAuth } from "../../hooks/useAuth";
-import {
-  GAME_POINTS,
-  getSerieMultiplier,
-} from "../../components/GamePointsConfig";
-import GameLayout from "./../GameLayout";
+import { GAME_POINTS, getSerieMultiplier } from "../../constants/gamePoints";
+import GameLayout from "../GameLayout";
 import GameResultOverlay from "../../components/GameResultOverlay";
 import { getIaMove } from "./ia";
-import Svg, { Line } from "react-native-svg";
 
 const { width } = Dimensions.get("window");
-const BOARD_WIDTH = width - 24;
-const CELL_SIZE = BOARD_WIDTH / 7;
-const BOARD_HEIGHT = CELL_SIZE * 6;
 
 const Puissance4 = ({ navigation }) => {
   const { user } = useAuth();
-  const [board, setBoard] = useState(
-    Array(6)
-      .fill()
-      .map(() => Array(7).fill(null))
-  );
-  const [currentPlayer, setCurrentPlayer] = useState(1); // 1 = rouge (joueur), 2 = jaune (IA)
-  const [gameOver, setGameOver] = useState(false);
-  const [winner, setWinner] = useState(null);
-  const [winningCells, setWinningCells] = useState([]);
+  const [plateau, setPlateau] = useState(Array(42).fill(null)); // 6x7 = 42 cases
+  const [partieTerminee, setPartieTerminee] = useState(false);
+  const [gagnant, setGagnant] = useState(null);
+  const [score, setScore] = useState(0);
+  const [tempsEcoule, setTempsEcoule] = useState(0);
+  const [enPartie, setEnPartie] = useState(false);
+  const [tourIA, setTourIA] = useState(false);
+  const [iaCommence, setIaCommence] = useState(false);
   const [showFirstTurnOverlay, setShowFirstTurnOverlay] = useState(false);
   const [showResultOverlay, setShowResultOverlay] = useState(false);
   const [resultData, setResultData] = useState({
@@ -41,7 +40,7 @@ const Puissance4 = ({ navigation }) => {
     multiplier: 0,
     streak: 0,
   });
-  const [stats, setStats] = useState({
+  const [statsJeu, setStatsJeu] = useState({
     win: 0,
     draw: 0,
     lose: 0,
@@ -51,267 +50,483 @@ const Puissance4 = ({ navigation }) => {
   });
   const [rank, setRank] = useState(null);
   const [totalPlayers, setTotalPlayers] = useState(null);
-  const [elapsedTime, setElapsedTime] = useState(0);
-  const [iaCommence, setIaCommence] = useState(false);
-  const [tourIA, setTourIA] = useState(false);
-  const showResultOverlayRef = useRef(false);
-
-  useEffect(() => {
-    let interval = null;
-    if (!gameOver) {
-      interval = setInterval(() => {
-        setElapsedTime((prev) => prev + 1);
-      }, 1000);
-    }
-    return () => clearInterval(interval);
-  }, [gameOver]);
-
-  useEffect(() => {
-    console.log("Nouvelle partie démarrée");
-  }, [board]);
-
-  // Faire jouer l'IA si c'est son tour
-  useEffect(() => {
-    if (tourIA && !gameOver && currentPlayer === 2) {
-      console.log("🎯 IA: C'est le tour de l'IA");
-      setTimeout(() => {
-        faireJouerIA();
-      }, 500);
-    }
-  }, [tourIA, gameOver, currentPlayer]);
+  const [countryRank, setCountryRank] = useState(null);
+  const [countryTotal, setCountryTotal] = useState(null);
 
   useEffect(() => {
     const chargerStats = async () => {
       if (user?.id) {
-        const s = await getUserGameScore(user.id, "Puissance4");
-        setStats(s);
-        const { rank, total } = await getUserRankInLeaderboard(
-          user.id,
-          "Puissance4"
-        );
-        setRank(rank);
-        setTotalPlayers(total);
+        try {
+          const stats = await getUserGameScore(user.id, "Puissance4");
+          setStatsJeu(stats);
+          setScore(stats.totalPoints || 0);
+          const { rank, total } = await getUserRankInLeaderboard(
+            user.id,
+            "Puissance4"
+          );
+          setRank(rank);
+          setTotalPlayers(total);
+          // Pays
+          const country = user.country || user.profile?.country || "FR";
+          const { rank: cRank, total: cTotal } =
+            await getUserRankInCountryLeaderboard(
+              user.id,
+              "Puissance4",
+              country
+            );
+          setCountryRank(cRank);
+          setCountryTotal(cTotal);
+        } catch (error) {
+          console.log(
+            "🎮 PUISSANCE4: Erreur lors du chargement des stats:",
+            error
+          );
+        }
       }
     };
     chargerStats();
-    // Afficher l'overlay au démarrage initial
-    setShowFirstTurnOverlay(true);
   }, [user?.id]);
 
   useEffect(() => {
-    if (resultData.result !== null) {
-      console.log(
-        "useEffect: resultData.result détecté, forçage setShowResultOverlay(true)"
-      );
-      setShowResultOverlay(true);
+    let interval = null;
+    if (enPartie && !partieTerminee) {
+      interval = setInterval(() => {
+        setTempsEcoule((prev) => prev + 1);
+      }, 1000);
     }
-  }, [resultData.result]);
+    return () => {
+      clearInterval(interval);
+    };
+  }, [enPartie, partieTerminee]);
 
-  // DEBUG: Forcer l'affichage de l'overlay
   useEffect(() => {
-    console.log("DEBUG: showResultOverlay changé:", showResultOverlay);
-    console.log("DEBUG: resultData.result:", resultData.result);
-  }, [showResultOverlay, resultData.result]);
+    nouvellePartie();
+    // Afficher l'overlay au démarrage initial
+    setShowFirstTurnOverlay(true);
+  }, []);
 
-  const isColumnFull = (col) => {
-    return board[0][col] !== null;
-  };
-
-  const getLowestEmptyCell = (col) => {
-    for (let row = 5; row >= 0; row--) {
-      if (board[row][col] === null) {
-        return row;
-      }
+  // Faire jouer l'IA si c'est son tour de commencer
+  useEffect(() => {
+    if (
+      tourIA &&
+      enPartie &&
+      !partieTerminee &&
+      plateau.every((cell) => cell === null)
+    ) {
+      console.log("🎯 IA: C'est le tour de l'IA de commencer");
+      setTimeout(() => {
+        faireJouerIA(plateau);
+      }, 500);
     }
-    return -1;
-  };
+  }, [tourIA, enPartie, partieTerminee, plateau]);
 
-  const dropToken = (col) => {
-    if (gameOver || isColumnFull(col) || currentPlayer !== 1) return; // Seul le joueur peut jouer
-    const row = getLowestEmptyCell(col);
-    if (row === -1) return;
-    const newBoard = board.map((row) => [...row]);
-    newBoard[row][col] = currentPlayer;
-    setBoard(newBoard);
-    console.log("JOUEUR joue colonne", col, "ligne", row);
-    const winningLine = checkWin(newBoard, row, col, currentPlayer);
-    if (winningLine) {
-      setWinner(currentPlayer);
-      setWinningCells(winningLine);
-      console.log('VICTOIRE JOUEUR détectée, appel handleGameEnd("win")');
-      setGameOver(true);
-      handleGameEnd(currentPlayer === 1 ? "win" : "lose");
-      return;
-    }
-    if (isBoardFull(newBoard)) {
-      setWinner(0);
-      setGameOver(true);
-      handleGameEnd("draw");
-      return;
-    }
-    setCurrentPlayer(currentPlayer === 1 ? 2 : 1);
-    setTourIA(true); // Activer le tour de l'IA
-  };
-
-  const faireJouerIA = async () => {
-    console.log("IA: Début du tour de l'IA");
-    try {
-      const coupIA = await getIaMove(board, 2);
-      console.log("IA: Coup choisi:", coupIA);
-
-      if (coupIA !== null && !isColumnFull(coupIA)) {
-        const row = getLowestEmptyCell(coupIA);
-        if (row !== -1) {
-          const newBoard = board.map((r) => [...r]);
-          newBoard[row][coupIA] = 2; // L'IA joue toujours 2 (jaune)
-          setBoard(newBoard);
-          console.log("IA joue colonne", coupIA, "ligne", row);
-
-          const winningLine = checkWin(newBoard, row, coupIA, 2);
-          if (winningLine) {
-            setWinner(2);
-            setWinningCells(winningLine);
-            console.log("🎯 WINNING CELLS:", JSON.stringify(winningLine)); // LOG DEBUG
-            setGameOver(true);
-            handleGameEnd("lose");
-            return;
-          }
-          if (isBoardFull(newBoard)) {
-            setWinner(0);
-            setGameOver(true);
-            handleGameEnd("draw");
-            return;
-          }
-          setCurrentPlayer(1); // Retour au joueur
-          setTourIA(false);
-        }
-      } else {
-        console.log("IA: Coup invalide, retour au joueur");
-        setCurrentPlayer(1);
-        setTourIA(false);
-      }
-    } catch (error) {
-      console.log("IA: Erreur lors du coup de l'IA:", error);
-      setCurrentPlayer(1);
-      setTourIA(false);
-    }
-  };
-
-  const isBoardFull = (boardState) => {
-    return boardState[0].every((cell) => cell !== null);
-  };
-
-  const checkWin = (boardState, row, col, player) => {
-    const directions = [
-      [0, 1], // horizontal
-      [1, 0], // vertical
-      [1, 1], // diagonale descendante
-      [1, -1], // diagonale montante
-    ];
-    for (const [dx, dy] of directions) {
-      let line = [[row, col]];
-      // Vers l'avant
-      for (let i = 1; i < 4; i++) {
-        const newRow = row + i * dx;
-        const newCol = col + i * dy;
+  const verifierGagnant = (cases) => {
+    // Vérifier les lignes horizontales
+    for (let row = 0; row < 6; row++) {
+      for (let col = 0; col <= 3; col++) {
+        const index = row * 7 + col;
         if (
-          newRow >= 0 &&
-          newRow < 6 &&
-          newCol >= 0 &&
-          newCol < 7 &&
-          boardState[newRow][newCol] === player
+          cases[index] &&
+          cases[index] === cases[index + 1] &&
+          cases[index] === cases[index + 2] &&
+          cases[index] === cases[index + 3]
         ) {
-          line.push([newRow, newCol]);
-        } else {
-          break;
+          return cases[index];
         }
-      }
-      // Vers l'arrière
-      for (let i = 1; i < 4; i++) {
-        const newRow = row - i * dx;
-        const newCol = col - i * dy;
-        if (
-          newRow >= 0 &&
-          newRow < 6 &&
-          newCol >= 0 &&
-          newCol < 7 &&
-          boardState[newRow][newCol] === player
-        ) {
-          line.unshift([newRow, newCol]);
-        } else {
-          break;
-        }
-      }
-      if (line.length >= 4) {
-        return line.slice(0, 4); // Toujours exactement 4 cases alignées
       }
     }
+
+    // Vérifier les lignes verticales
+    for (let row = 0; row <= 2; row++) {
+      for (let col = 0; col < 7; col++) {
+        const index = row * 7 + col;
+        if (
+          cases[index] &&
+          cases[index] === cases[index + 7] &&
+          cases[index] === cases[index + 14] &&
+          cases[index] === cases[index + 21]
+        ) {
+          return cases[index];
+        }
+      }
+    }
+
+    // Vérifier les diagonales montantes
+    for (let row = 3; row < 6; row++) {
+      for (let col = 0; col <= 3; col++) {
+        const index = row * 7 + col;
+        if (
+          cases[index] &&
+          cases[index] === cases[index - 6] &&
+          cases[index] === cases[index - 12] &&
+          cases[index] === cases[index - 18]
+        ) {
+          return cases[index];
+        }
+      }
+    }
+
+    // Vérifier les diagonales descendantes
+    for (let row = 0; row <= 2; row++) {
+      for (let col = 0; col <= 3; col++) {
+        const index = row * 7 + col;
+        if (
+          cases[index] &&
+          cases[index] === cases[index + 8] &&
+          cases[index] === cases[index + 16] &&
+          cases[index] === cases[index + 24]
+        ) {
+          return cases[index];
+        }
+      }
+    }
+
     return null;
   };
 
-  const handleGameEnd = async (result) => {
-    console.log("handleGameEnd appelé avec", result);
-    let pointsAvecMultiplicateur = 0;
-    let mult = 0;
-    if (user?.id) {
-      await recordGameResult(user.id, "Puissance4", result, 0, 0);
-      await actualiserStatsClassements();
-      const points = GAME_POINTS["Puissance4"][result];
-      mult = getSerieMultiplier(stats.currentStreak);
-      pointsAvecMultiplicateur =
-        mult > 0 ? Math.round(points * (1 + mult)) : points;
+  const verifierMatchNul = (cases) => {
+    // Vérifier si la première ligne est pleine
+    for (let col = 0; col < 7; col++) {
+      if (cases[col] === null) {
+        return false;
+      }
     }
-    console.log("setResultData avec result:", result);
-    setResultData({
-      result: result,
-      points: pointsAvecMultiplicateur,
-      multiplier: mult,
-      streak: stats.currentStreak,
-    });
-    console.log("FORÇAGE setShowResultOverlay(true)");
-    setShowResultOverlay(true);
-    showResultOverlayRef.current = true;
+    return true;
+  };
+
+  const obtenirColonneLibre = (colonne) => {
+    // Trouver la première case libre dans la colonne (en partant du bas)
+    for (let row = 5; row >= 0; row--) {
+      const index = row * 7 + colonne;
+      if (plateau[index] === null) {
+        return index;
+      }
+    }
+    return null; // Colonne pleine
+  };
+
+  const gererClicCase = (colonne) => {
+    console.log("👤 JOUEUR: Clic sur la colonne", colonne);
+    console.log("👤 JOUEUR: État actuel du plateau:", plateau);
+
+    if (partieTerminee || tourIA) {
+      console.log("👤 JOUEUR: Coup invalide - partie terminée ou tour de l'IA");
+      return;
+    }
+
+    const index = obtenirColonneLibre(colonne);
+    if (index === null) {
+      console.log("👤 JOUEUR: Colonne pleine");
+      return;
+    }
+
+    const nouveauPlateau = plateau.slice();
+    nouveauPlateau[index] = "X"; // Le joueur joue toujours X
+    setPlateau(nouveauPlateau);
+    console.log("👤 JOUEUR: X placé à l'index", index);
+    console.log("👤 JOUEUR: Nouveau plateau:", nouveauPlateau);
+
+    // Vérifier si le joueur a gagné
+    const gagnant = verifierGagnant(nouveauPlateau);
+    if (gagnant) {
+      console.log("👤 JOUEUR: Victoire du joueur !");
+      setGagnant(gagnant);
+      setPartieTerminee(true);
+      setEnPartie(false);
+      gererFinPartie(gagnant, tempsEcoule);
+      return;
+    }
+
+    // Vérifier match nul
+    if (verifierMatchNul(nouveauPlateau)) {
+      console.log("👤 JOUEUR: Match nul après coup du joueur");
+      setPartieTerminee(true);
+      setEnPartie(false);
+      gererFinPartie("nul", tempsEcoule);
+      return;
+    }
+
+    console.log("👤 JOUEUR: Partie continue, appel de l'IA...");
+    setTourIA(true); // Indiquer que c'est le tour de l'IA
+
+    // Faire jouer l'IA avec setTimeout pour éviter les problèmes d'async
+    setTimeout(() => {
+      faireJouerIA(nouveauPlateau);
+    }, 100);
+  };
+
+  const faireJouerIA = async (plateauActuel) => {
+    console.log("🎯 IA: Début du tour de l'IA");
+    console.log("🎯 IA: État du plateau:", plateauActuel);
+
+    try {
+      console.log("🎯 IA: Appel de getIaMove...");
+      const coupIA = await getIaMove(plateauActuel);
+      console.log("🎯 IA: Réponse reçue:", coupIA);
+      console.log("🎯 IA: Type de réponse:", typeof coupIA);
+
+      if (coupIA && typeof coupIA === "string") {
+        console.log("🎯 IA: Parsing des coordonnées...");
+
+        // Nettoyer la réponse et extraire les coordonnées
+        const reponseNettoyee = coupIA.trim().replace(/[^\d,]/g, "");
+        console.log("🎯 IA: Réponse nettoyée:", reponseNettoyee);
+
+        const coordonnees = reponseNettoyee.split(",");
+        if (coordonnees.length === 2) {
+          const ligne = parseInt(coordonnees[0]);
+          const colonne = parseInt(coordonnees[1]);
+          const indexIA = ligne * 7 + colonne;
+          console.log(
+            "🎯 IA: Coordonnées parsées - ligne:",
+            ligne,
+            "colonne:",
+            colonne,
+            "index:",
+            indexIA
+          );
+
+          if (
+            ligne >= 0 &&
+            ligne <= 5 &&
+            colonne >= 0 &&
+            colonne <= 6 &&
+            indexIA >= 0 &&
+            indexIA < 42 &&
+            plateauActuel[indexIA] === null
+          ) {
+            console.log("🎯 IA: Placement du coup O à l'index", indexIA);
+            const plateauAvecIA = plateauActuel.slice();
+            plateauAvecIA[indexIA] = "O";
+            setPlateau(plateauAvecIA);
+            console.log("🎯 IA: Plateau mis à jour:", plateauAvecIA);
+
+            // Vérifier si l'IA a gagné
+            const gagnantIA = verifierGagnant(plateauAvecIA);
+            if (gagnantIA) {
+              console.log("🎯 IA: L'IA a gagné !");
+              setGagnant(gagnantIA);
+              setPartieTerminee(true);
+              setEnPartie(false);
+              gererFinPartie(gagnantIA, tempsEcoule);
+              return;
+            }
+
+            // Vérifier match nul après coup de l'IA
+            if (verifierMatchNul(plateauAvecIA)) {
+              console.log("🎯 IA: Match nul après coup de l'IA");
+              setPartieTerminee(true);
+              setEnPartie(false);
+              gererFinPartie("nul", tempsEcoule);
+              return;
+            }
+
+            console.log("🎯 IA: Partie continue, tour du joueur");
+            setTourIA(false); // Indiquer que c'est le tour du joueur
+          } else {
+            console.log(
+              "🎯 IA: Coup invalide, utilisation d'un coup par défaut"
+            );
+            // Coup par défaut si l'IA retourne des coordonnées invalides
+            const colonnesDisponibles = [];
+            for (let col = 0; col < 7; col++) {
+              if (obtenirColonneLibre(col) !== null) {
+                colonnesDisponibles.push(col);
+              }
+            }
+            if (colonnesDisponibles.length > 0) {
+              const colonneAleatoire =
+                colonnesDisponibles[
+                  Math.floor(Math.random() * colonnesDisponibles.length)
+                ];
+              const indexIA = obtenirColonneLibre(colonneAleatoire);
+              const plateauAvecIA = plateauActuel.slice();
+              plateauAvecIA[indexIA] = "O";
+              setPlateau(plateauAvecIA);
+              setTourIA(false);
+            }
+          }
+        } else {
+          console.log("🎯 IA: Format de coordonnées invalide, coup par défaut");
+          // Coup par défaut
+          const colonnesDisponibles = [];
+          for (let col = 0; col < 7; col++) {
+            if (obtenirColonneLibre(col) !== null) {
+              colonnesDisponibles.push(col);
+            }
+          }
+          if (colonnesDisponibles.length > 0) {
+            const colonneAleatoire =
+              colonnesDisponibles[
+                Math.floor(Math.random() * colonnesDisponibles.length)
+              ];
+            const indexIA = obtenirColonneLibre(colonneAleatoire);
+            const plateauAvecIA = plateauActuel.slice();
+            plateauAvecIA[indexIA] = "O";
+            setPlateau(plateauAvecIA);
+            setTourIA(false);
+          }
+        }
+      } else {
+        console.log("🎯 IA: Réponse invalide, coup par défaut");
+        // Coup par défaut
+        const colonnesDisponibles = [];
+        for (let col = 0; col < 7; col++) {
+          if (obtenirColonneLibre(col) !== null) {
+            colonnesDisponibles.push(col);
+          }
+        }
+        if (colonnesDisponibles.length > 0) {
+          const colonneAleatoire =
+            colonnesDisponibles[
+              Math.floor(Math.random() * colonnesDisponibles.length)
+            ];
+          const indexIA = obtenirColonneLibre(colonneAleatoire);
+          const plateauAvecIA = plateauActuel.slice();
+          plateauAvecIA[indexIA] = "O";
+          setPlateau(plateauAvecIA);
+          setTourIA(false);
+        }
+      }
+    } catch (error) {
+      console.log("🎯 IA: Erreur lors du calcul du coup:", error);
+      // Coup par défaut en cas d'erreur
+      const colonnesDisponibles = [];
+      for (let col = 0; col < 7; col++) {
+        if (obtenirColonneLibre(col) !== null) {
+          colonnesDisponibles.push(col);
+        }
+      }
+      if (colonnesDisponibles.length > 0) {
+        const colonneAleatoire =
+          colonnesDisponibles[
+            Math.floor(Math.random() * colonnesDisponibles.length)
+          ];
+        const indexIA = obtenirColonneLibre(colonneAleatoire);
+        const plateauAvecIA = plateauActuel.slice();
+        plateauAvecIA[indexIA] = "O";
+        setPlateau(plateauAvecIA);
+        setTourIA(false);
+      }
+    }
+  };
+
+  const gererFinPartie = async (resultat, temps) => {
+    console.log(
+      "🎮 PUISSANCE4: Fin de partie - resultat:",
+      resultat,
+      "temps:",
+      temps
+    );
+    let resultatBDD = "lose";
+    if (resultat === "X") {
+      resultatBDD = "win";
+    } else if (resultat === "O") {
+      resultatBDD = "lose";
+    } else {
+      resultatBDD = "draw";
+    }
+    console.log("🎮 PUISSANCE4: Résultat BDD:", resultatBDD);
+
+    if (user?.id) {
+      try {
+        console.log("🎮 PUISSANCE4: Sauvegarde du résultat...");
+        await recordGameResult(user.id, "Puissance4", resultatBDD, 0, temps);
+        await actualiserStatsClassements();
+        const points = GAME_POINTS["Puissance4"][resultatBDD];
+        const mult = getSerieMultiplier(statsJeu.currentStreak);
+        const pointsAvecMultiplicateur =
+          mult > 0 ? Math.round(points * (1 + mult)) : points;
+        console.log(
+          "🎮 PUISSANCE4: Points calculés:",
+          points,
+          "multiplicateur:",
+          mult,
+          "total:",
+          pointsAvecMultiplicateur
+        );
+
+        setResultData({
+          result: resultatBDD,
+          points: pointsAvecMultiplicateur,
+          multiplier: mult,
+          streak: statsJeu.currentStreak,
+        });
+        setShowResultOverlay(true);
+      } catch (error) {
+        console.log("🎮 PUISSANCE4: Erreur lors de la sauvegarde:", error);
+      }
+    } else {
+      console.log(
+        "🎮 PUISSANCE4: Aucun utilisateur connecté, pas de sauvegarde"
+      );
+    }
   };
 
   const actualiserStatsClassements = async () => {
     if (user?.id) {
       try {
-        const s = await getUserGameScore(user.id, "Puissance4");
-        setStats(s);
+        const stats = await getUserGameScore(user.id, "Puissance4");
+        setStatsJeu(stats);
+        setScore(stats.totalPoints || 0);
         const { rank, total } = await getUserRankInLeaderboard(
           user.id,
           "Puissance4"
         );
         setRank(rank);
         setTotalPlayers(total);
+        const country = user.country || user.profile?.country || "FR";
+        const { rank: cRank, total: cTotal } =
+          await getUserRankInCountryLeaderboard(user.id, "Puissance4", country);
+        setCountryRank(cRank);
+        setCountryTotal(cTotal);
       } catch (error) {
         console.log("Erreur lors de l'actualisation des stats:", error);
       }
     }
   };
 
-  const resetGame = () => {
-    console.log("resetGame appelée dans Puissance4 - Reset du jeu");
-    setBoard(
-      Array(6)
-        .fill()
-        .map(() => Array(7).fill(null))
-    );
-    setGameOver(false);
-    setWinner(null);
-    setWinningCells([]);
-    setElapsedTime(0);
-    setTourIA(false);
-    // Ne pas toucher à showResultOverlay ici !
+  const recommencerPartie = () => {
+    setPlateau(Array(42).fill(null));
+    setPartieTerminee(false);
+    setGagnant(null);
+    setTempsEcoule(0);
+    setEnPartie(true);
+
     // Alterner qui commence
     const nouvelleValeur = !iaCommence;
     setIaCommence(nouvelleValeur);
     if (nouvelleValeur) {
-      setCurrentPlayer(2); // L'IA commence (jaune)
-      setTourIA(true); // Activer le tour de l'IA
+      setTourIA(true); // L'IA commence
     } else {
-      setCurrentPlayer(1); // Joueur commence (rouge)
+      setTourIA(false); // Le joueur commence
     }
+  };
+
+  const nouvellePartie = () => {
+    setPlateau(Array(42).fill(null));
+    setPartieTerminee(false);
+    setGagnant(null);
+    setTempsEcoule(0);
+    setEnPartie(true);
+
+    // Alterner qui commence
+    const nouvelleValeur = !iaCommence;
+    setIaCommence(nouvelleValeur);
+    if (nouvelleValeur) {
+      setTourIA(true); // L'IA commence
+    } else {
+      setTourIA(false); // Le joueur commence
+    }
+  };
+
+  const handleResultOverlayComplete = () => {
+    setShowResultOverlay(false);
+    // Redémarrage automatique après l'overlay
+    setTimeout(() => {
+      nouvellePartie();
+      setShowFirstTurnOverlay(true);
+    }, 500);
   };
 
   const handleFirstTurnOverlayComplete = (quiCommence = iaCommence) => {
@@ -319,161 +534,150 @@ const Puissance4 = ({ navigation }) => {
     // Plus besoin de toast car l'overlay affiche déjà le bon message
   };
 
-  const handleResultOverlayComplete = () => {
-    console.log("handleResultOverlayComplete appelé");
-    setShowResultOverlay(false);
-    showResultOverlayRef.current = false;
-    setTimeout(() => {
-      console.log("resetGame appelé depuis handleResultOverlayComplete");
-      resetGame();
-      setShowFirstTurnOverlay(true);
-    }, 500);
-  };
+  const rendreCase = (index) => {
+    const valeur = plateau[index];
+    let estCaseGagnante = false;
+    let couleurGagnante = null;
+    if (gagnant) {
+      // Vérifier toutes les lignes gagnantes possibles
+      const lignesGagnantes = [];
 
-  const renderWinningLineSVG = () => {
-    if (!winningCells || winningCells.length < 2) return null;
-    let sorted = [...winningCells];
-    sorted.sort((a, b) => a[1] - b[1] || a[0] - b[0]);
-    const [start, end] = [sorted[0], sorted[sorted.length - 1]];
-    const getPos = ([row, col]) => ({
-      x: col * CELL_SIZE + CELL_SIZE / 2,
-      y: row * CELL_SIZE + CELL_SIZE / 2,
-    });
-    const startPos = getPos(start);
-    const endPos = getPos(end);
-    return (
-      <Svg
-        style={{
-          position: "absolute",
-          left: 0,
-          top: 0,
-          width: BOARD_WIDTH,
-          height: BOARD_HEIGHT,
-          zIndex: 20,
-          pointerEvents: "none",
-        }}>
-        <Line
-          x1={startPos.x}
-          y1={startPos.y}
-          x2={endPos.x}
-          y2={endPos.y}
-          stroke='#FFD700'
-          strokeWidth={6}
-          strokeLinecap='round'
-          strokeLinejoin='round'
-        />
-      </Svg>
-    );
-  };
+      // Lignes horizontales
+      for (let row = 0; row < 6; row++) {
+        for (let col = 0; col <= 3; col++) {
+          const startIndex = row * 7 + col;
+          lignesGagnantes.push([
+            startIndex,
+            startIndex + 1,
+            startIndex + 2,
+            startIndex + 3,
+          ]);
+        }
+      }
 
-  const renderBoard = () => {
+      // Lignes verticales
+      for (let row = 0; row <= 2; row++) {
+        for (let col = 0; col < 7; col++) {
+          const startIndex = row * 7 + col;
+          lignesGagnantes.push([
+            startIndex,
+            startIndex + 7,
+            startIndex + 14,
+            startIndex + 21,
+          ]);
+        }
+      }
+
+      // Diagonales montantes
+      for (let row = 3; row < 6; row++) {
+        for (let col = 0; col <= 3; col++) {
+          const startIndex = row * 7 + col;
+          lignesGagnantes.push([
+            startIndex,
+            startIndex - 6,
+            startIndex - 12,
+            startIndex - 18,
+          ]);
+        }
+      }
+
+      // Diagonales descendantes
+      for (let row = 0; row <= 2; row++) {
+        for (let col = 0; col <= 3; col++) {
+          const startIndex = row * 7 + col;
+          lignesGagnantes.push([
+            startIndex,
+            startIndex + 8,
+            startIndex + 16,
+            startIndex + 24,
+          ]);
+        }
+      }
+
+      for (let i = 0; i < lignesGagnantes.length; i++) {
+        const [a, b, c, d] = lignesGagnantes[i];
+        if (
+          plateau[a] &&
+          plateau[a] === plateau[b] &&
+          plateau[a] === plateau[c] &&
+          plateau[a] === plateau[d] &&
+          (index === a || index === b || index === c || index === d)
+        ) {
+          estCaseGagnante = true;
+          couleurGagnante =
+            plateau[a] === "O" ? styles.caseGagnanteO : styles.caseGagnanteX;
+          break;
+        }
+      }
+    }
     return (
-      <View style={styles.boardEffect}>
-        {board.map((row, rowIndex) => (
-          <View key={rowIndex} style={styles.row}>
-            {row.map((cell, colIndex) => {
-              const isWinningCell = winningCells.some(
-                ([r, c]) => r === rowIndex && c === colIndex
-              );
-              // Correction : comparaison robuste
-              // const isWinningCell = winningCells.some(cellArr => JSON.stringify(cellArr) === JSON.stringify([rowIndex, colIndex]));
-              return (
-                <TouchableOpacity
-                  key={`${rowIndex}-${colIndex}`}
-                  style={styles.cell}
-                  onPress={() => dropToken(colIndex)}
-                  disabled={gameOver || isColumnFull(colIndex)}
-                  activeOpacity={0.7}>
-                  <View
-                    style={[styles.hole, isWinningCell && styles.winningHole]}>
-                    {cell && (
-                      <View
-                        style={[
-                          styles.token,
-                          cell === 1 ? styles.redToken : styles.yellowToken,
-                          isWinningCell && styles.winningToken,
-                        ]}
-                      />
-                    )}
-                  </View>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        ))}
-        {renderWinningLineSVG()}
+      <View
+        key={index}
+        style={[styles.case, estCaseGagnante && couleurGagnante]}>
+        <Text
+          style={[
+            styles.texteCase,
+            valeur === "X" && styles.texteX,
+            valeur === "O" && styles.texteO,
+            estCaseGagnante && styles.texteGagnant,
+          ]}>
+          {valeur}
+        </Text>
       </View>
     );
   };
 
-  // DEBUG : log état overlay
-  console.log(
-    "RENDU FINAL - showResultOverlay:",
-    showResultOverlay,
-    "resultData:",
-    resultData
-  );
+  const rendrePlateau = () => {
+    return (
+      <View style={styles.containerPlateau}>
+        <View style={styles.plateau}>
+          {Array.from({ length: 6 }, (_, row) => (
+            <View key={row} style={styles.lignePlateau}>
+              {Array.from({ length: 7 }, (_, col) => {
+                const index = row * 7 + col;
+                return rendreCase(index);
+              })}
+            </View>
+          ))}
+        </View>
+      </View>
+    );
+  };
+
   return (
     <>
       <GameLayout
-        title='Puissance4'
-        stats={stats}
-        streak={stats.currentStreak}
+        title='Puissance 4'
+        stats={statsJeu}
+        streak={statsJeu.currentStreak}
         onBack={() => navigation.goBack()}
-        currentTurnLabel={
-          gameOver
-            ? "Partie terminée"
-            : currentPlayer === 1
-            ? "Votre tour"
-            : "Tour de l'IA"
-        }
-        currentSymbol={
-          gameOver
-            ? winner === 1
-              ? "🔴"
-              : winner === 2
-              ? "🟡"
-              : "-"
-            : currentPlayer === 1
-            ? "🔴"
-            : "🟡"
-        }
-        timerLabel={`${Math.floor(elapsedTime / 60)}:${(elapsedTime % 60)
+        currentTurnLabel={tourIA ? "Tour de l'IA" : "Votre tour"}
+        currentSymbol={tourIA ? "O" : "X"}
+        timerLabel={`${Math.floor(tempsEcoule / 60)}:${(tempsEcoule % 60)
           .toString()
           .padStart(2, "0")}`}
-        onPressMainActionButton={resetGame}
+        onPressMainActionButton={nouvellePartie}
+        rank={rank}
+        totalPlayers={totalPlayers}
+        countryRank={countryRank}
+        countryTotal={countryTotal}
+        countryCode={user?.country || user?.profile?.country || "FR"}
         showFirstTurnOverlay={showFirstTurnOverlay}
         firstTurnPlayerName={iaCommence ? "L'IA" : "Vous"}
-        firstTurnPlayerSymbol={iaCommence ? "🟡" : "🔴"}
+        firstTurnPlayerSymbol={iaCommence ? "O" : "X"}
         onFirstTurnOverlayComplete={() =>
           handleFirstTurnOverlayComplete(iaCommence)
         }>
-        <View style={styles.containerJeu}>{renderBoard()}</View>
+        <View style={styles.containerJeu}>{rendrePlateau()}</View>
       </GameLayout>
-      {/* Overlay résultat centré, toujours au-dessus */}
-      {showResultOverlay && (
-        <View
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            zIndex: 9999,
-            justifyContent: "center",
-            alignItems: "center",
-            pointerEvents: "box-none",
-          }}>
-          <GameResultOverlay
-            isVisible={true}
-            result={resultData.result}
-            points={resultData.points}
-            multiplier={resultData.multiplier}
-            streak={resultData.streak}
-            onAnimationComplete={handleResultOverlayComplete}
-          />
-        </View>
-      )}
+      <GameResultOverlay
+        isVisible={showResultOverlay}
+        result={resultData.result}
+        points={resultData.points}
+        multiplier={resultData.multiplier}
+        streak={resultData.streak}
+        onAnimationComplete={handleResultOverlayComplete}
+      />
       <Toast />
     </>
   );
@@ -484,64 +688,80 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: 8,
+    paddingHorizontal: 20,
   },
-  boardEffect: {
-    width: BOARD_WIDTH,
-    height: BOARD_HEIGHT,
-    backgroundColor: "#0066cc",
-    borderRadius: 20,
-    flexDirection: "column",
-    justifyContent: "center",
+  containerPlateau: {
     alignItems: "center",
-    overflow: "hidden",
   },
-  row: {
+  plateau: {
+    width: width - 80,
+    height: (width - 80) * (6 / 7),
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
+    padding: 10,
+  },
+  lignePlateau: {
+    flex: 1,
     flexDirection: "row",
   },
-  cell: {
-    width: CELL_SIZE,
-    height: CELL_SIZE,
+  case: {
+    flex: 1,
+    margin: 2,
+    backgroundColor: "#f8f9fa",
     justifyContent: "center",
     alignItems: "center",
+    borderRadius: 8,
+    aspectRatio: 1,
   },
-  hole: {
-    width: CELL_SIZE - 8,
-    height: CELL_SIZE - 8,
-    borderRadius: (CELL_SIZE - 8) / 2,
-    backgroundColor: "#fff",
+  texteCase: {
+    fontSize: 24,
+    fontWeight: "bold",
+  },
+  texteX: {
+    color: "#667eea",
+  },
+  texteO: {
+    color: "#e74c3c",
+  },
+  caseGagnante: {
+    backgroundColor: "#667eea",
+  },
+  caseGagnanteX: {
+    backgroundColor: "#667eea",
+  },
+  caseGagnanteO: {
+    backgroundColor: "#e74c3c",
+  },
+  texteGagnant: {
+    color: "#fff",
+  },
+  controlesColonnes: {
+    flexDirection: "row",
+    marginTop: 20,
+    justifyContent: "space-around",
+    width: width - 80,
+  },
+  boutonColonne: {
+    width: 40,
+    height: 40,
+    backgroundColor: "#f8f9fa",
+    borderRadius: 20,
     justifyContent: "center",
     alignItems: "center",
-    overflow: "hidden",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  token: {
-    width: CELL_SIZE - 8,
-    height: CELL_SIZE - 8,
-    borderRadius: (CELL_SIZE - 8) / 2,
-  },
-  redToken: {
-    backgroundColor: "#f44336",
-  },
-  yellowToken: {
-    backgroundColor: "#ffeb3b",
-  },
-  winningHole: {
-    borderWidth: 3,
-    borderColor: "#FFD700",
-    shadowColor: "#FFD700",
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.8,
-    shadowRadius: 8,
-    elevation: 8,
-  },
-  winningToken: {
-    borderWidth: 3,
-    borderColor: "#FFD700",
-    shadowColor: "#FFD700",
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.8,
-    shadowRadius: 8,
-    elevation: 8,
+  colonnePleine: {
+    backgroundColor: "#e9ecef",
+    opacity: 0.5,
   },
 });
 
