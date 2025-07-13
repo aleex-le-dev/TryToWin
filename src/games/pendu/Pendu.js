@@ -75,7 +75,6 @@ const Pendu = ({ navigation }) => {
   const [gagne, setGagne] = useState(false);
   const [perdu, setPerdu] = useState(false);
   const [input, setInput] = useState("");
-  const [elapsedTime, setElapsedTime] = useState(0);
   const [showFirstTurnOverlay, setShowFirstTurnOverlay] = useState(false);
   const [stats, setStats] = useState({
     win: 0,
@@ -113,16 +112,6 @@ const Pendu = ({ navigation }) => {
   }, [user?.id]);
 
   useEffect(() => {
-    let interval = null;
-    if (!gagne && !perdu) {
-      interval = setInterval(() => {
-        setElapsedTime((prev) => prev + 1);
-      }, 1000);
-    }
-    return () => clearInterval(interval);
-  }, [gagne, perdu]);
-
-  useEffect(() => {
     const motAffiche = mot.split("").every((l) => lettres.includes(l));
     if (motAffiche) setGagne(true);
     if (erreurs >= MAX_ERRORS) setPerdu(true);
@@ -131,16 +120,14 @@ const Pendu = ({ navigation }) => {
   useEffect(() => {
     if ((gagne || perdu) && user?.id) {
       const result = gagne ? "win" : "lose";
-      recordGameResult(user.id, "Pendu", result, 0, elapsedTime).then(
-        async () => {
-          await actualiserStatsClassements();
-          // Relancer automatiquement une nouvelle partie après 3 secondes
-          setTimeout(() => {
-            resetGame();
-            setShowFirstTurnOverlay(true);
-          }, 3000);
-        }
-      );
+      recordGameResult(user.id, "Pendu", result, 0).then(async () => {
+        await actualiserStatsClassements();
+        // Relancer automatiquement une nouvelle partie après 3 secondes
+        setTimeout(() => {
+          resetGame();
+          setShowFirstTurnOverlay(true);
+        }, 3000);
+      });
     }
   }, [gagne, perdu]);
 
@@ -186,7 +173,6 @@ const Pendu = ({ navigation }) => {
     setGagne(false);
     setPerdu(false);
     setInput("");
-    setElapsedTime(0);
   };
 
   const handleFirstTurnOverlayComplete = () => {
@@ -267,9 +253,6 @@ const Pendu = ({ navigation }) => {
       countryRank={countryRank}
       countryTotal={countryTotal}
       countryCode={user?.country || user?.profile?.country || "FR"}
-      timerLabel={`${Math.floor(elapsedTime / 60)}:${(elapsedTime % 60)
-        .toString()
-        .padStart(2, "0")}`}
       currentTurnLabel={
         gagne ? "Gagné !" : perdu ? "Perdu !" : "À vous de jouer"
       }

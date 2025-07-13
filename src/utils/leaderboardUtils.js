@@ -31,7 +31,7 @@ export function generateLeaderboard(
       winRate: userStats.winRate || 0,
       totalPoints: userStats.totalPoints || 0,
       currentStreak: userStats.currentStreak || 0,
-      bestTime: userStats.bestTime || null,
+
     };
 
     // Retirer tout doublon éventuel
@@ -80,6 +80,6 @@ export function generateLeaderboard(
     isCurrentUser: player.isCurrentUser || false,
     country: player.country,
     currentStreak: player.isCurrentUser ? player.currentStreak : 0,
-    bestTime: player.isCurrentUser ? player.bestTime : null,
+
   }));
 }

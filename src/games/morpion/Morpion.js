@@ -28,7 +28,7 @@ const Morpion = ({ navigation }) => {
   const [partieTerminee, setPartieTerminee] = useState(false);
   const [gagnant, setGagnant] = useState(null);
   const [score, setScore] = useState(0);
-  const [tempsEcoule, setTempsEcoule] = useState(0);
+
   const [enPartie, setEnPartie] = useState(false);
   const [tourIA, setTourIA] = useState(false);
   const [iaCommence, setIaCommence] = useState(false);
@@ -86,9 +86,7 @@ const Morpion = ({ navigation }) => {
   useEffect(() => {
     let interval = null;
     if (enPartie && !partieTerminee) {
-      interval = setInterval(() => {
-        setTempsEcoule((prev) => prev + 1);
-      }, 1000);
+      interval = setInterval(() => {}, 1000);
     }
     return () => {
       clearInterval(interval);
@@ -164,7 +162,7 @@ const Morpion = ({ navigation }) => {
       setGagnant(gagnant);
       setPartieTerminee(true);
       setEnPartie(false);
-      gererFinPartie(gagnant, tempsEcoule);
+      gererFinPartie(gagnant);
       return;
     }
 
@@ -173,7 +171,7 @@ const Morpion = ({ navigation }) => {
       console.log("👤 JOUEUR: Match nul après coup du joueur");
       setPartieTerminee(true);
       setEnPartie(false);
-      gererFinPartie("nul", tempsEcoule);
+      gererFinPartie("nul");
       return;
     }
 
@@ -239,7 +237,7 @@ const Morpion = ({ navigation }) => {
               setGagnant(gagnantIA);
               setPartieTerminee(true);
               setEnPartie(false);
-              gererFinPartie(gagnantIA, tempsEcoule);
+              gererFinPartie(gagnantIA);
               return;
             }
 
@@ -248,7 +246,7 @@ const Morpion = ({ navigation }) => {
               console.log("🎯 IA: Match nul après coup de l'IA");
               setPartieTerminee(true);
               setEnPartie(false);
-              gererFinPartie("nul", tempsEcoule);
+              gererFinPartie("nul");
               return;
             }
 
@@ -304,7 +302,7 @@ const Morpion = ({ navigation }) => {
     if (user?.id) {
       try {
         console.log("🎮 MORPION: Sauvegarde du résultat...");
-        await recordGameResult(user.id, "Morpion", resultatBDD, 0, temps);
+        await recordGameResult(user.id, "Morpion", resultatBDD, 0);
         await actualiserStatsClassements();
         const points = GAME_POINTS["Morpion"][resultatBDD];
         const mult = getSerieMultiplier(statsJeu.currentStreak);
@@ -324,7 +322,7 @@ const Morpion = ({ navigation }) => {
           points: pointsAvecMultiplicateur,
           multiplier: mult,
           streak: statsJeu.currentStreak,
-          });
+        });
         setShowResultOverlay(true);
       } catch (error) {
         console.log("🎮 MORPION: Erreur lors de la sauvegarde:", error);
@@ -361,7 +359,6 @@ const Morpion = ({ navigation }) => {
     setPlateau(Array(9).fill(null));
     setPartieTerminee(false);
     setGagnant(null);
-    setTempsEcoule(0);
     setEnPartie(true);
 
     // Alterner qui commence
@@ -378,7 +375,6 @@ const Morpion = ({ navigation }) => {
     setPlateau(Array(9).fill(null));
     setPartieTerminee(false);
     setGagnant(null);
-    setTempsEcoule(0);
     setEnPartie(true);
 
     // Alterner qui commence
@@ -478,21 +474,18 @@ const Morpion = ({ navigation }) => {
 
   return (
     <>
-    <GameLayout
-      title='Morpion'
-      stats={statsJeu}
-      streak={statsJeu.currentStreak}
-      onBack={() => navigation.goBack()}
-      currentTurnLabel={tourIA ? "Tour de l'IA" : "Votre tour"}
-      currentSymbol={tourIA ? "O" : "X"}
-      timerLabel={`${Math.floor(tempsEcoule / 60)}:${(tempsEcoule % 60)
-        .toString()
-        .padStart(2, "0")}`}
-      onPressMainActionButton={nouvellePartie}
-      rank={rank}
-      totalPlayers={totalPlayers}
-      countryRank={countryRank}
-      countryTotal={countryTotal}
+      <GameLayout
+        title='Morpion'
+        stats={statsJeu}
+        streak={statsJeu.currentStreak}
+        onBack={() => navigation.goBack()}
+        currentTurnLabel={tourIA ? "Tour de l'IA" : "Votre tour"}
+        currentSymbol={tourIA ? "O" : "X"}
+        onPressMainActionButton={nouvellePartie}
+        rank={rank}
+        totalPlayers={totalPlayers}
+        countryRank={countryRank}
+        countryTotal={countryTotal}
         countryCode={user?.country || user?.profile?.country || "FR"}
         showFirstTurnOverlay={showFirstTurnOverlay}
         firstTurnPlayerName={iaCommence ? "L'IA" : "Vous"}
@@ -500,8 +493,8 @@ const Morpion = ({ navigation }) => {
         onFirstTurnOverlayComplete={() =>
           handleFirstTurnOverlayComplete(iaCommence)
         }>
-      <View style={styles.containerJeu}>{rendrePlateau()}</View>
-    </GameLayout>
+        <View style={styles.containerJeu}>{rendrePlateau()}</View>
+      </GameLayout>
       <GameResultOverlay
         isVisible={showResultOverlay}
         result={resultData.result}
@@ -510,8 +503,8 @@ const Morpion = ({ navigation }) => {
         streak={resultData.streak}
         onAnimationComplete={handleResultOverlayComplete}
       />
-    <Toast />
-  </>
+      <Toast />
+    </>
   );
 };
 

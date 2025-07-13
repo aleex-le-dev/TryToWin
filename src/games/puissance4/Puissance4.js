@@ -28,7 +28,6 @@ const Puissance4 = ({ navigation }) => {
   const [partieTerminee, setPartieTerminee] = useState(false);
   const [gagnant, setGagnant] = useState(null);
   const [score, setScore] = useState(0);
-  const [tempsEcoule, setTempsEcoule] = useState(0);
   const [enPartie, setEnPartie] = useState(false);
   const [tourIA, setTourIA] = useState(false);
   const [iaCommence, setIaCommence] = useState(false);
@@ -86,18 +85,6 @@ const Puissance4 = ({ navigation }) => {
     };
     chargerStats();
   }, [user?.id]);
-
-  useEffect(() => {
-    let interval = null;
-    if (enPartie && !partieTerminee) {
-      interval = setInterval(() => {
-        setTempsEcoule((prev) => prev + 1);
-      }, 1000);
-    }
-    return () => {
-      clearInterval(interval);
-    };
-  }, [enPartie, partieTerminee]);
 
   useEffect(() => {
     nouvellePartie();
@@ -231,7 +218,7 @@ const Puissance4 = ({ navigation }) => {
       setGagnant(gagnant);
       setPartieTerminee(true);
       setEnPartie(false);
-      gererFinPartie(gagnant, tempsEcoule);
+      gererFinPartie(gagnant, 0); // Passer 0 pour tempsEcoule
       return;
     }
 
@@ -240,7 +227,7 @@ const Puissance4 = ({ navigation }) => {
       console.log("👤 JOUEUR: Match nul après coup du joueur");
       setPartieTerminee(true);
       setEnPartie(false);
-      gererFinPartie("nul", tempsEcoule);
+      gererFinPartie("nul", 0); // Passer 0 pour tempsEcoule
       return;
     }
 
@@ -306,7 +293,7 @@ const Puissance4 = ({ navigation }) => {
               setGagnant(gagnantIA);
               setPartieTerminee(true);
               setEnPartie(false);
-              gererFinPartie(gagnantIA, tempsEcoule);
+              gererFinPartie(gagnantIA, 0); // Passer 0 pour tempsEcoule
               return;
             }
 
@@ -315,7 +302,7 @@ const Puissance4 = ({ navigation }) => {
               console.log("🎯 IA: Match nul après coup de l'IA");
               setPartieTerminee(true);
               setEnPartie(false);
-              gererFinPartie("nul", tempsEcoule);
+              gererFinPartie("nul", 0); // Passer 0 pour tempsEcoule
               return;
             }
 
@@ -429,7 +416,7 @@ const Puissance4 = ({ navigation }) => {
     if (user?.id) {
       try {
         console.log("🎮 PUISSANCE4: Sauvegarde du résultat...");
-        await recordGameResult(user.id, "Puissance4", resultatBDD, 0, temps);
+        await recordGameResult(user.id, "Puissance4", resultatBDD, 0);
         await actualiserStatsClassements();
         const points = GAME_POINTS["Puissance4"][resultatBDD];
         const mult = getSerieMultiplier(statsJeu.currentStreak);
@@ -488,7 +475,6 @@ const Puissance4 = ({ navigation }) => {
     setPlateau(Array(42).fill(null));
     setPartieTerminee(false);
     setGagnant(null);
-    setTempsEcoule(0);
     setEnPartie(true);
 
     // Alterner qui commence
@@ -505,7 +491,6 @@ const Puissance4 = ({ navigation }) => {
     setPlateau(Array(42).fill(null));
     setPartieTerminee(false);
     setGagnant(null);
-    setTempsEcoule(0);
     setEnPartie(true);
 
     // Alterner qui commence
@@ -675,9 +660,6 @@ const Puissance4 = ({ navigation }) => {
             />
           )
         }
-        timerLabel={`${Math.floor(tempsEcoule / 60)}:${(tempsEcoule % 60)
-          .toString()
-          .padStart(2, "0")}`}
         onPressMainActionButton={nouvellePartie}
         rank={rank}
         totalPlayers={totalPlayers}

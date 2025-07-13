@@ -30,15 +30,8 @@ import Toast from "react-native-toast-message";
  * @param {string} game - Nom du jeu
  * @param {'win'|'draw'|'lose'} result - Résultat de la partie
  * @param {number} score - Score spécifique de la partie
- * @param {number} duration - Durée de la partie en secondes
  */
-export async function recordGameResult(
-  userId,
-  game,
-  result,
-  score = 0,
-  duration = 0
-) {
+export async function recordGameResult(userId, game, result, score = 0) {
   if (!userId || !game || !["win", "draw", "lose"].includes(result)) return;
 
   const points = GAME_POINTS[game]?.[result] ?? 0;
@@ -54,18 +47,15 @@ export async function recordGameResult(
           lose: 0,
           totalPoints: 0,
           totalGames: 0,
-          totalDuration: 0,
           winRate: 0,
           lastUpdated: new Date().toISOString(),
           lastPlayed: new Date().toISOString(),
           currentStreak: 0,
-          bestTime: null,
         };
 
     // Mise à jour des statistiques
     data[result] += 1;
     data.totalGames += 1;
-    data.totalDuration += duration;
     data.lastUpdated = new Date().toISOString();
     data.lastPlayed = new Date().toISOString();
 
@@ -77,11 +67,6 @@ export async function recordGameResult(
     } else {
       data.currentStreak = 0;
       data.totalPoints += Math.round(points);
-    }
-
-    // Mise à jour du meilleur temps
-    if (duration > 0 && (data.bestTime === null || duration < data.bestTime)) {
-      data.bestTime = duration;
     }
 
     // Calcul du taux de victoire
@@ -172,10 +157,8 @@ export async function getUserGameScore(userId, game) {
       lose: 0,
       totalPoints: 0,
       totalGames: 0,
-      totalDuration: 0,
       winRate: 0,
       currentStreak: 0,
-      bestTime: null,
       lastPlayed: null,
     };
   } catch (error) {
@@ -185,10 +168,8 @@ export async function getUserGameScore(userId, game) {
       lose: 0,
       totalPoints: 0,
       totalGames: 0,
-      totalDuration: 0,
       winRate: 0,
       currentStreak: 0,
-      bestTime: null,
       lastPlayed: null,
     };
   }
@@ -213,7 +194,6 @@ export async function getUserAllGameStats(userId) {
       totalDraws: 0,
       totalLosses: 0,
       totalPoints: 0,
-      totalDuration: 0,
       gamesPlayed: {},
     };
 
@@ -226,7 +206,6 @@ export async function getUserAllGameStats(userId) {
       stats.totalDraws += data.draw || 0;
       stats.totalLosses += data.lose || 0;
       stats.totalPoints += data.totalPoints || 0;
-      stats.totalDuration += data.totalDuration || 0;
       stats.gamesPlayed[gameId] = data;
     });
 
@@ -284,7 +263,6 @@ export async function getLeaderboard(game, topN = 10, currentUser = null) {
         totalGames: data.totalGames || 0,
         winRate: data.winRate || 0,
         currentStreak: data.currentStreak || 0,
-        bestTime: data.bestTime || null,
         avatar: userProfile.avatar || null,
         email: userProfile.email || null,
       });
@@ -529,12 +507,10 @@ export async function initializeLeaderboardsForUser(userId) {
           lose: 0,
           totalPoints: 0,
           totalGames: 0,
-          totalDuration: 0,
           winRate: 0,
           lastUpdated: new Date().toISOString(),
           lastPlayed: new Date().toISOString(),
           currentStreak: 0,
-          bestTime: null,
         });
       }
     }
@@ -554,12 +530,10 @@ export async function ensureScoreEntry(userId, game) {
       lose: 0,
       totalPoints: 0,
       totalGames: 0,
-      totalDuration: 0,
       winRate: 0,
       lastUpdated: new Date().toISOString(),
       lastPlayed: new Date().toISOString(),
       currentStreak: 0,
-      bestTime: null,
     });
   }
 }
@@ -587,12 +561,10 @@ export async function initializeAllUsersScoreEntries() {
             lose: 0,
             totalPoints: 0,
             totalGames: 0,
-            totalDuration: 0,
             winRate: 0,
             lastUpdated: new Date().toISOString(),
             lastPlayed: new Date().toISOString(),
             currentStreak: 0,
-            bestTime: null,
           });
         }
       }

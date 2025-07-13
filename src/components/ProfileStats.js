@@ -72,11 +72,9 @@ const ProfileStats = ({
         <View style={styles.personalStats}>
           <View style={styles.personalStatRow}>
             <Ionicons name='trophy' size={20} color='#FFD700' />
-            <Text style={styles.personalStatLabel}>Meilleur temps</Text>
+            <Text style={styles.personalStatLabel}>Meilleur score</Text>
             <Text style={styles.personalStatValue}>
-              {gameStats.bestTime
-                ? `${gameStats.bestTime.toFixed(1)} s`
-                : "Aucun temps"}
+              {gameStats.bestScore || 0}
             </Text>
           </View>
 
@@ -114,16 +112,10 @@ const ProfileStats = ({
           </View>
 
           <View style={styles.personalStatRow}>
-            <Ionicons name='time-outline' size={20} color='#607D8B' />
-            <Text style={styles.personalStatLabel}>Durée de jeu</Text>
+            <Ionicons name='game-controller' size={20} color='#607D8B' />
+            <Text style={styles.personalStatLabel}>Parties jouées</Text>
             <Text style={styles.personalStatValue}>
-              {gameStats.totalDuration
-                ? `${Math.floor(gameStats.totalDuration / 60)}:${(
-                    gameStats.totalDuration % 60
-                  )
-                    .toString()
-                    .padStart(2, "0")}`
-                : "0:00"}
+              {gameStats.totalGames || 0}
             </Text>
           </View>
         </View>

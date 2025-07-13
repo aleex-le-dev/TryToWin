@@ -191,7 +191,7 @@ const GameLeaderboard = ({
                           styles.userStats,
                           item.isCurrentUser && { color: "#fff" },
                         ]}>
-                        {item.gamesPlayed} parties • {item.winRate}% victoires
+                        {item.gamesPlayed} parties • {item.win || 0} victoires
                       </Text>
                     </View>
                   </View>

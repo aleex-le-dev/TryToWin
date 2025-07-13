@@ -55,12 +55,10 @@ const GameDetailsScreen = ({ route, navigation }) => {
     totalPoints: 0,
     totalGames: 0,
     totalScore: 0,
-    totalDuration: 0,
     bestScore: 0,
     averageScore: 0,
     winRate: 0,
     currentStreak: 0,
-    bestTime: null,
   });
   const [userRank, setUserRank] = useState(null);
   const [totalPlayers, setTotalPlayers] = useState(null);
@@ -116,6 +114,7 @@ const GameDetailsScreen = ({ route, navigation }) => {
               rank: index + 1,
               score: item.totalPoints || 0,
               winRate: item.winRate || 0,
+              win: item.win || 0,
               gamesPlayed: item.totalGames || 0,
               avatar: getAvatarForRank(index + 1),
               isCurrentUser: item.userId === user.id,
@@ -260,7 +259,7 @@ const GameDetailsScreen = ({ route, navigation }) => {
           </View>
           <Text
             style={[styles.userStats, item.isCurrentUser && { color: "#fff" }]}>
-            {item.gamesPlayed} parties • {item.winRate}% victoires
+            {item.gamesPlayed} parties • {item.win || 0} victoires
           </Text>
         </View>
       </View>
@@ -410,9 +409,7 @@ const GameDetailsScreen = ({ route, navigation }) => {
                           Meilleur temps
                         </Text>
                         <Text style={styles.personalStatValue}>
-                          {userStats.bestTime
-                            ? `${userStats.bestTime.toFixed(1)} s`
-                            : "Aucun temps"}
+                                      {userStats.bestScore || 0}
                         </Text>
                       </View>
                       <View style={styles.personalStatRow}>
@@ -470,13 +467,7 @@ const GameDetailsScreen = ({ route, navigation }) => {
                           Durée de jeu
                         </Text>
                         <Text style={styles.personalStatValue}>
-                          {userStats.totalDuration
-                            ? `${Math.floor(userStats.totalDuration / 60)}:${(
-                                userStats.totalDuration % 60
-                              )
-                                .toString()
-                                .padStart(2, "0")}`
-                            : "0:00"}
+                          {userStats.totalGames || 0}
                         </Text>
                       </View>
                     </View>

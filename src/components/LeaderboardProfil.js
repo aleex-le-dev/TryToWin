@@ -132,6 +132,7 @@ const LeaderboardProfil = ({
       return {
         totalPoints,
         totalGames,
+        totalWins,
         winRate,
       };
     } catch (error) {
@@ -167,6 +168,7 @@ const LeaderboardProfil = ({
               country: user?.country || profile?.country || "FR",
               totalPoints: realStats?.totalPoints || 0,
               totalGames: realStats?.totalGames || 0,
+              win: realStats?.totalWins || 0,
               winRate: realStats?.winRate || 0,
               rank: 1,
             },
@@ -194,6 +196,7 @@ const LeaderboardProfil = ({
               country: user?.country || profile?.country || selectedCountry,
               totalPoints: realStats?.totalPoints || 0,
               totalGames: realStats?.totalGames || 0,
+              win: realStats?.totalWins || 0,
               winRate: realStats?.winRate || 0,
               rank: 1,
             },
@@ -405,7 +408,7 @@ const LeaderboardProfil = ({
               styles.userStats,
               item.userId === currentUserId && styles.currentUserText,
             ]}>
-            {item.totalGames || 0} parties • {item.winRate || 0}% victoires
+            {item.totalGames || 0} parties • {item.win || 0} victoires
           </Text>
         </View>
         <View style={styles.scoreContainer}>

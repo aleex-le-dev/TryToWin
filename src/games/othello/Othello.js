@@ -159,18 +159,7 @@ const Othello = ({ navigation }) => {
   });
   const [rank, setRank] = useState(null);
   const [totalPlayers, setTotalPlayers] = useState(null);
-  const [elapsedTime, setElapsedTime] = useState(0);
   const [iaCommence, setIaCommence] = useState(false);
-
-  useEffect(() => {
-    let interval = null;
-    if (!gameOver) {
-      interval = setInterval(() => {
-        setElapsedTime((prev) => prev + 1);
-      }, 1000);
-    }
-    return () => clearInterval(interval);
-  }, [gameOver]);
 
   useEffect(() => {
     const chargerStats = async () => {
@@ -282,8 +271,6 @@ const Othello = ({ navigation }) => {
     setBoard(initialBoard());
     setGameOver(false);
     setWinner(null);
-    setElapsedTime(0);
-    setValidMoves(getValidMoves(initialBoard(), 1));
     // Alterner qui commence
     const nouvelleValeur = !iaCommence;
     setIaCommence(nouvelleValeur);
@@ -321,7 +308,7 @@ const Othello = ({ navigation }) => {
 
   const handleGameEnd = async (resultatBDD) => {
     if (user?.id) {
-      await recordGameResult(user.id, "Othello", resultatBDD, 0, elapsedTime);
+      await recordGameResult(user.id, "Othello", resultatBDD, 0);
       await actualiserStatsClassements();
     }
   };
@@ -368,9 +355,6 @@ const Othello = ({ navigation }) => {
             ? "⚫"
             : "⚪"
         }
-        timerLabel={`${Math.floor(elapsedTime / 60)}:${(elapsedTime % 60)
-          .toString()
-          .padStart(2, "0")}`}
         onPressMainActionButton={resetGame}
         showFirstTurnOverlay={showFirstTurnOverlay}
         firstTurnPlayerName={iaCommence ? "L'IA" : "Vous"}

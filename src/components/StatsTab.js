@@ -63,16 +63,16 @@ const mainStats = [
     valueKey: "currentStreak",
   },
   {
-    icon: "time",
+    icon: "game-controller",
     color: "#4ECDC4",
-    label: "Durée de jeu",
-    valueKey: "totalTime",
+    label: "Parties jouées",
+    valueKey: "totalGames",
   },
   {
-    icon: "timer-outline",
+    icon: "trophy-outline",
     color: "#667eea",
-    label: "Meilleur temps",
-    valueKey: "bestTime",
+    label: "Meilleur score",
+    valueKey: "bestScore",
   },
 ];
 

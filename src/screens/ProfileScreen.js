@@ -298,21 +298,7 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
           )
         : "Aucun jeu",
     currentStreak: userStatsGlobal.streak || 0,
-    totalTime: (() => {
-      // Estimation : 5 minutes par partie en moyenne
-      const totalMinutes = (userStatsGlobal.totalGames || 0) * 5;
-      const hours = Math.floor(totalMinutes / 60);
-      const minutes = totalMinutes % 60;
-      const seconds = Math.floor((totalMinutes % 1) * 60);
-
-      if (hours > 0) {
-        return `${hours}h ${minutes}m ${seconds}s`;
-      } else if (minutes > 0) {
-        return `${minutes}m ${seconds}s`;
-      } else {
-        return `${seconds}s`;
-      }
-    })(),
+    totalGames: userStatsGlobal.totalGames || 0,
   };
 
   // Récupération du profil Firestore à l'ouverture
@@ -794,17 +780,13 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
               score = Math.floor(Math.random() * 50);
             }
 
-            // Durée aléatoire entre 30 et 300 secondes
-            const duration = Math.floor(Math.random() * 270) + 30;
-
             try {
               // Enregistrer le résultat
               await recordGameResult(
                 user.id,
                 gameName,
                 result,
-                score,
-                duration
+                score
               );
             } catch (error) {
               console.log(

@@ -49,12 +49,10 @@ const GameDetailsScreen = ({ route, navigation }) => {
     totalPoints: 0,
     totalGames: 0,
     totalScore: 0,
-    totalDuration: 0,
     bestScore: 0,
     averageScore: 0,
     winRate: 0,
     currentStreak: 0,
-    bestTime: null,
   });
   const [userRank, setUserRank] = useState(null);
   const [userCountryRank, setUserCountryRank] = useState(null);
@@ -166,6 +164,7 @@ const GameDetailsScreen = ({ route, navigation }) => {
                   rank: item.rank,
                   score: item.totalPoints || 0,
                   winRate: item.winRate || 0,
+                  win: item.win || 0,
                   gamesPlayed: item.totalGames || 0,
                   avatar: userAvatar,
                   isCurrentUser: item.userId === user.id,
@@ -308,7 +307,7 @@ const GameDetailsScreen = ({ route, navigation }) => {
           </View>
           <Text
             style={[styles.userStats, item.isCurrentUser && { color: "#fff" }]}>
-            {item.gamesPlayed} parties • {item.winRate}% victoires
+            {item.gamesPlayed} parties • {item.win || 0} victoires
           </Text>
         </View>
       </View>
@@ -522,57 +521,29 @@ const GameDetailsScreen = ({ route, navigation }) => {
                 Classement
               </Text>
             </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.tab,
-                activeTab === "stats" && {
-                  borderBottomColor: game.color,
-                  borderBottomWidth: 2,
-                },
-              ]}
-              onPress={() => setActiveTab("stats")}>
-              <Text
-                style={[
-                  styles.tabText,
-                  activeTab === "stats" && {
-                    color: game.color,
-                    fontWeight: "bold",
-                  },
-                ]}>
-                Statistiques
-              </Text>
-            </TouchableOpacity>
           </View>
 
           {/* Contenu des onglets */}
-          {activeTab === "leaderboard" ? (
-            <GameLeaderboard
-              leaderboardData={leaderboardData}
-              leaderboardType={leaderboardType}
-              setLeaderboardType={setLeaderboardType}
-              userCountry={userCountry}
-              currentUserRank={currentUserRank}
-              userCountryRank={userCountryRank}
-              game={game}
-              filteredLeaderboardData={filteredLeaderboardData}
-              centeredLeaderboardData={centeredLeaderboardData}
-              flatListRef={flatListRef}
-              handleScrollToIndexFailed={handleScrollToIndexFailed}
-              pendingScrollToUserCountry={pendingScrollToUserCountry}
-              setPendingScrollToUserCountry={setPendingScrollToUserCountry}
-              getUserIndexWithPlaceholders={getUserIndexWithPlaceholders}
-              loading={leaderboardLoading}
-              renderLeaderboardItem={renderLeaderboardItem}
-              scrollToUserInWorld={scrollToUserInWorld}
-              countries={countries}
-            />
-          ) : (
-            <GameStat
-              userStats={userStats}
-              statsLoading={statsLoading}
-              game={game}
-            />
-          )}
+          <GameLeaderboard
+            leaderboardData={leaderboardData}
+            leaderboardType={leaderboardType}
+            setLeaderboardType={setLeaderboardType}
+            userCountry={userCountry}
+            currentUserRank={currentUserRank}
+            userCountryRank={userCountryRank}
+            game={game}
+            filteredLeaderboardData={filteredLeaderboardData}
+            centeredLeaderboardData={centeredLeaderboardData}
+            flatListRef={flatListRef}
+            handleScrollToIndexFailed={handleScrollToIndexFailed}
+            pendingScrollToUserCountry={pendingScrollToUserCountry}
+            setPendingScrollToUserCountry={setPendingScrollToUserCountry}
+            getUserIndexWithPlaceholders={getUserIndexWithPlaceholders}
+            loading={leaderboardLoading}
+            renderLeaderboardItem={renderLeaderboardItem}
+            scrollToUserInWorld={scrollToUserInWorld}
+            countries={countries}
+          />
         </View>
       )}
     </View>

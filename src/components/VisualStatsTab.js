@@ -47,10 +47,7 @@ const VisualStatsTab = ({
       icon: "stats-chart-outline",
       color: "#4ECDC4",
       label: "Victoires",
-      value:
-        userStats && userStats.gamesPlayed > 0
-          ? Math.round((userStats.gamesWon / userStats.gamesPlayed) * 100) + "%"
-          : "-",
+      value: userStats?.gamesWon || 0,
     },
   ];
 

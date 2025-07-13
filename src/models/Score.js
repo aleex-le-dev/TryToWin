@@ -7,9 +7,8 @@ export class Score {
     this.userId = data.userId;
     this.gameId = data.gameId;
     this.score = data.score;
-    this.duration = data.duration;
     this.timestamp = data.timestamp || new Date();
-    this.level = data.level || 'normal';
+    this.level = data.level || "normal";
   }
 
   static fromFirestore(doc) {
@@ -22,9 +21,8 @@ export class Score {
       userId: this.userId,
       gameId: this.gameId,
       score: this.score,
-      duration: this.duration,
       timestamp: this.timestamp,
       level: this.level,
     };
   }
-} 
+}
