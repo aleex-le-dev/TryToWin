@@ -29,7 +29,6 @@ import { db } from "../../utils/firebaseConfig";
 import { countries } from "../../constants";
 import { AVATAR_COLLECTIONS } from "../../constants/avatars";
 import GameLeaderboard from "../../components/GameLeaderboard";
-import GameStat from "../../components/GameStat";
 
 const { width } = Dimensions.get("window");
 
