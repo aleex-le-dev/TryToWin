@@ -34,7 +34,7 @@ export const gamesData = [
     description: "Affrontez l'IA sur un plateau d'échecs classique.",
     category: "Stratégie",
     image: "♟️",
-    color: "#8B4513",
+    color: "#CD8D4E",
     gameType: "grid",
   },
 ];

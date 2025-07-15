@@ -248,7 +248,7 @@ const LoginScreen = ({ navigation }) => {
           {/* Logo et titre */}
           <View style={styles.header}>
             <View style={styles.logoContainer}>
-              {/* Icône supprimée ici */}
+            <Ionicons name="game-controller" size={50} color="white" />
             </View>
             <Text style={styles.title}>TryToWin</Text>
             <Text style={styles.subtitle}>Votre destination de jeux</Text>
