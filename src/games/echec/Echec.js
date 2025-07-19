@@ -2,6 +2,13 @@ import React, { useState, useCallback, useEffect, useMemo } from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import GameLayout from "../GameLayout";
 import { playAIMove } from "./ia";
+import { useAuth } from "../../hooks/useAuth";
+import {
+  recordGameResult,
+  getUserGameScore,
+  getUserRankInLeaderboard,
+  getUserRankInCountryLeaderboard,
+} from "../../services/scoreService";
 
 // Configuration des pièces d'échecs (même style que react-native-chessboard)
 const PIECES = {
@@ -59,6 +66,7 @@ const INITIAL_BOARD = [
 
 // Composant principal du jeu d'échecs
 const Echec = ({ navigation }) => {
+  const { user } = useAuth();
   const [board, setBoard] = useState(INITIAL_BOARD);
   const [selectedPiece, setSelectedPiece] = useState(null);
   const [turn, setTurn] = useState("white");
@@ -67,7 +75,18 @@ const Echec = ({ navigation }) => {
   const [whiteTime, setWhiteTime] = useState(300); // 5 minutes en secondes
   const [blackTime, setBlackTime] = useState(300);
   const [gameStartTime, setGameStartTime] = useState(Date.now());
-  const stats = { win: 0, lose: 0, draw: 0, totalPoints: 0 };
+  const [stats, setStats] = useState({
+    win: 0,
+    draw: 0,
+    lose: 0,
+    totalPoints: 0,
+    totalGames: 0,
+    winRate: 0,
+  });
+  const [rank, setRank] = useState(null);
+  const [totalPlayers, setTotalPlayers] = useState(null);
+  const [countryRank, setCountryRank] = useState(null);
+  const [countryTotal, setCountryTotal] = useState(null);
 
   // Formatage du temps
   const formatTime = (seconds) => {
@@ -88,6 +107,36 @@ const Echec = ({ navigation }) => {
 
     return () => clearInterval(timer);
   }, [turn]);
+
+  // Chargement des statistiques et classements
+  useEffect(() => {
+    const chargerStats = async () => {
+      if (user?.id) {
+        try {
+          const s = await getUserGameScore(user.id, "Echec");
+          setStats(s);
+          const { rank, total } = await getUserRankInLeaderboard(
+            user.id,
+            "Echec"
+          );
+          setRank(rank);
+          setTotalPlayers(total);
+          // Pays
+          const country = user.country || user.profile?.country || "FR";
+          const { rank: cRank, total: cTotal } =
+            await getUserRankInCountryLeaderboard(user.id, "Echec", country);
+          setCountryRank(cRank);
+          setCountryTotal(cTotal);
+        } catch (error) {
+          console.log(
+            "🎮 ECHEC: Erreur lors du chargement des stats:",
+            error
+          );
+        }
+      }
+    };
+    chargerStats();
+  }, [user?.id]);
 
   // Vérification de fin de temps
   useEffect(() => {
@@ -463,10 +512,10 @@ const Echec = ({ navigation }) => {
     <GameLayout
       title='Échecs'
       stats={stats}
-      streak={0}
+      streak={stats.currentStreak}
       onBack={() => navigation.goBack()}
-      rank={null}
-      totalPlayers={null}
+      rank={rank}
+      totalPlayers={totalPlayers}
       bestTime={null}
       currentTurnLabel={turn === "white" ? "Tour Blancs" : "Tour Noirs"}
       currentSymbol={turn === "white" ? "♔" : "♚"}
@@ -475,10 +524,11 @@ const Echec = ({ navigation }) => {
       }`}
       renderMainActionButton={null}
       onPressMainActionButton={null}
-      countryRank={null}
-      countryTotal={null}
-      countryCode={"FR"}
-      showFirstTurnOverlay={false}>
+      countryRank={countryRank}
+      countryTotal={countryTotal}
+      countryCode={user?.country || user?.profile?.country || "FR"}
+      showFirstTurnOverlay={false}
+      headerColor="#CD8D4E">
       {renderBoard}
     </GameLayout>
   );

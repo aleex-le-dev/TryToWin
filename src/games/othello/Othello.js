@@ -17,6 +17,7 @@ import {
   recordGameResult,
   getUserGameScore,
   getUserRankInLeaderboard,
+  getUserRankInCountryLeaderboard,
 } from "../../services/scoreService";
 import { useAuth } from "../../hooks/useAuth";
 import { GAME_POINTS, getSerieMultiplier } from "../../constants/gamePoints";
@@ -156,20 +157,35 @@ const Othello = ({ navigation }) => {
   });
   const [rank, setRank] = useState(null);
   const [totalPlayers, setTotalPlayers] = useState(null);
+  const [countryRank, setCountryRank] = useState(null);
+  const [countryTotal, setCountryTotal] = useState(null);
   const [iaCommence, setIaCommence] = useState(false);
   const [iaMovePreview, setIaMovePreview] = useState(null);
 
   useEffect(() => {
     const chargerStats = async () => {
       if (user?.id) {
-        const s = await getUserGameScore(user.id, "Othello");
-        setStats(s);
-        const { rank, total } = await getUserRankInLeaderboard(
-          user.id,
-          "Othello"
-        );
-        setRank(rank);
-        setTotalPlayers(total);
+        try {
+          const s = await getUserGameScore(user.id, "Othello");
+          setStats(s);
+          const { rank, total } = await getUserRankInLeaderboard(
+            user.id,
+            "Othello"
+          );
+          setRank(rank);
+          setTotalPlayers(total);
+          // Pays
+          const country = user.country || user.profile?.country || "FR";
+          const { rank: cRank, total: cTotal } =
+            await getUserRankInCountryLeaderboard(user.id, "Othello", country);
+          setCountryRank(cRank);
+          setCountryTotal(cTotal);
+        } catch (error) {
+          console.log(
+            "🎮 OTHELLO: Erreur lors du chargement des stats:",
+            error
+          );
+        }
       }
     };
     chargerStats();
@@ -341,6 +357,12 @@ const Othello = ({ navigation }) => {
         );
         setRank(rank);
         setTotalPlayers(total);
+        // Pays
+        const country = user.country || user.profile?.country || "FR";
+        const { rank: cRank, total: cTotal } =
+          await getUserRankInCountryLeaderboard(user.id, "Othello", country);
+        setCountryRank(cRank);
+        setCountryTotal(cTotal);
       } catch (error) {
         console.log("Erreur lors de l'actualisation des stats:", error);
       }
@@ -378,7 +400,13 @@ const Othello = ({ navigation }) => {
         firstTurnPlayerSymbol={iaCommence ? "⚪" : "⚫"}
         onFirstTurnOverlayComplete={() =>
           handleFirstTurnOverlayComplete(iaCommence)
-        }>
+        }
+        headerColor="#4ECDC4"
+        rank={rank}
+        totalPlayers={totalPlayers}
+        countryRank={countryRank}
+        countryTotal={countryTotal}
+        countryCode={user?.country || user?.profile?.country || "FR"}>
         {/* Score en direct sous le bloc info */}
         <View
           style={{

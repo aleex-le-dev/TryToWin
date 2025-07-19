@@ -695,7 +695,8 @@ const Puissance4 = ({ navigation }) => {
         }
         onFirstTurnOverlayComplete={() =>
           handleFirstTurnOverlayComplete(iaCommence)
-        }>
+        }
+        headerColor="#FF6B6B">
         <View style={styles.containerJeu}>{rendrePlateau()}</View>
       </GameLayout>
       <GameResultOverlay
