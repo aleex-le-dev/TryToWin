@@ -380,9 +380,9 @@ const GameScreen = ({ navigation, resetCategoryTrigger, forceHomeReset }) => {
             renderItem={renderGameCard}
             keyExtractor={(item) => item.id}
             numColumns={2}
-            columnWrapperStyle={{ gap: 10, paddingHorizontal: 0 }}
+            columnWrapperStyle={styles.row}
             scrollEnabled={false}
-            style={[styles.gamesList, { paddingHorizontal: 8 }]}
+            style={styles.gamesList}
           />
         </View>
       </ScrollView>
@@ -593,11 +593,14 @@ const styles = StyleSheet.create({
   gamesList: {
     marginTop: 10,
   },
-  gameRow: {
+  row: {
     justifyContent: "space-between",
+    paddingHorizontal: 20,
+    marginBottom: 20,
+    gap: 20,
   },
   gameCard: {
-    flex: 1,
+    width: (width - 60) / 2 - 10,
     height: 180,
     borderRadius: 28,
     backgroundColor: "#fff",
@@ -605,7 +608,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginHorizontal: 0,
     marginVertical: 0,
-    marginBottom: 10,
+    marginBottom: 0,
     overflow: "hidden",
     transform: [{ scale: 1 }],
   },
