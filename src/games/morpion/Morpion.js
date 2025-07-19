@@ -492,7 +492,8 @@ const Morpion = ({ navigation }) => {
         firstTurnPlayerSymbol={iaCommence ? "O" : "X"}
         onFirstTurnOverlayComplete={() =>
           handleFirstTurnOverlayComplete(iaCommence)
-        }>
+        }
+        headerColor="#45B7D1">
         <View style={styles.containerJeu}>{rendrePlateau()}</View>
       </GameLayout>
       <GameResultOverlay

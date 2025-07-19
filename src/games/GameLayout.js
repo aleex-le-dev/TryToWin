@@ -35,6 +35,7 @@ const GameLayout = ({
   firstTurnPlayerName = "Vous", // Nom du joueur qui commence
   firstTurnPlayerSymbol = "X", // Symbole du joueur qui commence
   onFirstTurnOverlayComplete, // Callback quand l'overlay se termine
+  headerColor = "#667eea", // Couleur du header (défaut: violet)
 }) => {
   // Tableau de stats
   const rendreStatistiques = () => {
@@ -95,7 +96,7 @@ const GameLayout = ({
 
       {/* Header */}
       <LinearGradient
-        colors={["#667eea", "#764ba2"]}
+        colors={[headerColor, headerColor]}
         style={{ paddingTop: 50, paddingBottom: 20, paddingHorizontal: 20 }}>
         <View
           style={{
