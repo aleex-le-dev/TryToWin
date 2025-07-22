@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "690931106779",
+    "project_id": "trytowin-c063c",
+    "storage_bucket": "trytowin-c063c.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:690931106779:android:9c871c3e5ac4cf3c579dfe",
+        "android_client_info": {
+          "package_name": "try.to.win"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBAtz-UwLMATqLFK59Q2k594hT6BPWIcD0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
