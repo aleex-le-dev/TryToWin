@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Chat TryToWin - Multi-appareils</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .step {
+            margin-bottom: 20px;
+            padding: 15px;
+            border-left: 4px solid #667eea;
+            background-color: #f8f9fa;
+        }
+        .step h3 {
+            color: #667eea;
+            margin-top: 0;
+        }
+        .qr-code {
+            text-align: center;
+            margin: 20px 0;
+        }
+        .qr-code img {
+            max-width: 200px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+        }
+        .highlight {
+            background-color: #fff3cd;
+            padding: 10px;
+            border-radius: 5px;
+            border-left: 4px solid #ffc107;
+        }
+        .code {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            border: 1px solid #dee2e6;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Test Chat TryToWin - Multi-appareils</h1>
+        
+        <div class="step">
+            <h3>📱 Méthode 1 : Mode Test (Recommandé)</h3>
+            <p>Pour tester avec un seul appareil virtuel :</p>
+            <ol>
+                <li>Ouvrez l'application TryToWin</li>
+                <li>Allez dans l'onglet <strong>Social</strong></li>
+                <li>Cliquez sur <strong>"Mode Test (1 appareil)"</strong></li>
+                <li>Un ami fictif "TestUser" sera ajouté automatiquement</li>
+                <li>Cliquez sur TestUser pour ouvrir le chat</li>
+                <li>Des messages automatiques apparaîtront toutes les 3 secondes</li>
+                <li>L'indicateur de frappe se déclenchera toutes les 8 secondes</li>
+            </ol>
+        </div>
+
+        <div class="step">
+            <h3>📱 Méthode 2 : Deux onglets du navigateur</h3>
+            <p>Pour simuler deux appareils différents :</p>
+            <ol>
+                <li>Ouvrez l'application dans <strong>deux onglets</strong> différents</li>
+                <li>Connectez-vous avec <strong>deux comptes différents</strong></li>
+                <li>Dans le premier onglet, allez dans <strong>Social</strong></li>
+                <li>Copiez le lien de votre profil</li>
+                <li>Dans le deuxième onglet, collez le lien dans la barre d'adresse</li>
+                <li>Ou scannez le QR code affiché</li>
+                <li>Les deux utilisateurs peuvent maintenant chatter en temps réel</li>
+            </ol>
+        </div>
+
+        <div class="step">
+            <h3>📱 Méthode 3 : Appareil physique + virtuel</h3>
+            <p>Si vous avez un téléphone physique :</p>
+            <ol>
+                <li>Installez <strong>Expo Go</strong> sur votre téléphone</li>
+                <li>Scannez le QR code de l'application</li>
+                <li>Connectez-vous avec un compte différent</li>
+                <li>Testez le chat entre l'appareil virtuel et physique</li>
+            </ol>
+        </div>
+
+        <div class="highlight">
+            <h3>🎯 Fonctionnalités à tester :</h3>
+            <ul>
+                <li>✅ Messages en temps réel</li>
+                <li>✅ Statut en ligne/hors ligne</li>
+                <li>✅ Indicateur de frappe</li>
+                <li>✅ Horodatage des messages</li>
+                <li>✅ Distinction entre vos messages et ceux de l'ami</li>
+                <li>✅ Ajout d'ami via QR code</li>
+            </ul>
+        </div>
+
+        <div class="step">
+            <h3>🔧 Dépannage</h3>
+            <p>Si le chat ne fonctionne pas :</p>
+            <ul>
+                <li>Vérifiez votre connexion internet</li>
+                <li>Assurez-vous que Firebase est configuré correctement</li>
+                <li>Redémarrez l'application avec <code>npx expo start --clear</code></li>
+                <li>Vérifiez les permissions caméra pour le scan QR</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html> 

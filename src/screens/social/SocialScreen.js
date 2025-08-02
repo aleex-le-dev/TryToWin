@@ -1,6 +1,6 @@
 // SocialScreen.js - Écran social pour ajouter des amis et chatter
 // Utilisé dans la barre de navigation principale (onglet Social)
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import {
   View,
   Text,
@@ -14,8 +14,12 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import QRCode from "react-native-qrcode-svg";
 import Toast from "react-native-toast-message";
+// import { BarCodeScanner } from 'expo-barcode-scanner';
+import { useAuth } from "../../hooks/useAuth";
+import { doc, getDoc, collection, addDoc, onSnapshot, updateDoc, serverTimestamp, query, orderBy, where } from "firebase/firestore";
+import { db } from "../../utils/firebaseConfig";
 
-// Données fictives pour la démonstration
+// Données fictives pour la démonstration (utilisateurs non connectés)
 const allUsers = [
   { id: "1", username: "MariePro" },
   { id: "2", username: "PierreMaster" },
@@ -24,18 +28,275 @@ const allUsers = [
 ];
 
 export default function SocialScreen() {
+  const { user } = useAuth();
   // Liste d'amis simulée
-  const [friends, setFriends] = useState([
-    { id: "2", username: "PierreMaster" },
-  ]);
+  const [friends, setFriends] = useState([]);
   const [selectedFriend, setSelectedFriend] = useState(null);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [search, setSearch] = useState("");
   const [longPressedFriendId, setLongPressedFriendId] = useState(null);
+  const [scanning, setScanning] = useState(false);
+  const [hasPermission, setHasPermission] = useState(null);
+  const [onlineStatus, setOnlineStatus] = useState({});
+  const [typingStatus, setTypingStatus] = useState({});
+  const [isTyping, setIsTyping] = useState(false);
+  const [testMode, setTestMode] = useState(false);
 
-  // Lien unique de profil (à adapter selon la logique réelle)
-  const myProfileLink = `trytowin://addfriend/1234`;
+  // Mode test : simuler un ami fictif
+  const enableTestMode = useCallback(() => {
+    const testFriend = {
+      id: "test-user-123",
+      username: "TestUser",
+      avatar: "🧪",
+      photoURL: "",
+      bio: "Utilisateur de test",
+      country: "Test",
+      isOnline: true,
+    };
+    
+    setFriends([testFriend]);
+    setOnlineStatus({ "test-user-123": true });
+    setTestMode(true);
+    
+    Toast.show({
+      type: 'success',
+      text1: 'Mode test activé',
+      text2: 'TestUser a été ajouté pour tester le chat',
+      position: 'top',
+      topOffset: 40,
+      visibilityTime: 2000,
+    });
+  }, []);
+
+  // Simuler des messages automatiques en mode test
+  useEffect(() => {
+    if (!testMode || !selectedFriend || selectedFriend.id !== "test-user-123") return;
+
+    const simulateMessages = [
+      "Salut ! Comment ça va ?",
+      "Je teste le chat en temps réel",
+      "C'est vraiment cool !",
+      "Les messages s'affichent instantanément",
+      "Et l'indicateur de frappe fonctionne aussi !"
+    ];
+
+    let messageIndex = 0;
+    const interval = setInterval(() => {
+      if (messageIndex < simulateMessages.length) {
+        const newMessage = {
+          id: `test-msg-${Date.now()}`,
+          text: simulateMessages[messageIndex],
+          senderId: "test-user-123",
+          senderName: "TestUser",
+          timestamp: new Date(),
+          read: false
+        };
+        
+        setMessages(prev => [...prev, newMessage]);
+        messageIndex++;
+      } else {
+        clearInterval(interval);
+      }
+    }, 3000); // Nouveau message toutes les 3 secondes
+
+    return () => clearInterval(interval);
+  }, [testMode, selectedFriend]);
+
+  // Simuler l'indicateur de frappe en mode test
+  useEffect(() => {
+    if (!testMode || !selectedFriend || selectedFriend.id !== "test-user-123") return;
+
+    const simulateTyping = () => {
+      setTypingStatus(prev => ({ ...prev, "test-user-123": true }));
+      
+      setTimeout(() => {
+        setTypingStatus(prev => ({ ...prev, "test-user-123": false }));
+      }, 2000);
+    };
+
+    const typingInterval = setInterval(simulateTyping, 8000); // Toutes les 8 secondes
+    return () => clearInterval(typingInterval);
+  }, [testMode, selectedFriend]);
+
+  // Écouter les messages en temps réel (désactivé temporairement)
+  // useEffect(() => {
+  //   if (!selectedFriend || !user?.id) return;
+
+  //   const chatId = [user.id, selectedFriend.id].sort().join('_');
+  //   const messagesRef = collection(db, 'chats', chatId, 'messages');
+  //   const q = query(messagesRef, orderBy('timestamp', 'asc'));
+
+  //   const unsubscribe = onSnapshot(q, (snapshot) => {
+  //     const newMessages = [];
+  //     snapshot.forEach((doc) => {
+  //       newMessages.push({ id: doc.id, ...doc.data() });
+  //     });
+  //     setMessages(newMessages);
+  //   });
+
+  //   return unsubscribe;
+  // }, [selectedFriend, user?.id]);
+
+  // Écouter le statut en ligne des amis (désactivé temporairement)
+  // useEffect(() => {
+  //   if (!friends.length) return;
+
+  //   const unsubscribes = friends.map(friend => {
+  //     const userRef = doc(db, 'users', friend.id);
+  //     return onSnapshot(userRef, (doc) => {
+  //         if (doc.exists()) {
+  //           const data = doc.data();
+  //           setOnlineStatus(prev => ({
+  //             ...prev,
+  //             [friend.id]: data.isOnline || false
+  //           }));
+  //         }
+  //       });
+  //     });
+
+  //     return () => unsubscribes.forEach(unsub => unsub());
+  //   }, [friends]);
+
+  // Écouter le statut de frappe (désactivé temporairement)
+  // useEffect(() => {
+  //   if (!selectedFriend || !user?.id) return;
+
+  //   const chatId = [user.id, selectedFriend.id].sort().join('_');
+  //   const typingRef = doc(db, 'chats', chatId, 'typing', selectedFriend.id);
+
+  //   const unsubscribe = onSnapshot(typingRef, (doc) => {
+  //     if (doc.exists()) {
+  //       setTypingStatus(prev => ({
+  //         ...prev,
+  //         [selectedFriend.id]: doc.data().isTyping || false
+  //       }));
+  //     }
+  //   });
+
+  //   return unsubscribe;
+  // }, [selectedFriend, user?.id]);
+
+  // Mettre à jour le statut en ligne (désactivé temporairement)
+  // useEffect(() => {
+  //   if (!user?.id) return;
+
+  //   const userRef = doc(db, 'users', user.id);
+  //   const updateOnlineStatus = async () => {
+  //     await updateDoc(userRef, {
+  //       isOnline: true,
+  //       lastSeen: serverTimestamp()
+  //     });
+  //   };
+
+  //   updateOnlineStatus();
+
+  //   // Mettre à jour le statut hors ligne quand l'app se ferme
+  //   const handleAppStateChange = () => {
+  //     updateDoc(userRef, {
+  //       isOnline: false,
+  //       lastSeen: serverTimestamp()
+  //     });
+  //   };
+
+  //   // Écouter les changements d'état de l'app
+  //   return () => {
+  //     handleAppStateChange();
+  //   };
+  // }, [user?.id]);
+
+  // Gérer la frappe (désactivé temporairement)
+  const handleTyping = useCallback(async (isTyping) => {
+    // Fonctionnalité désactivée temporairement
+  }, [selectedFriend, user?.id]);
+
+  // Envoyer un message en temps réel
+  const sendMessage = useCallback(async () => {
+    if (!input.trim() || !selectedFriend || !user?.id) return;
+
+    // En mode test, ajouter le message localement
+    if (testMode && selectedFriend.id === "test-user-123") {
+      const newMessage = {
+        id: `msg-${Date.now()}`,
+        text: input.trim(),
+        senderId: user.id,
+        senderName: user.displayName || user.email,
+        timestamp: new Date(),
+        read: false
+      };
+      
+      setMessages(prev => [...prev, newMessage]);
+      setInput("");
+      handleTyping(false);
+      
+      Toast.show({
+        type: 'success',
+        text1: 'Message envoyé',
+        text2: 'Message ajouté localement',
+        position: 'top',
+        topOffset: 40,
+        visibilityTime: 2000,
+      });
+    } else {
+      Toast.show({
+        type: 'info',
+        text1: 'Mode test requis',
+        text2: 'Activez le mode test pour envoyer des messages',
+        position: 'top',
+        topOffset: 40,
+        visibilityTime: 2000,
+      });
+    }
+  }, [input, selectedFriend, user, handleTyping, testMode]);
+
+  // useEffect(() => {
+  //   if (scanning) {
+  //     (async () => {
+  //       const { status } = await BarCodeScanner.requestPermissionsAsync();
+  //       setHasPermission(status === 'granted');
+  //     })();
+  //   }
+  // }, [scanning]);
+
+  // Récupérer les informations d'un utilisateur depuis Firestore
+  const getUserFromFirestore = async (userId) => {
+    try {
+      const userRef = doc(db, "users", userId);
+      const userSnap = await getDoc(userRef);
+      
+      if (userSnap.exists()) {
+        const userData = userSnap.data();
+        return {
+          id: userId,
+          username: userData.username || "Utilisateur",
+          avatar: userData.avatar || "👤",
+          photoURL: userData.photoURL || "",
+          bio: userData.bio || "",
+          country: userData.country || "",
+          isOnline: userData.isOnline || false,
+        };
+      }
+      return null;
+    } catch (error) {
+      console.error("Erreur lors de la récupération de l'utilisateur:", error);
+      return null;
+    }
+  };
+
+  const handleBarCodeScanned = async ({ data }) => {
+    setScanning(false);
+    Toast.show({
+      type: 'info',
+      text1: 'Fonctionnalité temporairement désactivée',
+      text2: 'Le scan QR code sera bientôt disponible',
+      position: 'top',
+      topOffset: 40,
+      visibilityTime: 2000,
+    });
+  };
+
+  // Lien unique de profil avec le vrai ID de l'utilisateur connecté
+  const myProfileLink = user?.id ? `trytowin://addfriend/${user.id}` : `trytowin://addfriend/1234`;
 
   // Fonction pour copier le lien avec gestion d'erreur
   const copyToClipboard = async () => {
@@ -72,14 +333,6 @@ export default function SocialScreen() {
     [friends]
   );
 
-  // Envoyer un message (mock) avec vérification
-  const sendMessage = useCallback(() => {
-    if (input.trim() && selectedFriend) {
-      setMessages((prev) => [...prev, { fromMe: true, text: input.trim() }]);
-      setInput("");
-    }
-  }, [input, selectedFriend]);
-
   // Supprimer un ami avec confirmation
   const removeFriend = useCallback((id) => {
     Alert.alert(
@@ -111,19 +364,47 @@ export default function SocialScreen() {
 
   // Rendu optimisé des messages
   const renderMessage = useCallback(
-    ({ item }) => (
-      <View
-        style={[
-          styles.messageBubble,
-          item.fromMe ? styles.myMessage : styles.theirMessage,
-        ]}>
-        <Text style={styles.messageText}>{item.text}</Text>
-      </View>
-    ),
-    []
+    ({ item }) => {
+      // Formater l'heure du message
+      let messageTime = 'Maintenant';
+      if (item.timestamp) {
+        if (item.timestamp.toDate) {
+          // Timestamp Firestore
+          messageTime = item.timestamp.toDate().toLocaleTimeString('fr-FR', { 
+            hour: '2-digit', 
+            minute: '2-digit' 
+          });
+        } else if (item.timestamp instanceof Date) {
+          // Date JavaScript
+          messageTime = item.timestamp.toLocaleTimeString('fr-FR', { 
+            hour: '2-digit', 
+            minute: '2-digit' 
+          });
+        } else if (typeof item.timestamp === 'string') {
+          // String timestamp
+          const date = new Date(item.timestamp);
+          messageTime = date.toLocaleTimeString('fr-FR', { 
+            hour: '2-digit', 
+            minute: '2-digit' 
+          });
+        }
+      }
+
+      return (
+        <View
+          style={[
+            styles.messageBubble,
+            item.senderId === user?.id ? styles.myMessage : styles.theirMessage,
+          ]}>
+          <Text style={styles.messageText}>{item.text}</Text>
+          <Text style={styles.messageTime}>{messageTime}</Text>
+        </View>
+      );
+    },
+    [user?.id]
   );
 
-  // Rendu optimisé des amis
+  // Rendu optimisé des amis avec statut en ligne
   const renderFriend = useCallback(
     ({ item }) => (
       <TouchableOpacity
@@ -131,8 +412,19 @@ export default function SocialScreen() {
         onPress={() => setSelectedFriend(item)}
         onLongPress={() => setLongPressedFriendId(item.id)}
         activeOpacity={0.7}>
-        <Ionicons name='person-circle' size={28} color='#667eea' />
-        <Text style={styles.friendName}>{item.username}</Text>
+        <View style={styles.avatarContainer}>
+          <Ionicons name='person-circle' size={28} color='#667eea' />
+          <View style={[
+            styles.onlineIndicator,
+            { backgroundColor: onlineStatus[item.id] ? '#4cd137' : '#ff6b6b' }
+          ]} />
+        </View>
+        <View style={styles.friendInfo}>
+          <Text style={styles.friendName}>{item.username}</Text>
+          <Text style={styles.onlineStatus}>
+            {onlineStatus[item.id] ? 'En ligne' : 'Hors ligne'}
+          </Text>
+        </View>
         <Ionicons name='chatbubble-ellipses' size={20} color='#4ECDC4' />
         {longPressedFriendId === item.id && (
           <TouchableOpacity
@@ -143,7 +435,7 @@ export default function SocialScreen() {
         )}
       </TouchableOpacity>
     ),
-    [longPressedFriendId, removeFriend]
+    [longPressedFriendId, removeFriend, onlineStatus]
   );
 
   // Rendu optimisé des utilisateurs
@@ -163,34 +455,64 @@ export default function SocialScreen() {
   // Affichage du chat avec un ami
   const renderChat = () => (
     <View style={styles.chatContainer}>
-      <Text style={styles.chatTitle}>Chat avec {selectedFriend?.username}</Text>
+      <View style={styles.chatHeader}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => setSelectedFriend(null)}>
+          <Ionicons name='arrow-back' size={20} color='#667eea' />
+        </TouchableOpacity>
+        <View style={styles.chatHeaderInfo}>
+          <Text style={styles.chatTitle}>{selectedFriend?.username}</Text>
+          <View style={styles.chatStatus}>
+            <View style={[
+              styles.onlineIndicator,
+              { backgroundColor: onlineStatus[selectedFriend?.id] ? '#4cd137' : '#ff6b6b' }
+            ]} />
+            <Text style={styles.chatStatusText}>
+              {onlineStatus[selectedFriend?.id] ? 'En ligne' : 'Hors ligne'}
+            </Text>
+          </View>
+        </View>
+      </View>
+      
+      {typingStatus[selectedFriend?.id] && (
+        <View style={styles.typingIndicator}>
+          <Text style={styles.typingText}>{selectedFriend?.username} est en train d'écrire...</Text>
+        </View>
+      )}
+
       <FlatList
         data={messages}
-        keyExtractor={(_, i) => i.toString()}
+        keyExtractor={(item) => item.id}
         renderItem={renderMessage}
         style={{ flex: 1 }}
         removeClippedSubviews={true}
         maxToRenderPerBatch={10}
         windowSize={10}
+        inverted={false}
       />
+      
       <View style={styles.inputRow}>
         <TextInput
           style={styles.input}
           value={input}
-          onChangeText={setInput}
+          onChangeText={(text) => {
+            setInput(text);
+            if (text.length > 0 && !isTyping) {
+              setIsTyping(true);
+              handleTyping(true);
+            } else if (text.length === 0 && isTyping) {
+              setIsTyping(false);
+              handleTyping(false);
+            }
+          }}
           placeholder='Votre message...'
           multiline={false}
         />
-        <TouchableOpacity onPress={sendMessage}>
+        <TouchableOpacity onPress={sendMessage} style={styles.sendButton}>
           <Ionicons name='send' size={24} color='#667eea' />
         </TouchableOpacity>
       </View>
-      <TouchableOpacity
-        style={styles.backButton}
-        onPress={() => setSelectedFriend(null)}>
-        <Ionicons name='arrow-back' size={20} color='#667eea' />
-        <Text style={styles.backText}>Retour</Text>
-      </TouchableOpacity>
     </View>
   );
 
@@ -212,7 +534,32 @@ export default function SocialScreen() {
             </TouchableOpacity>
           </View>
         </View>
+        <TouchableOpacity
+          style={[styles.copyButton, { marginTop: 16, alignSelf: 'center' }]}
+          onPress={() => setScanning(true)}>
+          <Ionicons name='qr-code' size={18} color='#667eea' />
+          <Text style={styles.copyButtonText}>Scanner un QR code</Text>
+        </TouchableOpacity>
+        
+        {/* Bouton Mode Test pour appareil unique */}
+        <TouchableOpacity
+          style={[styles.testButton, { marginTop: 12, alignSelf: 'center' }]}
+          onPress={enableTestMode}>
+          <Ionicons name='flask' size={18} color='#fff' />
+          <Text style={styles.testButtonText}>Mode Test (1 appareil)</Text>
+        </TouchableOpacity>
       </View>
+             {scanning && (
+         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#00000099', position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 10 }}>
+           <View style={{ backgroundColor: '#fff', padding: 20, borderRadius: 10, alignItems: 'center' }}>
+             <Text style={{ color: '#667eea', fontWeight: 'bold', marginBottom: 10 }}>Scanner QR Code</Text>
+             <Text style={{ color: '#666', textAlign: 'center', marginBottom: 15 }}>Cette fonctionnalité sera bientôt disponible</Text>
+             <TouchableOpacity onPress={() => setScanning(false)} style={{ backgroundColor: '#667eea', padding: 10, borderRadius: 8 }}>
+               <Text style={{ color: '#fff', fontWeight: 'bold' }}>Fermer</Text>
+             </TouchableOpacity>
+           </View>
+         </View>
+       )}
       {/* Toast pour feedback */}
       <Toast />
       {selectedFriend ? (
@@ -300,11 +647,47 @@ const styles = StyleSheet.create({
     marginVertical: 10,
   },
   chatContainer: { flex: 1 },
+  chatHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 10,
+    backgroundColor: "#fff",
+    borderBottomWidth: 1,
+    borderBottomColor: "#e9ecef",
+  },
+  backButton: {
+    padding: 5,
+  },
+  chatHeaderInfo: {
+    flex: 1,
+    marginLeft: 10,
+  },
   chatTitle: {
     fontSize: 18,
     fontWeight: "bold",
     color: "#667eea",
+  },
+  chatStatus: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 2,
+  },
+  chatStatusText: {
+    fontSize: 13,
+    color: "#6c757d",
+    marginLeft: 5,
+  },
+  typingIndicator: {
+    alignSelf: "center",
+    backgroundColor: "#e0e0e0",
+    padding: 8,
+    borderRadius: 10,
+    marginTop: 10,
     marginBottom: 10,
+  },
+  typingText: {
+    fontSize: 14,
+    color: "#333",
   },
   messageBubble: {
     padding: 10,
@@ -315,6 +698,13 @@ const styles = StyleSheet.create({
   myMessage: { backgroundColor: "#e1f5fe", alignSelf: "flex-end" },
   theirMessage: { backgroundColor: "#f1f3f4", alignSelf: "flex-start" },
   messageText: { fontSize: 15, color: "#333" },
+  messageTime: {
+    fontSize: 11,
+    color: "#666",
+    marginTop: 4,
+    alignSelf: "flex-end",
+    fontStyle: "italic",
+  },
   inputRow: { flexDirection: "row", alignItems: "center", marginTop: 10 },
   input: {
     flex: 1,
@@ -327,7 +717,9 @@ const styles = StyleSheet.create({
     borderColor: "#e9ecef",
     marginRight: 10,
   },
-  backButton: { flexDirection: "row", alignItems: "center", marginTop: 10 },
+  sendButton: {
+    padding: 5,
+  },
   backText: { color: "#667eea", marginLeft: 5, fontSize: 15 },
   searchContainer: {
     flexDirection: "row",
@@ -393,5 +785,40 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginLeft: 6,
     fontSize: 13,
+  },
+  avatarContainer: {
+    position: "relative",
+    marginRight: 10,
+  },
+  onlineIndicator: {
+    position: "absolute",
+    bottom: 0,
+    right: 0,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+  },
+  friendInfo: {
+    flex: 1,
+  },
+  onlineStatus: {
+    fontSize: 12,
+    color: "#999",
+  },
+  testButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#4CAF50', // Vert foncé
+    borderRadius: 20,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    marginTop: 10,
+    elevation: 3,
+  },
+  testButtonText: {
+    color: '#fff',
+    fontSize: 15,
+    fontWeight: 'bold',
+    marginLeft: 8,
   },
 });
