@@ -29,7 +29,8 @@
       "googleServicesFile": "./google-services.json",
       "permissions": [
         "READ_EXTERNAL_STORAGE",
-        "WRITE_EXTERNAL_STORAGE"
+        "WRITE_EXTERNAL_STORAGE",
+        "android.permission.CAMERA"
       ]
     },
     "web": {
@@ -46,6 +47,7 @@
     },
     "plugins": [
       "expo-barcode-scanner"
-    ]
+    ],
+    "owner": "diiablex62"
   }
 }
