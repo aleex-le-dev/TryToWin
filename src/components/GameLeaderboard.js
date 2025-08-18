@@ -44,47 +44,6 @@ const GameLeaderboard = ({
       <View style={styles.leaderboardHeader}>
         <Text style={styles.leaderboardTitle}>Classement {game.title}</Text>
         <Text style={styles.leaderboardSubtitle}>{`Votre position : #${userPosition}`}</Text>
-        {/* Bouton Aller à ma position (mondial/pays) */}
-        {centeredLeaderboardData.length > 0 && (
-          <TouchableOpacity
-            style={{
-              backgroundColor: game.color,
-              paddingHorizontal: 14,
-              paddingVertical: 8,
-              borderRadius: 18,
-              marginTop: 8,
-              alignSelf: "center",
-              flexDirection: "row",
-              alignItems: "center",
-              gap: 6,
-            }}
-            onPress={() => {
-              try {
-                if (leaderboardType === "global") {
-                  scrollToUserInWorld && scrollToUserInWorld();
-                } else {
-                  // si pas de pays défini, afficher un toast
-                  if (!userCountry || userCountry === "") {
-                    Toast.show({
-                      type: "info",
-                      text1: "Veuillez entrer votre pays dans le profil",
-                      position: "top",
-                    });
-                    return;
-                  }
-                  if (scrollToUserInCountry) {
-                    scrollToUserInCountry();
-                  } else {
-                    // fallback: activer la logique existante
-                    setPendingScrollToUserCountry && setPendingScrollToUserCountry(true);
-                  }
-                }
-              } catch (e) {}
-            }}>
-            <Ionicons name='locate' size={16} color='#fff' />
-            <Text style={{ color: "#fff", fontWeight: "bold" }}>Aller à ma position</Text>
-          </TouchableOpacity>
-        )}
       </View>
 
       {/* Onglets de classement */}
@@ -272,7 +231,21 @@ const GameLeaderboard = ({
             }
             showsVerticalScrollIndicator={false}
             contentContainerStyle={{ paddingBottom: 20 }}
-            onScrollToIndexFailed={handleScrollToIndexFailed}
+            getItemLayout={(data, index) => ({ length: 80, offset: 80 * index, index })}
+            onScrollToIndexFailed={(info) => {
+              try {
+                const safeIndex = Math.max(0, Math.min(info.index, info.highestMeasuredFrameIndex || 0));
+                flatListRef.current?.scrollToIndex({
+                  index: safeIndex,
+                  animated: true,
+                  viewPosition: 0.5,
+                });
+              } catch (e) {
+                try {
+                  flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
+                } catch {}
+              }
+            }}
             onContentSizeChange={() => {
               if (pendingScrollToUserCountry) {
                 try {

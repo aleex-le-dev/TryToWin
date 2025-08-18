@@ -148,13 +148,19 @@ const GameDetailsScreen = ({ route, navigation }) => {
       const userIndex = leaderboardData.findIndex((item) => item.isCurrentUser);
       console.log("🎯 Scroll manuel vers l'utilisateur à l'index:", userIndex);
 
-      if (userIndex !== -1) {
+      if (userIndex !== -1 && userIndex < leaderboardData.length) {
         setTimeout(() => {
-          flatListRef.current?.scrollToIndex({
-            index: userIndex,
-            animated: true,
-            viewPosition: 0.5,
-          });
+          try {
+            flatListRef.current?.scrollToIndex({
+              index: userIndex,
+              animated: true,
+              viewPosition: 0.5,
+            });
+          } catch (error) {
+            try {
+              flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
+            } catch {}
+          }
         }, 100);
       }
     }
@@ -175,18 +181,24 @@ const GameDetailsScreen = ({ route, navigation }) => {
         userIndex
       );
 
-      if (userIndex !== -1) {
+      if (userIndex !== -1 && userIndex < leaderboardData.length) {
         // Attendre un peu que la FlatList soit rendue
         setTimeout(() => {
-          console.log("🎯 Scroll automatique vers l'index:", userIndex);
-          flatListRef.current?.scrollToIndex({
-            index: userIndex,
-            animated: true,
-            viewPosition: 0.5, // Centre l'élément dans la vue
-          });
+          try {
+            console.log("🎯 Scroll automatique vers l'index:", userIndex);
+            flatListRef.current?.scrollToIndex({
+              index: userIndex,
+              animated: true,
+              viewPosition: 0.5, // Centre l'élément dans la vue
+            });
+          } catch (e) {
+            try {
+              flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
+            } catch {}
+          }
         }, 300); // Réduit le délai pour une réponse plus rapide
       } else {
-        console.log("❌ Utilisateur non trouvé dans le classement");
+        console.log("❌ Utilisateur non trouvé dans le classement ou index invalide");
       }
     } else {
       console.log("🔍 Conditions non remplies pour le scroll:", {
