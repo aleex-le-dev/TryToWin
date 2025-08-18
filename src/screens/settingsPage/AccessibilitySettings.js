@@ -13,28 +13,21 @@ import {
 import Ionicons from "react-native-vector-icons/Ionicons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Linking from "expo-linking";
+import { useAccessibility, A11Y_KEYS } from "../../contexts/AccessibilityContext";
 
-const STORAGE_KEYS = {
-	HIGH_CONTRAST: "a11y_high_contrast",
-	LARGE_TOUCH_TARGETS: "a11y_large_touch_targets",
-	RESPECT_OS_PREFS: "a11y_respect_os_prefs",
-	REDUCE_MOTION: "a11y_reduce_motion",
-	LARGER_SPACING: "a11y_larger_spacing",
-	SHOW_TUTORIALS: "a11y_show_tutorials",
-	HAPTICS: "a11y_haptics",
-	SOUNDS: "a11y_sounds",
-};
+const STORAGE_KEYS = A11Y_KEYS;
 
 const AccessibilitySettings = ({ navigation }) => {
+	const a11y = useAccessibility();
 	// États des préférences d'accessibilité
-	const [highContrast, setHighContrast] = useState(true);
-	const [largeTouchTargets, setLargeTouchTargets] = useState(true);
-	const [respectOsPrefs, setRespectOsPrefs] = useState(true);
-	const [reduceMotion, setReduceMotion] = useState(false);
-	const [largerSpacing, setLargerSpacing] = useState(false);
-	const [showTutorials, setShowTutorials] = useState(true);
-	const [haptics, setHaptics] = useState(true);
-	const [sounds, setSounds] = useState(false);
+	const [highContrast, setHighContrast] = useState(a11y.highContrast);
+	const [largeTouchTargets, setLargeTouchTargets] = useState(a11y.largeTouchTargets);
+	const [respectOsPrefs, setRespectOsPrefs] = useState(a11y.respectOsPrefs);
+	const [reduceMotion, setReduceMotion] = useState(a11y.reduceMotion);
+	const [largerSpacing, setLargerSpacing] = useState(a11y.largerSpacing);
+	const [showTutorials, setShowTutorials] = useState(a11y.showTutorials);
+	const [haptics, setHaptics] = useState(a11y.haptics);
+	const [sounds, setSounds] = useState(a11y.sounds);
 
 	// Chargement des préférences persistées
 	useEffect(() => {
@@ -63,11 +56,7 @@ const AccessibilitySettings = ({ navigation }) => {
 	}, []);
 
 	// Persistance utilitaire
-	const persist = async (key, value) => {
-		try {
-			await AsyncStorage.setItem(key, String(value));
-		} catch {}
-	};
+	const persist = async (key, value) => { try { await AsyncStorage.setItem(key, String(value)); } catch {} };
 
 	// Lien de contact accessible
 	const openContact = () => {
@@ -98,8 +87,7 @@ const AccessibilitySettings = ({ navigation }) => {
 						desc="Renforce les contrastes pour une meilleure lisibilité"
 						value={highContrast}
 						onValueChange={(v) => {
-							setHighContrast(v);
-							persist(STORAGE_KEYS.HIGH_CONTRAST, v);
+							setHighContrast(v); a11y.setHighContrast(v);
 						}}
 					/>
 					<Row
@@ -107,8 +95,7 @@ const AccessibilitySettings = ({ navigation }) => {
 						desc="Boutons et zones tactiles plus larges"
 						value={largeTouchTargets}
 						onValueChange={(v) => {
-							setLargeTouchTargets(v);
-							persist(STORAGE_KEYS.LARGE_TOUCH_TARGETS, v);
+							setLargeTouchTargets(v); a11y.setLargeTouchTargets(v);
 						}}
 					/>
 					<Text style={styles.note}>Tous les contrôles disposent d'un label accessible (compatibles VoiceOver/TalkBack).</Text>
@@ -122,8 +109,7 @@ const AccessibilitySettings = ({ navigation }) => {
 						desc="Taille du texte, contraste renforcé, etc."
 						value={respectOsPrefs}
 						onValueChange={(v) => {
-							setRespectOsPrefs(v);
-							persist(STORAGE_KEYS.RESPECT_OS_PREFS, v);
+							setRespectOsPrefs(v); a11y.setRespectOsPrefs(v);
 						}}
 					/>
 					<Row
@@ -131,8 +117,7 @@ const AccessibilitySettings = ({ navigation }) => {
 						desc="Désactive certaines animations pour limiter la gêne visuelle"
 						value={reduceMotion}
 						onValueChange={(v) => {
-							setReduceMotion(v);
-							persist(STORAGE_KEYS.REDUCE_MOTION, v);
+							setReduceMotion(v); a11y.setReduceMotion(v);
 						}}
 					/>
 					<Row
@@ -140,8 +125,7 @@ const AccessibilitySettings = ({ navigation }) => {
 						desc="Augmente les espacements et interlignes"
 						value={largerSpacing}
 						onValueChange={(v) => {
-							setLargerSpacing(v);
-							persist(STORAGE_KEYS.LARGER_SPACING, v);
+							setLargerSpacing(v); a11y.setLargerSpacing(v);
 						}}
 					/>
 					<Text style={styles.note}>Les parcours sont pensés pour l'usage à une main sur smartphone et tablette.</Text>
@@ -155,8 +139,7 @@ const AccessibilitySettings = ({ navigation }) => {
 						desc="Afficher des tutoriels contextuels à la première utilisation"
 						value={showTutorials}
 						onValueChange={(v) => {
-							setShowTutorials(v);
-							persist(STORAGE_KEYS.SHOW_TUTORIALS, v);
+							setShowTutorials(v); a11y.setShowTutorials(v);
 						}}
 					/>
 					<Row
@@ -164,8 +147,7 @@ const AccessibilitySettings = ({ navigation }) => {
 						desc="Feedback haptique lors d'actions importantes"
 						value={haptics}
 						onValueChange={(v) => {
-							setHaptics(v);
-							persist(STORAGE_KEYS.HAPTICS, v);
+							setHaptics(v); a11y.setHaptics(v);
 						}}
 					/>
 					<Row
@@ -173,8 +155,7 @@ const AccessibilitySettings = ({ navigation }) => {
 						desc="Jouer un son léger (désactivable) lors des validations"
 						value={sounds}
 						onValueChange={(v) => {
-							setSounds(v);
-							persist(STORAGE_KEYS.SOUNDS, v);
+							setSounds(v); a11y.setSounds(v);
 						}}
 					/>
 					<Text style={styles.note}>FAQ et tutoriels sont accessibles depuis l'app et lors de la découverte de nouvelles fonctions.</Text>

@@ -21,6 +21,7 @@ import { gamesData } from "../../constants/gamesData";
 import { categories } from "../../constants/categories";
 import { getUserAllGameStats } from "../../services/scoreService";
 import { useRef } from "react";
+import { useAccessibility } from "../../contexts/AccessibilityContext";
 
 const { width } = Dimensions.get("window");
 
@@ -62,6 +63,8 @@ function GameCard({ item, onPress }) {
 
 // Composant effet shiny-text
 const ShinyText = ({ children, style }) => {
+  const { reduceMotion } = useAccessibility();
+  if (reduceMotion) return <Text style={style}>{children}</Text>;
   const [shineAnim] = useState(new Animated.Value(0));
 
   useEffect(() => {
@@ -110,6 +113,8 @@ const ShinyText = ({ children, style }) => {
 };
 
 function ShinyLetter({ letter, style }) {
+  const { reduceMotion } = useAccessibility();
+  if (reduceMotion) return <Text style={style}>{letter}</Text>;
   const [shineAnim] = useState(new Animated.Value(0));
   useEffect(() => {
     Animated.loop(
@@ -198,6 +203,7 @@ function useDecryptedText(
 // Écran d'accueil fusionné avec liste des jeux
 const GameScreen = ({ navigation, resetCategoryTrigger, forceHomeReset }) => {
   const { user, loading } = useAuth();
+  const { highContrast, largeTouchTargets, largerSpacing, reduceMotion } = useAccessibility();
   const [selectedCategory, setSelectedCategory] = useState("Tous");
   const [profile, setProfile] = useState(null);
   const [profileLoading, setProfileLoading] = useState(true);
@@ -284,12 +290,14 @@ const GameScreen = ({ navigation, resetCategoryTrigger, forceHomeReset }) => {
       style={[
         styles.categoryButton,
         selectedCategory === item && styles.categoryButtonActive,
+        largeTouchTargets && { paddingVertical: 12, paddingHorizontal: 24 }
       ]}
       onPress={() => setSelectedCategory(item)}>
       <Text
         style={[
           styles.categoryButtonText,
           selectedCategory === item && styles.categoryButtonTextActive,
+          largerSpacing && { letterSpacing: 0.3 }
         ]}>
         {item}
       </Text>
@@ -334,7 +342,7 @@ const GameScreen = ({ navigation, resetCategoryTrigger, forceHomeReset }) => {
     <View style={styles.container}>
       <ScrollView ref={scrollViewRef} showsVerticalScrollIndicator={false}>
         {/* Header avec salutation */}
-        <LinearGradient colors={["#667eea", "#764ba2"]} style={styles.header}>
+        <LinearGradient colors={highContrast ? ["#3730a3", "#3b0764"] : ["#667eea", "#764ba2"]} style={styles.header}>
           <View style={styles.headerContent}>
             <View style={styles.greetingContainer}>
               <Text style={styles.greeting}>{decryptedBonjour}</Text>
@@ -343,8 +351,8 @@ const GameScreen = ({ navigation, resetCategoryTrigger, forceHomeReset }) => {
               )}
               <Text style={styles.subtitle}>{decryptedReady}</Text>
             </View>
-            <View style={styles.headerStats}>
-              <View style={styles.statItem}>
+            <View style={[styles.headerStats, highContrast && { backgroundColor: "rgba(255,255,255,0.35)" }]}>
+              <View style={[styles.statItem, largerSpacing && { marginRight: 8 }]}>
                 <Text style={styles.statNumber}>{totalPoints}</Text>
                 <Text style={styles.statLabel}>Points</Text>
               </View>
@@ -353,14 +361,14 @@ const GameScreen = ({ navigation, resetCategoryTrigger, forceHomeReset }) => {
         </LinearGradient>
 
         {/* Filtres par catégorie */}
-        <View style={styles.filtersContainer}>
+        <View style={[styles.filtersContainer, largerSpacing && { paddingVertical: 20 }]}>
           <FlatList
             data={categories}
             renderItem={renderCategoryButton}
             keyExtractor={(item) => item}
             horizontal
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.categoriesList}
+            contentContainerStyle={[styles.categoriesList, largerSpacing && { paddingVertical: 6 }]}
           />
         </View>
 

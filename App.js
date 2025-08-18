@@ -5,6 +5,7 @@ import { AuthProvider } from './src/contexts/AuthContext';
 import { ToastProvider } from './src/contexts/ToastContext';
 import AppNavigator from './src/navigation/AppNavigator';
 import CustomToast from './src/components/CustomToast';
+import { AccessibilityProvider } from './src/contexts/AccessibilityContext';
 
 export default function App() {
   return (
@@ -12,8 +13,10 @@ export default function App() {
       <StatusBar style="auto" />
       <AuthProvider>
         <ToastProvider>
-          <AppNavigator />
-          <CustomToast />
+          <AccessibilityProvider>
+            <AppNavigator />
+            <CustomToast />
+          </AccessibilityProvider>
         </ToastProvider>
       </AuthProvider>
     </View>
