@@ -72,7 +72,7 @@ const SettingsScreen = ({ navigation, route }) => {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Application</Text>
           <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('AppearanceSettings')}>
-            <Text style={styles.menuItemText}>Apparence</Text>
+            <Text style={styles.menuItemText}>Mode sombre</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('AccessibilitySettings')}>
             <Text style={[styles.menuItemText, styles.menuItemTextBold]}>Accessibilité</Text>
