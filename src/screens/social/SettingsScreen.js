@@ -38,33 +38,33 @@ const SettingsScreen = ({ navigation, route }) => {
         {/* Section Compte */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Compte</Text>
-          <TouchableOpacity style={styles.menuItem}>
+          <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('AccountSettings')}>
             <Text style={styles.menuItemText}>Compte</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.menuItem}>
+          <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('PrivacySettings')}>
             <Text style={styles.menuItemText}>Données et confidentialité</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.menuItem}>
+          <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('DeviceSettings')}>
             <Text style={styles.menuItemText}>Appareil</Text>
           </TouchableOpacity>
         </View>
         {/* Section Abonnement */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Abonnement</Text>
-          <TouchableOpacity style={styles.menuItem}>
+          <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('ShopScreen')}>
             <Text style={styles.menuItemText}>Boutique</Text>
           </TouchableOpacity>
         </View>
         {/* Section Application */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Application</Text>
-          <TouchableOpacity style={styles.menuItem}>
+          <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('AppearanceSettings')}>
             <Text style={styles.menuItemText}>Apparence</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.menuItem}>
+          <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('AccessibilitySettings')}>
             <Text style={styles.menuItemText}>Accessibilité</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.menuItem}>
+          <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('LanguageSettings')}>
             <Text style={styles.menuItemText}>Langue</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('BlockedUsers')}>
@@ -74,10 +74,10 @@ const SettingsScreen = ({ navigation, route }) => {
         {/* Section Assistance */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Assistance</Text>
-          <TouchableOpacity style={styles.menuItem}>
+          <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('SupportScreen')}>
             <Text style={styles.menuItemText}>Contact</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.menuItem}>
+          <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('DonateScreen')}>
             <Text style={styles.menuItemText}>Payer un café</Text>
           </TouchableOpacity>
         </View>

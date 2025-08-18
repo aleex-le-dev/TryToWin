@@ -11,6 +11,15 @@ import { useAuth } from "../contexts/AuthContext";
 import EmailValidationScreen from "../screens/auth/EmailValidationScreen";
 import SettingsScreen from "../screens/social/SettingsScreen";
 import BlockedUsersScreen from "../screens/social/BlockedUsersScreen";
+import AccessibilitySettings from "../screens/settingsPage/AccessibilitySettings";
+import AccountSettings from "../screens/settingsPage/AccountSettings";
+import AppearanceSettings from "../screens/settingsPage/AppearanceSettings";
+import DeviceSettings from "../screens/settingsPage/DeviceSettings";
+import DonateScreen from "../screens/settingsPage/DonateScreen";
+import LanguageSettings from "../screens/settingsPage/LanguageSettings";
+import PrivacySettings from "../screens/settingsPage/PrivacySettings";
+import ShopScreen from "../screens/settingsPage/ShopScreen";
+import SupportScreen from "../screens/settingsPage/SupportScreen";
 
 const Stack = createStackNavigator();
 
@@ -83,6 +92,15 @@ const AppNavigator = () => {
               component={BlockedUsersScreen}
               options={{ headerShown: false }}
             />
+            <Stack.Screen name='AccessibilitySettings' component={AccessibilitySettings} options={{ headerShown: false }} />
+            <Stack.Screen name='AccountSettings' options={{ headerShown: false }}>{(p) => <AccountSettings {...p} />}</Stack.Screen>
+            <Stack.Screen name='AppearanceSettings' options={{ headerShown: false }}>{(p) => <AppearanceSettings {...p} />}</Stack.Screen>
+            <Stack.Screen name='DeviceSettings' options={{ headerShown: false }}>{(p) => <DeviceSettings {...p} />}</Stack.Screen>
+            <Stack.Screen name='DonateScreen' options={{ headerShown: false }}>{(p) => <DonateScreen {...p} />}</Stack.Screen>
+            <Stack.Screen name='LanguageSettings' options={{ headerShown: false }}>{(p) => <LanguageSettings {...p} />}</Stack.Screen>
+            <Stack.Screen name='PrivacySettings' options={{ headerShown: false }}>{(p) => <PrivacySettings {...p} />}</Stack.Screen>
+            <Stack.Screen name='ShopScreen' options={{ headerShown: false }}>{(p) => <ShopScreen {...p} />}</Stack.Screen>
+            <Stack.Screen name='SupportScreen' options={{ headerShown: false }}>{(p) => <SupportScreen {...p} />}</Stack.Screen>
           </>
         )}
       </Stack.Navigator>
