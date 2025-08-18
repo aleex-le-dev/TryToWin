@@ -1,10 +1,10 @@
 // Script de test pour générer un QR code de test
-// Utilisez ce script pour créer un QR code avec un lien d'ami fictif
+
 
 const QRCode = require('qrcode');
 
 // ID d'utilisateur de test (correspond à "MariePro" dans allUsers)
-// Pour tester avec un vrai utilisateur Firestore, remplacez par un vrai ID
+
 const testUserId = "1";
 const testProfileLink = `trytowin://addfriend/${testUserId}`;
 
