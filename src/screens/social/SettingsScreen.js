@@ -1,5 +1,5 @@
 // Composant Paramètres façon Discord (squelette)
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -10,13 +10,28 @@ import {
 } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { useAuth } from "../../hooks/useAuth";
+import { db } from "../../utils/firebaseConfig";
+import { collection, onSnapshot } from "firebase/firestore";
 
 const SettingsScreen = ({ navigation, route }) => {
   const { logout } = useAuth();
+  const { user } = useAuth();
+  const [blockedCount, setBlockedCount] = useState(0);
   const handleLogout = async () => {
     await logout();
     navigation.goBack();
   };
+
+  useEffect(() => {
+    if (!user?.id) return;
+    const col = collection(db, "users", user.id, "blocked");
+    const unsub = onSnapshot(
+      col,
+      (snap) => setBlockedCount(snap.size || 0),
+      () => setBlockedCount(0)
+    );
+    return () => unsub();
+  }, [user?.id]);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
@@ -68,7 +83,7 @@ const SettingsScreen = ({ navigation, route }) => {
             <Text style={styles.menuItemText}>Langue</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('BlockedUsers')}>
-            <Text style={styles.menuItemText}>Joueurs bloqués</Text>
+            <Text style={[styles.menuItemText, styles.menuItemTextBold]}>Joueurs bloqués</Text>
           </TouchableOpacity>
         </View>
         {/* Section Assistance */}
@@ -154,6 +169,9 @@ const styles = StyleSheet.create({
   menuItemText: {
     color: "#23272a",
     fontSize: 16,
+  },
+  menuItemTextBold: {
+    fontWeight: "bold",
   },
 });
 
