@@ -30,6 +30,8 @@ const GameLeaderboard = ({
   renderLeaderboardItem,
   scrollToUserInWorld,
   countries,
+  // Nouveau: scroll en mode pays
+  scrollToUserInCountry,
 }) => {
   // Calcul dynamique de la position utilisateur dans la liste affichée
   const userIndex = centeredLeaderboardData.findIndex(
@@ -41,9 +43,48 @@ const GameLeaderboard = ({
     <View style={styles.leaderboardContent}>
       <View style={styles.leaderboardHeader}>
         <Text style={styles.leaderboardTitle}>Classement {game.title}</Text>
-        <Text style={styles.leaderboardSubtitle}>
-          {`Votre position : #${userPosition}`}
-        </Text>
+        <Text style={styles.leaderboardSubtitle}>{`Votre position : #${userPosition}`}</Text>
+        {/* Bouton Aller à ma position (mondial/pays) */}
+        {centeredLeaderboardData.length > 0 && (
+          <TouchableOpacity
+            style={{
+              backgroundColor: game.color,
+              paddingHorizontal: 14,
+              paddingVertical: 8,
+              borderRadius: 18,
+              marginTop: 8,
+              alignSelf: "center",
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 6,
+            }}
+            onPress={() => {
+              try {
+                if (leaderboardType === "global") {
+                  scrollToUserInWorld && scrollToUserInWorld();
+                } else {
+                  // si pas de pays défini, afficher un toast
+                  if (!userCountry || userCountry === "") {
+                    Toast.show({
+                      type: "info",
+                      text1: "Veuillez entrer votre pays dans le profil",
+                      position: "top",
+                    });
+                    return;
+                  }
+                  if (scrollToUserInCountry) {
+                    scrollToUserInCountry();
+                  } else {
+                    // fallback: activer la logique existante
+                    setPendingScrollToUserCountry && setPendingScrollToUserCountry(true);
+                  }
+                }
+              } catch (e) {}
+            }}>
+            <Ionicons name='locate' size={16} color='#fff' />
+            <Text style={{ color: "#fff", fontWeight: "bold" }}>Aller à ma position</Text>
+          </TouchableOpacity>
+        )}
       </View>
 
       {/* Onglets de classement */}
@@ -55,13 +96,16 @@ const GameLeaderboard = ({
           ]}
           onPress={() => {
             setLeaderboardType("global");
-            setTimeout(scrollToUserInWorld, 400);
+            setTimeout(() => {
+              try {
+                scrollToUserInWorld && scrollToUserInWorld();
+              } catch (e) {}
+            }, 400);
           }}>
           <Text
             style={[
               styles.leaderboardSwitchText,
-              leaderboardType === "global" &&
-                styles.leaderboardSwitchTextActive,
+              leaderboardType === "global" && styles.leaderboardSwitchTextActive,
             ]}>
             Mondial
           </Text>
@@ -84,13 +128,12 @@ const GameLeaderboard = ({
               return;
             }
             setLeaderboardType("country");
-            setPendingScrollToUserCountry(true);
+            setPendingScrollToUserCountry && setPendingScrollToUserCountry(true);
           }}>
           <Text
             style={[
               styles.leaderboardSwitchText,
-              leaderboardType === "country" &&
-                styles.leaderboardSwitchTextActive,
+              leaderboardType === "country" && styles.leaderboardSwitchTextActive,
               (!userCountry || userCountry === "") && { color: "#aaa" },
             ]}>
             {(countries.find((c) => c.code === userCountry)?.flag || "🌍") +
@@ -182,8 +225,7 @@ const GameLeaderboard = ({
                       )}
                     </View>
                     <View style={styles.userDetails}>
-                      <View
-                        style={{ flexDirection: "row", alignItems: "center" }}>
+                      <View style={{ flexDirection: "row", alignItems: "center" }}>
                         <Text style={{ fontSize: 18, marginRight: 5 }}>
                           {item.country?.flag || "🌍"}
                         </Text>
@@ -226,25 +268,30 @@ const GameLeaderboard = ({
               )
             }
             keyExtractor={(item, index) =>
-              item.key ||
-              item.userId ||
-              item.id ||
-              `player_${item.rank}` ||
-              `item_${index}`
+              item.key || item.userId || item.id || `player_${item.rank}` || `item_${index}`
             }
             showsVerticalScrollIndicator={false}
             contentContainerStyle={{ paddingBottom: 20 }}
             onScrollToIndexFailed={handleScrollToIndexFailed}
             onContentSizeChange={() => {
               if (pendingScrollToUserCountry) {
-                const userIndex = getUserIndexWithPlaceholders();
-                if (userIndex !== -1 && flatListRef.current) {
-                  flatListRef.current.scrollToIndex({
-                    index: userIndex,
-                    animated: true,
-                    viewPosition: 0.5,
-                  });
-                }
+                try {
+                  const userIdx = getUserIndexWithPlaceholders();
+                  const total = centeredLeaderboardData.length;
+                  if (
+                    typeof userIdx === "number" &&
+                    userIdx >= 0 &&
+                    total > 0 &&
+                    userIdx < total &&
+                    flatListRef.current
+                  ) {
+                    flatListRef.current.scrollToIndex({
+                      index: userIdx,
+                      animated: true,
+                      viewPosition: 0.5,
+                    });
+                  }
+                } catch (e) {}
                 setPendingScrollToUserCountry(false);
               }
             }}
@@ -262,6 +309,7 @@ const styles = {
   },
   leaderboardHeader: {
     marginBottom: 16,
+    alignItems: "center",
   },
   leaderboardTitle: {
     fontSize: 20,

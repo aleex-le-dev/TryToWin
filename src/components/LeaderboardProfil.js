@@ -82,21 +82,56 @@ const LeaderboardProfil = ({
 
   // Scroll vers l'utilisateur quand le leaderboard est chargé
   useEffect(() => {
-    if (leaderboard.length > 0 && effectiveIsProfileView) {
-      const userIndex = leaderboard.findIndex(
-        (player) => player.userId === currentUserId
-      );
-      if (userIndex !== -1 && flatListRef.current) {
-        setTimeout(() => {
-          flatListRef.current?.scrollToIndex({
-            index: userIndex,
-            animated: true,
-            viewPosition: 0.3, // Positionne l'utilisateur à 30% du haut de l'écran
-          });
-        }, 500); // Délai pour laisser le temps au FlatList de se rendre
+    if (!effectiveIsProfileView) return;
+    if (!flatListRef.current) return;
+    if (!currentUserId) return;
+    if (!leaderboard || leaderboard.length === 0) return;
+
+    const userIndex = leaderboard.findIndex((player) => player.userId === currentUserId);
+    if (userIndex === -1) return;
+
+    setTimeout(() => {
+      try {
+        flatListRef.current?.scrollToIndex({
+          index: userIndex,
+          animated: true,
+          viewPosition: 0.3,
+        });
+      } catch (error) {
+        try {
+          flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
+        } catch {}
+      }
+    }, 400);
+  }, [leaderboard, currentUserId, effectiveIsProfileView, activeTab]);
+
+  // Fonction pour aller manuellement à la position de l'utilisateur
+  const scrollToUserPosition = () => {
+    if (!flatListRef.current || leaderboard.length === 0) return;
+    
+    const userIndex = leaderboard.findIndex(
+      (player) => player.userId === currentUserId
+    );
+    
+    if (userIndex !== -1 && userIndex < leaderboard.length) {
+      try {
+        console.log("[DEBUG] Scroll manuel vers l'index:", userIndex);
+        flatListRef.current.scrollToIndex({
+          index: userIndex,
+          animated: true,
+          viewPosition: 0.3,
+        });
+      } catch (error) {
+        console.log("[DEBUG] Erreur scroll manuel:", error);
+        // Fallback vers le haut
+        try {
+          flatListRef.current.scrollToOffset({ offset: 0, animated: true });
+        } catch (fallbackError) {
+          console.log("[DEBUG] Fallback échoué:", fallbackError);
+        }
       }
     }
-  }, [leaderboard, currentUserId, effectiveIsProfileView, activeTab]);
+  };
 
   const initializeLeaderboards = async () => {
     if (!currentUserId || initialized) return;
@@ -193,23 +228,53 @@ const LeaderboardProfil = ({
         // Charger tous les joueurs et filtrer par pays
         const rawData = await getGlobalLeaderboard(1000); // Charger plus de joueurs pour avoir une meilleure couverture
         
-        // Filtrer uniquement les joueurs du pays sélectionné
-        const countryPlayers = rawData.filter(entry => {
-          // Vérifier si le pays correspond, avec gestion des cas où country peut être undefined
-          return entry.country === selectedCountry || 
-                 (entry.userId === currentUserId && (profile?.country || user?.country || "FR") === selectedCountry);
-        });
-
-        console.log("[DEBUG] Filtrage par pays:", {
-          selectedCountry,
+        console.log("[DEBUG] Données brutes:", {
           totalPlayers: rawData.length,
-          countryPlayers: countryPlayers.length,
+          selectedCountry,
           userCountry: profile?.country || user?.country || "FR",
-          sampleEntries: rawData.slice(0, 3).map(e => ({ userId: e.userId, country: e.country, points: e.totalPoints }))
+          sampleEntries: rawData.slice(0, 5).map(e => ({ 
+            userId: e.userId, 
+            country: e.country, 
+            points: e.totalPoints,
+            hasCountry: !!e.country
+          }))
         });
-
-        // Si aucun joueur du pays n'est trouvé, inclure au moins l'utilisateur actuel
+        
+        // Filtrer uniquement les joueurs du pays sélectionné
+        let countryPlayers = [];
+        
+        // D'abord, essayer de filtrer par le pays stocké dans les données de score
+        countryPlayers = rawData.filter(entry => {
+          return entry.country === selectedCountry;
+        });
+        
+        // Si aucun joueur trouvé, essayer de récupérer les données utilisateur pour vérifier le pays
         if (countryPlayers.length === 0) {
+          console.log("[DEBUG] Aucun joueur trouvé avec le pays dans les scores, vérification des profils utilisateurs...");
+          
+          // Récupérer les données utilisateur pour les premiers joueurs
+          const userDataPromises = rawData.slice(0, 20).map(async (entry) => {
+            try {
+              const userDoc = await getDoc(doc(db, "users", entry.userId));
+              const userData = userDoc.exists() ? userDoc.data() : {};
+              return {
+                ...entry,
+                userCountry: userData.country || "FR"
+              };
+            } catch (error) {
+              return { ...entry, userCountry: "FR" };
+            }
+          });
+          
+          const usersWithCountry = await Promise.all(userDataPromises);
+          countryPlayers = usersWithCountry.filter(entry => 
+            entry.userCountry === selectedCountry
+          );
+        }
+        
+        // Si toujours aucun joueur trouvé, inclure au moins l'utilisateur actuel
+        if (countryPlayers.length === 0) {
+          console.log("[DEBUG] Aucun joueur du pays trouvé, ajout de l'utilisateur actuel");
           const userStats = await getUserRealStats();
           if (userStats) {
             countryPlayers.push({
@@ -221,10 +286,18 @@ const LeaderboardProfil = ({
             });
           }
         }
-
+        
+        console.log("[DEBUG] Filtrage par pays:", {
+          selectedCountry,
+          totalPlayers: rawData.length,
+          countryPlayers: countryPlayers.length,
+          userCountry: profile?.country || user?.country || "FR",
+          countryPlayersDetails: countryPlayers.map(p => ({ userId: p.userId, points: p.totalPoints }))
+        });
+        
         // Trier par points décroissants
         countryPlayers.sort((a, b) => (b.totalPoints || 0) - (a.totalPoints || 0));
-
+        
         data = await Promise.all(
           countryPlayers.map(async (entry, index) => {
             let userData = {};
@@ -234,7 +307,7 @@ const LeaderboardProfil = ({
             } catch (error) {
               console.log("Erreur lors de la récupération des données utilisateur:", error);
             }
-
+            
             return {
               userId: entry.userId,
               username: userData.username || userData.displayName || `Joueur ${entry.userId.slice(0, 6)}`,
@@ -518,8 +591,16 @@ const LeaderboardProfil = ({
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.listContainer}
           onScrollToIndexFailed={(info) => {
-            // Fallback: scroll vers le haut
-            flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
+            try {
+              const target = Math.max(0, info?.highestMeasuredFrameIndex || 0);
+              flatListRef.current?.scrollToIndex({
+                index: target,
+                animated: true,
+                viewPosition: 0.3,
+              });
+            } catch {
+              flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
+            }
           }}
         />
       ) : (

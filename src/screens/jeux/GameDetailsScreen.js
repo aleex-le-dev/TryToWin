@@ -393,7 +393,12 @@ const GameDetailsScreen = ({ route, navigation }) => {
   // Fonction pour scroller vers l'utilisateur dans Monde
   const scrollToUserInWorld = () => {
     const userIndex = leaderboardData.findIndex((item) => item.isCurrentUser);
-    if (userIndex !== -1 && flatListRef.current) {
+    if (
+      typeof userIndex === "number" &&
+      userIndex >= 0 &&
+      userIndex < leaderboardData.length &&
+      flatListRef.current
+    ) {
       setTimeout(() => {
         try {
           flatListRef.current.scrollToIndex({
@@ -402,8 +407,9 @@ const GameDetailsScreen = ({ route, navigation }) => {
             viewPosition: 0.5,
           });
         } catch (error) {
-          // Fallback : scroll vers le haut si l'index n'est pas trouvé
-          flatListRef.current.scrollToOffset({ offset: 0, animated: true });
+          try {
+            flatListRef.current.scrollToOffset({ offset: 0, animated: true });
+          } catch {}
         }
       }, 200);
     }
@@ -413,26 +419,44 @@ const GameDetailsScreen = ({ route, navigation }) => {
     const userIndex = filteredLeaderboardData.findIndex(
       (item) => item.isCurrentUser
     );
-    if (userIndex !== -1 && flatListRef.current) {
+    const total = filteredLeaderboardData.length;
+    if (
+      typeof userIndex === "number" &&
+      userIndex >= 0 &&
+      userIndex < total &&
+      flatListRef.current
+    ) {
       setTimeout(() => {
-        flatListRef.current.scrollToIndex({
-          index: userIndex,
-          animated: true,
-          viewPosition: 0.5,
-        });
-      }, 500);
+        try {
+          flatListRef.current.scrollToIndex({
+            index: userIndex,
+            animated: true,
+            viewPosition: 0.5,
+          });
+        } catch (error) {
+          try {
+            flatListRef.current.scrollToOffset({ offset: 0, animated: true });
+          } catch {}
+        }
+      }, 300);
     }
   };
 
   // Fonction pour gérer l'échec du scrollToIndex
   const handleScrollToIndexFailed = (info) => {
-    // Si l'index demandé est trop grand, scroll au dernier élément
-    if (flatListRef.current && info.highestMeasuredFrameIndex >= 0) {
-      flatListRef.current.scrollToIndex({
-        index: info.highestMeasuredFrameIndex,
-        animated: true,
-        viewPosition: 0.5,
-      });
+    if (flatListRef.current) {
+      try {
+        const targetIndex = Math.max(0, info?.highestMeasuredFrameIndex || 0);
+        flatListRef.current.scrollToIndex({
+          index: targetIndex,
+          animated: true,
+          viewPosition: 0.5,
+        });
+      } catch {
+        try {
+          flatListRef.current.scrollToOffset({ offset: 0, animated: true });
+        } catch {}
+      }
     }
   };
 
@@ -562,6 +586,7 @@ const GameDetailsScreen = ({ route, navigation }) => {
             renderLeaderboardItem={renderLeaderboardItem}
             scrollToUserInWorld={scrollToUserInWorld}
             countries={countries}
+            scrollToUserInCountry={scrollToUserInCountry}
           />
         </View>
       )}
