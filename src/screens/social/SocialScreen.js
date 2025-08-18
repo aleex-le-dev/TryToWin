@@ -23,6 +23,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { getUserAllGameStats } from "../../services/scoreService";
 import { gamesData } from "../../constants/gamesData";
 import { countries } from "../../constants/countries";
+import { useAccessibility } from "../../contexts/AccessibilityContext";
 
 // Données fictives pour la démonstration (utilisateurs non connectés)
 // const allUsers = [
@@ -34,6 +35,7 @@ import { countries } from "../../constants/countries";
 
 export default function SocialScreen({ route, navigation }) {
   const { user } = useAuth();
+  const { highContrast, largeTouchTargets, largerSpacing } = useAccessibility();
   // Liste d'amis simulée
   const [friends, setFriends] = useState([]);
   const [friendsRaw, setFriendsRaw] = useState([]);
@@ -648,20 +650,20 @@ export default function SocialScreen({ route, navigation }) {
   // Affichage du chat avec un ami
   const renderChat = () => (
     <View style={styles.chatContainer}>
-      <View style={styles.chatHeader}>
+      <View style={[styles.chatHeader, highContrast && { backgroundColor: '#111' }]}>
         <TouchableOpacity
-          style={styles.backButton}
+          style={[styles.backButton, largeTouchTargets && { padding: 10 }]}
           onPress={() => setSelectedFriend(null)}>
-          <Ionicons name='arrow-back' size={20} color='#667eea' />
+          <Ionicons name='arrow-back' size={22} color={highContrast ? '#fff' : '#667eea'} />
         </TouchableOpacity>
         <View style={styles.chatHeaderInfo}>
-          <Text style={styles.chatTitle}>{selectedFriend?.username}</Text>
+          <Text style={[styles.chatTitle, highContrast && { color: '#fff' }]}>{selectedFriend?.username}</Text>
           <View style={styles.chatStatus}>
             <View style={[
               styles.onlineIndicator,
               { backgroundColor: onlineStatus[selectedFriend?.id] ? '#4cd137' : '#ff6b6b' }
             ]} />
-            <Text style={styles.chatStatusText}>
+            <Text style={[styles.chatStatusText, highContrast && { color: '#ddd' }]}>
               {onlineStatus[selectedFriend?.id] ? 'En ligne' : 'Hors ligne'}
             </Text>
           </View>
@@ -743,7 +745,7 @@ export default function SocialScreen({ route, navigation }) {
             <Text style={{ color: '#999', marginTop: 6 }}>Commencez la conversation</Text>
           </View>
         ) : null}
-        contentContainerStyle={{ paddingBottom: 80 }}
+        contentContainerStyle={{ paddingBottom: largerSpacing ? 120 : 80 }}
         keyboardShouldPersistTaps='handled'
         removeClippedSubviews={true}
         maxToRenderPerBatch={10}
@@ -753,7 +755,7 @@ export default function SocialScreen({ route, navigation }) {
       
       <View style={styles.inputRow}>
         <TextInput
-          style={styles.input}
+          style={[styles.input, largeTouchTargets && { paddingVertical: 12, fontSize: 16 }]}
           value={input}
           onChangeText={(text) => {
             setInput(text);
@@ -768,8 +770,8 @@ export default function SocialScreen({ route, navigation }) {
           placeholder='Votre message...'
           multiline={false}
         />
-        <TouchableOpacity onPress={sendMessage} style={styles.sendButton}>
-          <Ionicons name='send' size={24} color='#667eea' />
+        <TouchableOpacity onPress={sendMessage} style={[styles.sendButton, largeTouchTargets && { padding: 10 }]} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+          <Ionicons name='send' size={26} color={highContrast ? '#fff' : '#667eea'} />
         </TouchableOpacity>
       </View>
     </View>
@@ -780,7 +782,7 @@ export default function SocialScreen({ route, navigation }) {
     <View style={styles.container}>
       {/* Section Partager mon profil (affichée uniquement hors conversation) */}
       {!selectedFriend && (
-        <View style={styles.shareProfileSection}>
+        <View style={[styles.shareProfileSection, largerSpacing && { padding: 24, marginBottom: 24 }]}>
           <Text style={styles.shareTitle}>Partager mon profil</Text>
           <View style={styles.qrAndLinkRow}>
             <QRCode value={myProfileLink} size={90} />
@@ -788,7 +790,7 @@ export default function SocialScreen({ route, navigation }) {
           <TouchableOpacity
             style={[styles.copyButton, { marginTop: 16, alignSelf: 'center' }]}
             onPress={openGallery}>
-            <Ionicons name='qr-code' size={18} color='#667eea' />
+            <Ionicons name='qr-code' size={20} color={highContrast ? '#111' : '#667eea'} />
             <Text style={styles.copyButtonText}>Scanner un QR code</Text>
           </TouchableOpacity>
           {/* Bouton Mode Test pour appareil unique */}
@@ -982,15 +984,15 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#fff",
     borderRadius: 20,
-    paddingHorizontal: 15,
-    paddingVertical: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
     fontSize: 15,
     borderWidth: 1,
     borderColor: "#e9ecef",
     marginRight: 10,
   },
   sendButton: {
-    padding: 5,
+    padding: 6,
   },
   backText: { color: "#667eea", marginLeft: 5, fontSize: 15 },
   searchContainer: {

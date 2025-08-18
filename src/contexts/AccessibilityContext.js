@@ -13,13 +13,13 @@ export const A11Y_KEYS = {
 };
 
 const defaultState = {
-  highContrast: true,
-  largeTouchTargets: true,
-  respectOsPrefs: true,
+  highContrast: false,
+  largeTouchTargets: false,
+  respectOsPrefs: false,
   reduceMotion: false,
   largerSpacing: false,
-  showTutorials: true,
-  haptics: true,
+  showTutorials: false,
+  haptics: false,
   sounds: false,
 };
 
