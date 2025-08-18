@@ -44,6 +44,7 @@ const GamesStack = ({ resetCategoryTrigger, forceHomeReset }) => {
 const MainTabNavigator = () => {
   const [resetCategoryTrigger, setResetCategoryTrigger] = React.useState(0);
   const [profileTabResetKey, setProfileTabResetKey] = React.useState(0);
+  const [socialTabResetKey, setSocialTabResetKey] = React.useState(0);
   const [forceHomeReset, setForceHomeReset] = React.useState(0);
 
   return (
@@ -129,9 +130,15 @@ const MainTabNavigator = () => {
       />
       <Tab.Screen
         name='Social'
-        component={SocialScreen}
+        children={(props) => (
+          <SocialScreen {...props} key={socialTabResetKey} />
+        )}
         options={{
           title: "Social",
+          unmountOnBlur: true,
+        }}
+        listeners={{
+          tabPress: () => setSocialTabResetKey((k) => k + 1),
         }}
       />
     </Tab.Navigator>

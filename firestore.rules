@@ -4,6 +4,9 @@ service cloud.firestore {
     function isOwner(userId) {
       return request.auth != null && request.auth.uid == userId;
     }
+    function isParticipant(id) {
+      return request.auth != null && id.matches('.*' + request.auth.uid + '.*');
+    }
     // Règles pour les utilisateurs
     match /users/{userId} {
       // Lecture publique des profils utilisateurs
@@ -29,6 +32,13 @@ service cloud.firestore {
       match /blocked/{blockedId} {
         // Lecture/écriture réservées au propriétaire du document parent
         allow read, create, update, delete: if isOwner(userId);
+      }
+    }
+    // Chats privés entre deux utilisateurs: chemin 'chats/{uidA_uidB}/messages/{messageId}'
+    match /chats/{chatId} {
+      allow read, write: if isParticipant(chatId);
+      match /messages/{messageId} {
+        allow read, write: if isParticipant(chatId);
       }
     }
     

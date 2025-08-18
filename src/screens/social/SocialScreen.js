@@ -1,6 +1,6 @@
 // SocialScreen.js - Écran social pour ajouter des amis et chatter
 // Utilisé dans la barre de navigation principale (onglet Social)
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -16,9 +16,12 @@ import QRCode from "react-native-qrcode-svg";
 import Toast from "react-native-toast-message";
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from "../../hooks/useAuth";
-import { doc, getDoc, collection, setDoc, deleteDoc, onSnapshot, updateDoc, serverTimestamp, query, orderBy, where } from "firebase/firestore";
+import { doc, getDoc, collection, setDoc, deleteDoc, onSnapshot, updateDoc, serverTimestamp, query, orderBy, where, addDoc } from "firebase/firestore";
 import { db } from "../../utils/firebaseConfig";
 import { subscribeFriends, subscribeBlocked, addFriend as addFriendSvc, removeFriend as removeFriendSvc } from "../../services/friendsService";
+import { useFocusEffect } from "@react-navigation/native";
+import { getUserAllGameStats } from "../../services/scoreService";
+import { gamesData } from "../../constants/gamesData";
 
 // Données fictives pour la démonstration (utilisateurs non connectés)
 // const allUsers = [
@@ -64,6 +67,57 @@ export default function SocialScreen({ route, navigation }) {
   const [typingStatus, setTypingStatus] = useState({});
   const [isTyping, setIsTyping] = useState(false);
   const [testMode, setTestMode] = useState(false);
+  const [friendProfile, setFriendProfile] = useState(null);
+  const [friendStats, setFriendStats] = useState(null);
+  const [friendLoading, setFriendLoading] = useState(false);
+
+  // Charger la carte joueur de l’ami sélectionné
+  useEffect(() => {
+    const loadFriend = async () => {
+      if (!selectedFriend?.id) {
+        setFriendProfile(null);
+        setFriendStats(null);
+        return;
+      }
+      setFriendLoading(true);
+      try {
+        const userSnap = await getDoc(doc(db, 'users', selectedFriend.id));
+        if (userSnap.exists()) {
+          const prof = userSnap.data();
+          setFriendProfile(prof);
+        } else {
+          setFriendProfile({ username: selectedFriend.username });
+        }
+        const allStats = await getUserAllGameStats(selectedFriend.id);
+        let bestGameId = null;
+        let bestPts = 0;
+        if (allStats?.gamesPlayed) {
+          for (const [gid, s] of Object.entries(allStats.gamesPlayed)) {
+            const pts = s?.totalPoints || 0;
+            if (pts > bestPts) { bestPts = pts; bestGameId = gid; }
+          }
+        }
+        const winRate = allStats?.totalGames > 0 ? Math.round((allStats.totalWins / allStats.totalGames) * 100) : 0;
+        setFriendStats({
+          totalPoints: allStats?.totalPoints || 0,
+          winRate,
+          bestGameId,
+        });
+      } catch {
+      } finally {
+        setFriendLoading(false);
+      }
+    };
+    loadFriend();
+  }, [selectedFriend?.id]);
+
+  // Réinitialiser l’écran (fermer la conversation) à chaque focus sur l’onglet Social
+  useFocusEffect(
+    React.useCallback(() => {
+      setSelectedFriend(null);
+      setLongPressedFriendId(null);
+    }, [])
+  );
 
   // Mode test : simuler un ami fictif
   const enableTestMode = useCallback(() => {
@@ -142,23 +196,25 @@ export default function SocialScreen({ route, navigation }) {
   }, [testMode, selectedFriend]);
 
   // Écouter les messages en temps réel (désactivé temporairement)
-  // useEffect(() => {
-  //   if (!selectedFriend || !user?.id) return;
+  useEffect(() => {
+    if (!selectedFriend || !user?.id) return;
 
-  //   const chatId = [user.id, selectedFriend.id].sort().join('_');
-  //   const messagesRef = collection(db, 'chats', chatId, 'messages');
-  //   const q = query(messagesRef, orderBy('timestamp', 'asc'));
+    const chatId = [user.id, selectedFriend.id].sort().join('_');
+    const messagesRef = collection(db, 'chats', chatId, 'messages');
+    const qMsg = query(messagesRef, orderBy('timestamp', 'asc'));
 
-  //   const unsubscribe = onSnapshot(q, (snapshot) => {
-  //     const newMessages = [];
-  //     snapshot.forEach((doc) => {
-  //       newMessages.push({ id: doc.id, ...doc.data() });
-  //     });
-  //     setMessages(newMessages);
-  //   });
+    const unsubscribe = onSnapshot(qMsg, (snapshot) => {
+      const newMessages = [];
+      snapshot.forEach((d) => {
+        newMessages.push({ id: d.id, ...d.data() });
+      });
+      setMessages(newMessages);
+    }, (err) => {
+      Toast.show({ type: 'error', text1: 'Erreur messages', text2: 'Permissions insuffisantes', position: 'top', topOffset: 40 });
+    });
 
-  //   return unsubscribe;
-  // }, [selectedFriend, user?.id]);
+    return unsubscribe;
+  }, [selectedFriend, user?.id]);
 
   // Écouter le statut en ligne des amis (désactivé temporairement)
   // useEffect(() => {
@@ -236,40 +292,25 @@ export default function SocialScreen({ route, navigation }) {
   const sendMessage = useCallback(async () => {
     if (!input.trim() || !selectedFriend || !user?.id) return;
 
-    // En mode test, ajouter le message localement
-    if (testMode && selectedFriend.id === "test-user-123") {
-      const newMessage = {
-        id: `msg-${Date.now()}`,
+    try {
+      const chatId = [user.id, selectedFriend.id].sort().join('_');
+      const messagesRef = collection(db, 'chats', chatId, 'messages');
+      await addDoc(messagesRef, {
         text: input.trim(),
         senderId: user.id,
         senderName: user.displayName || user.email,
-        timestamp: new Date(),
-        read: false
-      };
-      
-      setMessages(prev => [...prev, newMessage]);
+        timestamp: serverTimestamp(),
+        read: false,
+      });
       setInput("");
-      handleTyping(false);
-      
-      Toast.show({
-        type: 'success',
-        text1: 'Message envoyé',
-        text2: 'Message ajouté localement',
-        position: 'top',
-        topOffset: 40,
-        visibilityTime: 2000,
-      });
-    } else {
-      Toast.show({
-        type: 'info',
-        text1: 'Mode test requis',
-        text2: 'Activez le mode test pour envoyer des messages',
-        position: 'top',
-        topOffset: 40,
-        visibilityTime: 2000,
-      });
+      if (isTyping) {
+        setIsTyping(false);
+        handleTyping(false);
+      }
+    } catch (e) {
+      Toast.show({ type: 'error', text1: 'Envoi échoué', position: 'top', topOffset: 40 });
     }
-  }, [input, selectedFriend, user, handleTyping, testMode]);
+  }, [input, selectedFriend, user, handleTyping, isTyping]);
 
   // Demander les permissions de galerie quand le scan est activé
   useEffect(() => {
@@ -575,14 +616,19 @@ export default function SocialScreen({ route, navigation }) {
     [longPressedFriendId, removeFriend, onlineStatus]
   );
 
-  // Ouvre automatiquement la messagerie si un ami est fourni via navigation params
+  const consumedInitialParam = useRef(false);
   useEffect(() => {
     const initialFriendId = route?.params?.initialFriendId;
-    if (initialFriendId && friends.length > 0) {
+    if (!consumedInitialParam.current && initialFriendId && friends.length > 0) {
       const target = friends.find((f) => f.id === initialFriendId);
-      if (target) setSelectedFriend(target);
+      if (target) {
+        setSelectedFriend(target);
+        consumedInitialParam.current = true;
+        // Nettoyer le paramètre pour ne pas rouvrir automatiquement la prochaine fois
+        try { navigation.setParams({ initialFriendId: undefined }); } catch {}
+      }
     }
-  }, [route?.params?.initialFriendId, friends]);
+  }, [route?.params?.initialFriendId, friends, navigation]);
 
   // Rendu optimisé des utilisateurs
   // const renderUser = useCallback(
@@ -632,6 +678,65 @@ export default function SocialScreen({ route, navigation }) {
         keyExtractor={(item) => item.id}
         renderItem={renderMessage}
         style={{ flex: 1 }}
+        ListHeaderComponent={selectedFriend ? (
+          <View style={styles.friendCard}>
+            {friendProfile?.bannerImage ? (
+              <Image source={{ uri: friendProfile.bannerImage }} style={styles.friendCardBanner} resizeMode='cover' />
+            ) : (
+              <View style={[styles.friendCardBanner, { backgroundColor: friendProfile?.bannerColor || '#f1f3f4' }]} />
+            )}
+            <View style={styles.friendCardAvatarWrap}>
+              {friendProfile?.photoURL ? (
+                <Image source={{ uri: friendProfile.photoURL }} style={styles.friendCardAvatar} />
+              ) : (
+                <View style={[styles.friendCardAvatar, { backgroundColor: '#667eea', alignItems: 'center', justifyContent: 'center' }]}>
+                  <Text style={{ color: '#fff', fontSize: 22, fontWeight: 'bold' }}>
+                    {(friendProfile?.username || selectedFriend?.username || 'U').slice(0,1).toUpperCase()}
+                  </Text>
+                </View>
+              )}
+            </View>
+            <Text style={styles.friendCardName}>{friendProfile?.username || selectedFriend?.username || 'Utilisateur'}</Text>
+            <Text style={styles.friendCardCountry}>{friendProfile?.country || ''}</Text>
+            <View style={styles.friendCardStatsRow}>
+              <View style={styles.friendCardStat}>
+                <Ionicons name='trophy' size={18} color='#FFD700' />
+                <Text style={styles.friendCardStatValue}>{friendStats?.totalPoints ?? 0}</Text>
+                <Text style={styles.friendCardStatLabel}>Points</Text>
+              </View>
+              <View style={styles.friendCardStat}>
+                {(() => {
+                  const gd = gamesData.find(g => g.id === friendStats?.bestGameId);
+                  if (!gd) return <Ionicons name='extension-puzzle' size={18} color='#667eea' />;
+                  const img = gd.image;
+                  if (typeof img === 'string') {
+                    return <Text style={{ fontSize: 18 }}>{img}</Text>;
+                  }
+                  return <Image source={img} style={{ width: 22, height: 22 }} resizeMode='contain' />;
+                })()}
+                <Text style={styles.friendCardStatValue}>{friendStats?.bestGameId || '-'}</Text>
+                <Text style={styles.friendCardStatLabel}>Meilleur jeu</Text>
+              </View>
+              <View style={styles.friendCardStat}>
+                <Ionicons name='trending-up' size={18} color='#96CEB4' />
+                <Text style={styles.friendCardStatValue}>{friendStats?.winRate ?? 0}%</Text>
+                <Text style={styles.friendCardStatLabel}>Victoires</Text>
+              </View>
+            </View>
+            {!!friendProfile?.bio && (
+              <Text style={styles.friendCardBio}>« {friendProfile.bio} »</Text>
+            )}
+          </View>
+        ) : null}
+        ListHeaderComponentStyle={{ zIndex: 1, elevation: 2 }}
+        ListEmptyComponent={selectedFriend ? (
+          <View style={{ paddingVertical: 24, alignItems: 'center' }}>
+            <Ionicons name='chatbubbles-outline' size={22} color='#999' />
+            <Text style={{ color: '#999', marginTop: 6 }}>Commencez la conversation</Text>
+          </View>
+        ) : null}
+        contentContainerStyle={{ paddingBottom: 80 }}
+        keyboardShouldPersistTaps='handled'
         removeClippedSubviews={true}
         maxToRenderPerBatch={10}
         windowSize={10}
@@ -665,27 +770,28 @@ export default function SocialScreen({ route, navigation }) {
   // Affichage principal : recherche, liste d'amis et d'utilisateurs
   return (
     <View style={styles.container}>
-      {/* Section Partager mon profil avec QR code et lien */}
-      <View style={styles.shareProfileSection}>
-        <Text style={styles.shareTitle}>Partager mon profil</Text>
-        <View style={styles.qrAndLinkRow}>
-          <QRCode value={myProfileLink} size={90} />
+      {/* Section Partager mon profil (affichée uniquement hors conversation) */}
+      {!selectedFriend && (
+        <View style={styles.shareProfileSection}>
+          <Text style={styles.shareTitle}>Partager mon profil</Text>
+          <View style={styles.qrAndLinkRow}>
+            <QRCode value={myProfileLink} size={90} />
+          </View>
+          <TouchableOpacity
+            style={[styles.copyButton, { marginTop: 16, alignSelf: 'center' }]}
+            onPress={openGallery}>
+            <Ionicons name='qr-code' size={18} color='#667eea' />
+            <Text style={styles.copyButtonText}>Scanner un QR code</Text>
+          </TouchableOpacity>
+          {/* Bouton Mode Test pour appareil unique */}
+          <TouchableOpacity
+            style={[styles.testButton, { marginTop: 12, alignSelf: 'center' }]}
+            onPress={enableTestMode}>
+            <Ionicons name='flask' size={18} color='#fff' />
+            <Text style={styles.testButtonText}>Test QR code</Text>
+          </TouchableOpacity>
         </View>
-        <TouchableOpacity
-          style={[styles.copyButton, { marginTop: 16, alignSelf: 'center' }]}
-          onPress={openGallery}>
-          <Ionicons name='qr-code' size={18} color='#667eea' />
-          <Text style={styles.copyButtonText}>Scanner un QR code</Text>
-        </TouchableOpacity>
-        
-        {/* Bouton Mode Test pour appareil unique */}
-        <TouchableOpacity
-          style={[styles.testButton, { marginTop: 12, alignSelf: 'center' }]}
-          onPress={enableTestMode}>
-          <Ionicons name='flask' size={18} color='#fff' />
-          <Text style={styles.testButtonText}>Test QR code</Text>
-        </TouchableOpacity>
-      </View>
+      )}
 
       {/* Scanner QR Code - Interface de traitement */}
       {scanning && (
@@ -1091,4 +1197,23 @@ const styles = StyleSheet.create({
     marginTop: 10,
     paddingHorizontal: 20,
   },
+  friendCard: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    marginHorizontal: 12,
+    marginTop: 8,
+    marginBottom: 10,
+    elevation: 3,
+    overflow: 'hidden',
+  },
+  friendCardBanner: { width: '100%', height: 80 },
+  friendCardAvatarWrap: { alignItems: 'center', marginTop: -24 },
+  friendCardAvatar: { width: 60, height: 60, borderRadius: 30, borderWidth: 3, borderColor: '#fff' },
+  friendCardName: { textAlign: 'center', fontWeight: 'bold', fontSize: 16, color: '#23272a', marginTop: 6 },
+  friendCardCountry: { textAlign: 'center', color: '#6c757d', fontSize: 12 },
+  friendCardStatsRow: { flexDirection: 'row', justifyContent: 'space-around', paddingVertical: 10 },
+  friendCardStat: { alignItems: 'center' },
+  friendCardStatValue: { fontWeight: 'bold', color: '#23272a', marginTop: 2 },
+  friendCardStatLabel: { color: '#6c757d', fontSize: 11 },
+  friendCardBio: { textAlign: 'center', color: '#667eea', fontStyle: 'italic', paddingBottom: 10 },
 });
