@@ -77,7 +77,7 @@ const SettingsScreen = ({ navigation, route }) => {
             <Text style={styles.menuItemText}>Apparence</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('AccessibilitySettings')}>
-            <Text style={styles.menuItemText}>Accessibilité</Text>
+            <Text style={[styles.menuItemText, styles.menuItemTextBold]}>Accessibilité</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('LanguageSettings')}>
             <Text style={styles.menuItemText}>Langue</Text>
