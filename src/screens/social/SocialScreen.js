@@ -16,8 +16,9 @@ import QRCode from "react-native-qrcode-svg";
 import Toast from "react-native-toast-message";
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from "../../hooks/useAuth";
-import { doc, getDoc, collection, addDoc, onSnapshot, updateDoc, serverTimestamp, query, orderBy, where } from "firebase/firestore";
+import { doc, getDoc, collection, setDoc, deleteDoc, onSnapshot, updateDoc, serverTimestamp, query, orderBy, where } from "firebase/firestore";
 import { db } from "../../utils/firebaseConfig";
+import { subscribeFriends, subscribeBlocked, addFriend as addFriendSvc, removeFriend as removeFriendSvc } from "../../services/friendsService";
 
 // Données fictives pour la démonstration (utilisateurs non connectés)
 // const allUsers = [
@@ -27,10 +28,31 @@ import { db } from "../../utils/firebaseConfig";
 //   { id: "4", username: "LucasChamp" },
 // ];
 
-export default function SocialScreen() {
+export default function SocialScreen({ route, navigation }) {
   const { user } = useAuth();
   // Liste d'amis simulée
   const [friends, setFriends] = useState([]);
+  const [friendsRaw, setFriendsRaw] = useState([]);
+  const [blockedIds, setBlockedIds] = useState([]);
+  // Charger les amis depuis Firestore (collection users/{uid}/friends)
+  useEffect(() => {
+    if (!user?.id) return;
+    const unsub = subscribeFriends(user.id, (items) => setFriendsRaw(items));
+    return () => unsub();
+  }, [user?.id]);
+
+  // Charger la liste des bloqués
+  useEffect(() => {
+    if (!user?.id) return;
+    const unsub = subscribeBlocked(user.id, (ids) => setBlockedIds(ids));
+    return () => unsub();
+  }, [user?.id]);
+
+  // Recalcule la liste d'amis visible en excluant les bloqués
+  useEffect(() => {
+    if (!friendsRaw) return;
+    setFriends(friendsRaw.filter((f) => !blockedIds.includes(f.id)));
+  }, [friendsRaw, blockedIds]);
   const [selectedFriend, setSelectedFriend] = useState(null);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
@@ -429,12 +451,22 @@ export default function SocialScreen() {
 
   // Ajouter un ami avec vérification
   const addFriend = useCallback(
-    (user) => {
-      if (user && user.id && !friends.find((f) => f.id === user.id)) {
-        setFriends((prev) => [...prev, user]);
+    async (friendUser) => {
+      if (!user?.id || !friendUser?.id) return;
+      try {
+        const res = await addFriendSvc(user.id, friendUser);
+        if (res.ok) {
+          Toast.show({ type: 'success', text1: res.already ? 'Déjà ami' : 'Ami ajouté', position: 'top', topOffset: 40 });
+        } else if (res.reason === 'blocked') {
+          Toast.show({ type: 'error', text1: 'Joueur bloqué', text2: 'Débloquez avant d\'ajouter', position: 'top', topOffset: 40 });
+        } else {
+          Toast.show({ type: 'error', text1: 'Erreur', text2: "Impossible d'ajouter l'ami", position: 'top', topOffset: 40 });
+        }
+      } catch (e) {
+        Toast.show({ type: 'error', text1: 'Erreur', text2: "Impossible d'ajouter l'ami", position: 'top', topOffset: 40 });
       }
     },
-    [friends]
+    [user?.id, friends]
   );
 
   // Supprimer un ami avec confirmation
@@ -447,14 +479,15 @@ export default function SocialScreen() {
         {
           text: "Supprimer",
           style: "destructive",
-          onPress: () => {
+          onPress: async () => {
+            try { if (user?.id) await removeFriendSvc(user.id, id); } catch {}
             setFriends((prev) => prev.filter((f) => f.id !== id));
             setLongPressedFriendId(null);
           },
         },
       ]
     );
-  }, []);
+  }, [user?.id]);
 
   // Filtrage des utilisateurs selon la recherche
   // const filteredUsers = allUsers.filter(
@@ -541,6 +574,15 @@ export default function SocialScreen() {
     ),
     [longPressedFriendId, removeFriend, onlineStatus]
   );
+
+  // Ouvre automatiquement la messagerie si un ami est fourni via navigation params
+  useEffect(() => {
+    const initialFriendId = route?.params?.initialFriendId;
+    if (initialFriendId && friends.length > 0) {
+      const target = friends.find((f) => f.id === initialFriendId);
+      if (target) setSelectedFriend(target);
+    }
+  }, [route?.params?.initialFriendId, friends]);
 
   // Rendu optimisé des utilisateurs
   // const renderUser = useCallback(

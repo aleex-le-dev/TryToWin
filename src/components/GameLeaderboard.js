@@ -32,6 +32,7 @@ const GameLeaderboard = ({
   countries,
   // Nouveau: scroll en mode pays
   scrollToUserInCountry,
+  onPressPlayer,
 }) => {
   // Calcul dynamique de la position utilisateur dans la liste affichée
   const userIndex = centeredLeaderboardData.findIndex(
@@ -123,107 +124,109 @@ const GameLeaderboard = ({
               item.placeholder ? (
                 <View key={item.key} style={{ height: 40 }} />
               ) : (
-                <View
-                  style={[
-                    styles.leaderboardItem,
-                    item.isCurrentUser && { backgroundColor: game.color },
-                  ]}>
-                  <View style={styles.rankContainer}>
-                    <Text
-                      style={[
-                        styles.rankText,
-                        item.isCurrentUser && { color: "#fff" },
-                      ]}>
-                      #{item.rank}
-                    </Text>
-                    {index < 3 && (
-                      <Ionicons
-                        name='trophy'
-                        size={16}
-                        color={
-                          index === 0
-                            ? "#FFD700"
-                            : index === 1
-                            ? "#C0C0C0"
-                            : "#CD7F32"
-                        }
-                      />
-                    )}
-                  </View>
-                  <View style={styles.userInfo}>
-                    <View style={styles.userAvatar}>
-                      {item.avatar && item.avatar.startsWith("http") ? (
-                        <Image
-                          source={{ uri: item.avatar }}
-                          style={{ width: 40, height: 40, borderRadius: 20 }}
-                          resizeMode='cover'
-                        />
-                      ) : (
-                        <View
-                          style={{
-                            width: 40,
-                            height: 40,
-                            borderRadius: 20,
-                            backgroundColor: "#bbb",
-                            justifyContent: "center",
-                            alignItems: "center",
-                          }}>
-                          <Text
-                            style={{
-                              color: "#fff",
-                              fontSize: 22,
-                              fontWeight: "bold",
-                            }}>
-                            {item.username && item.username.length > 0
-                              ? item.username[0].toUpperCase()
-                              : item.email && item.email.length > 0
-                              ? item.email[0].toUpperCase()
-                              : "U"}
-                          </Text>
-                        </View>
-                      )}
-                    </View>
-                    <View style={styles.userDetails}>
-                      <View style={{ flexDirection: "row", alignItems: "center" }}>
-                        <Text style={{ fontSize: 18, marginRight: 5 }}>
-                          {item.country?.flag || "🌍"}
-                        </Text>
-                        <Text
-                          style={[
-                            styles.username,
-                            item.isCurrentUser && { color: "#fff" },
-                          ]}>
-                          {item.username}
-                        </Text>
-                      </View>
+                <TouchableOpacity activeOpacity={0.8} onPress={() => onPressPlayer && onPressPlayer(item)}>
+                  <View
+                    style={[
+                      styles.leaderboardItem,
+                      item.isCurrentUser && { backgroundColor: game.color },
+                    ]}>
+                    <View style={styles.rankContainer}>
                       <Text
                         style={[
-                          styles.userStats,
+                          styles.rankText,
                           item.isCurrentUser && { color: "#fff" },
                         ]}>
-                        {item.gamesPlayed} parties • {item.win || 0} victoires
+                        #{item.rank}
+                      </Text>
+                      {index < 3 && (
+                        <Ionicons
+                          name='trophy'
+                          size={16}
+                          color={
+                            index === 0
+                              ? "#FFD700"
+                              : index === 1
+                              ? "#C0C0C0"
+                              : "#CD7F32"
+                          }
+                        />
+                      )}
+                    </View>
+                    <View style={styles.userInfo}>
+                      <View style={styles.userAvatar}>
+                        {item.avatar && item.avatar.startsWith("http") ? (
+                          <Image
+                            source={{ uri: item.avatar }}
+                            style={{ width: 40, height: 40, borderRadius: 20 }}
+                            resizeMode='cover'
+                          />
+                        ) : (
+                          <View
+                            style={{
+                              width: 40,
+                              height: 40,
+                              borderRadius: 20,
+                              backgroundColor: "#bbb",
+                              justifyContent: "center",
+                              alignItems: "center",
+                            }}>
+                            <Text
+                              style={{
+                                color: "#fff",
+                                fontSize: 22,
+                                fontWeight: "bold",
+                              }}>
+                              {item.username && item.username.length > 0
+                                ? item.username[0].toUpperCase()
+                                : item.email && item.email.length > 0
+                                ? item.email[0].toUpperCase()
+                                : "U"}
+                            </Text>
+                          </View>
+                        )}
+                      </View>
+                      <View style={styles.userDetails}>
+                        <View style={{ flexDirection: "row", alignItems: "center" }}>
+                          <Text style={{ fontSize: 18, marginRight: 5 }}>
+                            {item.country?.flag || "🌍"}
+                          </Text>
+                          <Text
+                            style={[
+                              styles.username,
+                              item.isCurrentUser && { color: "#fff" },
+                            ]}>
+                            {item.username}
+                          </Text>
+                        </View>
+                        <Text
+                          style={[
+                            styles.userStats,
+                            item.isCurrentUser && { color: "#fff" },
+                          ]}>
+                          {item.gamesPlayed} parties • {item.win || 0} victoires
+                        </Text>
+                      </View>
+                    </View>
+                    <View style={styles.scoreContainer}>
+                      <Text
+                        style={[
+                          styles.scoreText,
+                          item.isCurrentUser
+                            ? { color: "#fff" }
+                            : { color: game.color, fontWeight: "bold" },
+                        ]}>
+                        {item.score}
+                      </Text>
+                      <Text
+                        style={[
+                          styles.scoreLabel,
+                          item.isCurrentUser && { color: "#fff" },
+                        ]}>
+                        points
                       </Text>
                     </View>
                   </View>
-                  <View style={styles.scoreContainer}>
-                    <Text
-                      style={[
-                        styles.scoreText,
-                        item.isCurrentUser
-                          ? { color: "#fff" }
-                          : { color: game.color, fontWeight: "bold" },
-                      ]}>
-                      {item.score}
-                    </Text>
-                    <Text
-                      style={[
-                        styles.scoreLabel,
-                        item.isCurrentUser && { color: "#fff" },
-                      ]}>
-                      points
-                    </Text>
-                  </View>
-                </View>
+                </TouchableOpacity>
               )
             }
             keyExtractor={(item, index) =>

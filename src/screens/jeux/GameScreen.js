@@ -372,7 +372,7 @@ const GameScreen = ({ navigation, resetCategoryTrigger, forceHomeReset }) => {
         {/* Liste des jeux (2 par ligne) */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Jeux Disponibles</Text>
+            <Text style={styles.sectionTitle}>Jeux disponibles</Text>
             <Text style={styles.gamesCount}>{filteredGames.length} jeux</Text>
           </View>
           <FlatList

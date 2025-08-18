@@ -10,6 +10,7 @@ import MainTabNavigator from "./MainTabNavigator";
 import { useAuth } from "../contexts/AuthContext";
 import EmailValidationScreen from "../screens/auth/EmailValidationScreen";
 import SettingsScreen from "../screens/social/SettingsScreen";
+import BlockedUsersScreen from "../screens/social/BlockedUsersScreen";
 
 const Stack = createStackNavigator();
 
@@ -75,6 +76,11 @@ const AppNavigator = () => {
             <Stack.Screen
               name='Settings'
               component={SettingsScreen}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name='BlockedUsers'
+              component={BlockedUsersScreen}
               options={{ headerShown: false }}
             />
           </>

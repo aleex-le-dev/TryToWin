@@ -587,6 +587,13 @@ const GameDetailsScreen = ({ route, navigation }) => {
             scrollToUserInWorld={scrollToUserInWorld}
             countries={countries}
             scrollToUserInCountry={scrollToUserInCountry}
+            onPressPlayer={(player) => {
+              try {
+                navigation.navigate("PlayerCard", {
+                  userId: player.id || player.userId,
+                });
+              } catch {}
+            }}
           />
         </View>
       )}

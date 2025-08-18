@@ -67,6 +67,9 @@ const SettingsScreen = ({ navigation, route }) => {
           <TouchableOpacity style={styles.menuItem}>
             <Text style={styles.menuItemText}>Langue</Text>
           </TouchableOpacity>
+          <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('BlockedUsers')}>
+            <Text style={styles.menuItemText}>Joueurs bloqués</Text>
+          </TouchableOpacity>
         </View>
         {/* Section Assistance */}
         <View style={styles.section}>
