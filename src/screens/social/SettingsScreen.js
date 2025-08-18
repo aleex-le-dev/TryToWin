@@ -171,7 +171,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   menuItemTextBold: {
-    fontWeight: "bold",
+    fontWeight: "700",
   },
 });
 
