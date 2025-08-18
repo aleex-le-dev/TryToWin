@@ -52,12 +52,12 @@ const SettingsScreen = ({ navigation, route }) => {
       <ScrollView contentContainerStyle={{ padding: 18 }}>
         {/* Section Compte */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Compte</Text>
+          <Text style={[styles.sectionTitle, styles.sectionTitleBold]}>Compte</Text>
           <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('AccountSettings')}>
             <Text style={styles.menuItemText}>Compte</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('PrivacySettings')}>
-            <Text style={styles.menuItemText}>Données et confidentialité</Text>
+            <Text style={[styles.menuItemText, styles.menuItemTextBold]}>Données et confidentialité</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('DeviceSettings')}>
             <Text style={styles.menuItemText}>Appareil</Text>

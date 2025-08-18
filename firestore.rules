@@ -33,6 +33,11 @@ service cloud.firestore {
         // Lecture/écriture réservées au propriétaire du document parent
         allow read, create, update, delete: if isOwner(userId);
       }
+
+      // Règles pour les consentements (journalisation RGPD)
+      match /consents/{consentId} {
+        allow read, create, update, delete: if isOwner(userId);
+      }
     }
     // Chats privés entre deux utilisateurs: chemin 'chats/{uidA_uidB}/messages/{messageId}'
     match /chats/{chatId} {

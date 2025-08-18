@@ -1,33 +1,135 @@
-// Page Paramètres > Données et confidentialité
-import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+// Page Paramètres > Données et confidentialité (RGPD)
+import React, { useEffect, useState } from "react";
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
+import { useAuth } from "../../hooks/useAuth";
+import { recordConsent, getLastConsent } from "../../services/consentService";
+import * as Linking from "expo-linking";
 
-const PrivacySettings = ({ navigation }) => (
-  <View style={styles.container}>
-    <View style={styles.header}>
-      <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-        <Ionicons name='arrow-back' size={22} color='#23272a' />
-      </TouchableOpacity>
-      <Text style={styles.title}>Données et confidentialité</Text>
+const PrivacySettings = ({ navigation }) => {
+  const { user } = useAuth();
+
+  const [privacyAccepted, setPrivacyAccepted] = useState(null);
+
+  const refreshPrivacyStatus = async () => {
+    if (!user?.id) return;
+    const last = await getLastConsent(user.id, 'privacy');
+    if (last) {
+      setPrivacyAccepted(!!last.accepted);
+    } else {
+      // Par défaut: accepté et journalisé
+      try { await recordConsent(user.id, { type: 'privacy', accepted: true, version: 'v1' }); } catch {}
+      setPrivacyAccepted(true);
+    }
+  };
+
+  useEffect(() => { refreshPrivacyStatus(); }, [user?.id]);
+
+  const saveConsent = async (type, accepted) => {
+    try {
+      await recordConsent(user.id, { type, accepted, version: 'v1' });
+      await refreshPrivacyStatus();
+    } catch {}
+  };
+
+  return (
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+          <Ionicons name='arrow-back' size={22} color='#23272a' />
+        </TouchableOpacity>
+        <Text style={styles.title}>Données et confidentialité</Text>
+      </View>
+
+      <ScrollView contentContainerStyle={{ paddingBottom: 36 }}>
+        {/* Mentions légales et politique */}
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Mentions légales & Politique</Text>
+          <Text style={styles.paragraph}>Consultez les mentions légales et la politique de confidentialité.</Text>
+          <View style={styles.rowBtns}>
+            <OutlineBtn label='Mentions légales' onPress={() => navigation.navigate('LegalMentions')} />
+            <OutlineBtn label='Politique de confidentialité' onPress={() => navigation.navigate('PrivacyPolicy') } />
+          </View>
+        </View>
+
+        {/* Consentements */}
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Consentements</Text>
+          <Text style={styles.paragraph}>Vous pouvez accepter ou retirer vos consentements à tout moment.</Text>
+          <Text style={[styles.paragraph, { marginTop: 4 }]}>État actuel: {privacyAccepted === null ? '—' : (privacyAccepted ? 'accepté' : 'retiré')}</Text>
+          <View style={styles.rowBtns}>
+            <SolidBtn label='Accepter la politique' onPress={() => saveConsent('privacy', true)} />
+            <OutlineBtn label='Retirer' onPress={() => saveConsent('privacy', false)} />
+          </View>
+          {/* Historique retiré: les consentements sont journalisés en interne mais non listés ici. */}
+        </View>
+
+        {/* Données personnelles */}
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Données personnelles</Text>
+          <Text style={styles.listItem}>• Données collectées: profil, email, scores, interactions sociales</Text>
+          <Text style={styles.listItem}>• Finalités: fonctionnement, personnalisation, sécurité</Text>
+          <Text style={styles.listItem}>• Conservation: limitée au nécessaire; voir politique</Text>
+          <Text style={styles.listItem}>• Tiers: Firebase/Google, analytics éventuels</Text>
+          <Text style={styles.listItem}>• Base légale: exécution du service, consentement</Text>
+        </View>
+
+        {/* Droits utilisateurs */}
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Vos droits</Text>
+          <Text style={styles.listItem}>• Accès, rectification, suppression, portabilité, opposition</Text>
+          <Text style={styles.listItem}>• Réponse sous 30 jours, par email et confirmation</Text>
+          <TouchableOpacity style={styles.contactBtn} onPress={() => Linking.openURL('mailto:dpo@trytowin.app?subject=Droits%20RGPD')}>
+            <Ionicons name='mail' size={18} color='#fff' />
+            <Text style={styles.contactText}>Exercer mes droits</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Registre & Responsable */}
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Registre & Responsable</Text>
+          <Text style={styles.paragraph}>Un registre des traitements est tenu à jour (finalité, base légale, destinataire, durée, sécurité). Responsable & DPO: contact dans la politique.</Text>
+        </View>
+
+        {/* Sécurité & notifications */}
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Sécurité & notifications</Text>
+          <Text style={styles.paragraph}>Chiffrement, accès restreints, minimisation. En cas d’incident ou de modification importante, information des utilisateurs et notification à la CNIL si nécessaire.</Text>
+        </View>
+      </ScrollView>
     </View>
-    <Text style={styles.placeholder}>
-      Paramètres de confidentialité à venir…
-    </Text>
-  </View>
+  );
+};
+
+const OutlineBtn = ({ label, onPress }) => (
+  <TouchableOpacity style={styles.outlineBtn} onPress={onPress}>
+    <Text style={styles.outlineBtnText}>{label}</Text>
+  </TouchableOpacity>
+);
+
+const SolidBtn = ({ label, onPress }) => (
+  <TouchableOpacity style={styles.solidBtn} onPress={onPress}>
+    <Text style={styles.solidBtnText}>{label}</Text>
+  </TouchableOpacity>
 );
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fff", padding: 24 },
-  header: { flexDirection: 'row', alignItems: 'center', marginBottom: 18 },
-  backBtn: { marginRight: 6, padding: 4 },
-  title: {
-    color: "#23272a",
-    fontSize: 22,
-    fontWeight: "bold",
-    marginBottom: 0,
-  },
-  placeholder: { color: "#6c757d", fontSize: 16 },
+  container: { flex: 1, backgroundColor: "#fff" },
+  header: { flexDirection: 'row', alignItems: 'center', padding: 24, paddingBottom: 12 },
+  backBtn: { marginRight: 10, padding: 4 },
+  title: { color: '#23272a', fontSize: 22, fontWeight: 'bold' },
+  card: { backgroundColor: '#f8f9fa', marginHorizontal: 16, marginTop: 12, borderRadius: 14, padding: 16 },
+  cardTitle: { color: '#23272a', fontWeight: 'bold', fontSize: 16, marginBottom: 8 },
+  paragraph: { color: '#23272a', fontSize: 14 },
+  listItem: { color: '#23272a', fontSize: 14, marginTop: 4 },
+  note: { color: '#6c757d', fontSize: 12, marginTop: 6 },
+  rowBtns: { flexDirection: 'row', gap: 10, marginTop: 10 },
+  outlineBtn: { borderColor: '#667eea', borderWidth: 1, borderRadius: 10, paddingVertical: 8, paddingHorizontal: 12 },
+  outlineBtnText: { color: '#667eea', fontWeight: 'bold' },
+  solidBtn: { backgroundColor: '#667eea', borderRadius: 10, paddingVertical: 8, paddingHorizontal: 12 },
+  solidBtnText: { color: '#fff', fontWeight: 'bold' },
+  contactBtn: { marginTop: 10, backgroundColor: '#667eea', borderRadius: 10, paddingVertical: 10, paddingHorizontal: 14, flexDirection: 'row', alignItems: 'center', gap: 8, alignSelf: 'flex-start' },
+  contactText: { color: '#fff', fontWeight: 'bold' },
 });
 
 export default PrivacySettings;

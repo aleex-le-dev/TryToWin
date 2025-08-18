@@ -20,6 +20,8 @@ import LanguageSettings from "../screens/settingsPage/LanguageSettings";
 import PrivacySettings from "../screens/settingsPage/PrivacySettings";
 import ShopScreen from "../screens/settingsPage/ShopScreen";
 import SupportScreen from "../screens/settingsPage/SupportScreen";
+import PrivacyPolicy from "../screens/settingsPage/PrivacyPolicy";
+import LegalMentions from "../screens/settingsPage/LegalMentions";
 
 const Stack = createStackNavigator();
 
@@ -99,6 +101,8 @@ const AppNavigator = () => {
             <Stack.Screen name='DonateScreen' options={{ headerShown: false }}>{(p) => <DonateScreen {...p} />}</Stack.Screen>
             <Stack.Screen name='LanguageSettings' options={{ headerShown: false }}>{(p) => <LanguageSettings {...p} />}</Stack.Screen>
             <Stack.Screen name='PrivacySettings' options={{ headerShown: false }}>{(p) => <PrivacySettings {...p} />}</Stack.Screen>
+            <Stack.Screen name='PrivacyPolicy' options={{ headerShown: false }}>{(p) => <PrivacyPolicy {...p} />}</Stack.Screen>
+            <Stack.Screen name='LegalMentions' options={{ headerShown: false }}>{(p) => <LegalMentions {...p} />}</Stack.Screen>
             <Stack.Screen name='ShopScreen' options={{ headerShown: false }}>{(p) => <ShopScreen {...p} />}</Stack.Screen>
             <Stack.Screen name='SupportScreen' options={{ headerShown: false }}>{(p) => <SupportScreen {...p} />}</Stack.Screen>
           </>
