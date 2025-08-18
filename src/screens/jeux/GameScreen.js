@@ -348,11 +348,6 @@ const GameScreen = ({ navigation, resetCategoryTrigger, forceHomeReset }) => {
                 <Text style={styles.statNumber}>{totalPoints}</Text>
                 <Text style={styles.statLabel}>Points</Text>
               </View>
-              <View style={styles.statDivider} />
-              <View style={styles.statItem}>
-                <Text style={styles.statNumber}>?</Text>
-                <Text style={styles.statLabel}>Niveau</Text>
-              </View>
             </View>
           </View>
         </LinearGradient>
