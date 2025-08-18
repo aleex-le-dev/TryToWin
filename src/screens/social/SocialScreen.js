@@ -22,6 +22,7 @@ import { subscribeFriends, subscribeBlocked, addFriend as addFriendSvc, removeFr
 import { useFocusEffect } from "@react-navigation/native";
 import { getUserAllGameStats } from "../../services/scoreService";
 import { gamesData } from "../../constants/gamesData";
+import { countries } from "../../constants/countries";
 
 // Données fictives pour la démonstration (utilisateurs non connectés)
 // const allUsers = [
@@ -697,7 +698,14 @@ export default function SocialScreen({ route, navigation }) {
               )}
             </View>
             <Text style={styles.friendCardName}>{friendProfile?.username || selectedFriend?.username || 'Utilisateur'}</Text>
-            <Text style={styles.friendCardCountry}>{friendProfile?.country || ''}</Text>
+            <View style={styles.friendCardCountryRow}>
+              <Text style={styles.friendCardCountryFlag}>
+                {countries.find((c) => c.code === friendProfile?.country)?.flag || '🌍'}
+              </Text>
+              <Text style={styles.friendCardCountryName}>
+                {countries.find((c) => c.code === friendProfile?.country)?.name || ''}
+              </Text>
+            </View>
             <View style={styles.friendCardStatsRow}>
               <View style={styles.friendCardStat}>
                 <Ionicons name='trophy' size={18} color='#FFD700' />
@@ -1210,7 +1218,9 @@ const styles = StyleSheet.create({
   friendCardAvatarWrap: { alignItems: 'center', marginTop: -24 },
   friendCardAvatar: { width: 60, height: 60, borderRadius: 30, borderWidth: 3, borderColor: '#fff' },
   friendCardName: { textAlign: 'center', fontWeight: 'bold', fontSize: 16, color: '#23272a', marginTop: 6 },
-  friendCardCountry: { textAlign: 'center', color: '#6c757d', fontSize: 12 },
+  friendCardCountryRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 6 },
+  friendCardCountryFlag: { fontSize: 18 },
+  friendCardCountryName: { textAlign: 'center', color: '#6c757d', fontSize: 12 },
   friendCardStatsRow: { flexDirection: 'row', justifyContent: 'space-around', paddingVertical: 10 },
   friendCardStat: { alignItems: 'center' },
   friendCardStatValue: { fontWeight: 'bold', color: '#23272a', marginTop: 2 },
