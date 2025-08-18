@@ -16,7 +16,8 @@
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
-        "NSPhotoLibraryUsageDescription": "Cette application a besoin d'accéder à votre galerie pour choisir une image de profil."
+        "NSPhotoLibraryUsageDescription": "Cette application a besoin d'accéder à votre galerie pour choisir une image de profil.",
+        "NSCameraUsageDescription": "Cette application a besoin d'accéder à votre caméra pour scanner les codes QR."
       }
     },
     "android": {

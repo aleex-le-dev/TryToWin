@@ -8,24 +8,24 @@ import {
   FlatList,
   TouchableOpacity,
   TextInput,
-  Clipboard,
   Alert,
+  Image,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import QRCode from "react-native-qrcode-svg";
 import Toast from "react-native-toast-message";
-// import { BarCodeScanner } from 'expo-barcode-scanner';
+import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from "../../hooks/useAuth";
 import { doc, getDoc, collection, addDoc, onSnapshot, updateDoc, serverTimestamp, query, orderBy, where } from "firebase/firestore";
 import { db } from "../../utils/firebaseConfig";
 
 // Données fictives pour la démonstration (utilisateurs non connectés)
-const allUsers = [
-  { id: "1", username: "MariePro" },
-  { id: "2", username: "PierreMaster" },
-  { id: "3", username: "SophieWin" },
-  { id: "4", username: "LucasChamp" },
-];
+// const allUsers = [
+//   { id: "1", username: "MariePro" },
+//   { id: "2", username: "PierreMaster" },
+//   { id: "3", username: "SophieWin" },
+//   { id: "4", username: "LucasChamp" },
+// ];
 
 export default function SocialScreen() {
   const { user } = useAuth();
@@ -37,7 +37,7 @@ export default function SocialScreen() {
   const [search, setSearch] = useState("");
   const [longPressedFriendId, setLongPressedFriendId] = useState(null);
   const [scanning, setScanning] = useState(false);
-  const [hasPermission, setHasPermission] = useState(null);
+  const [selectedImage, setSelectedImage] = useState(null);
   const [onlineStatus, setOnlineStatus] = useState({});
   const [typingStatus, setTypingStatus] = useState({});
   const [isTyping, setIsTyping] = useState(false);
@@ -249,14 +249,72 @@ export default function SocialScreen() {
     }
   }, [input, selectedFriend, user, handleTyping, testMode]);
 
-  // useEffect(() => {
-  //   if (scanning) {
-  //     (async () => {
-  //       const { status } = await BarCodeScanner.requestPermissionsAsync();
-  //       setHasPermission(status === 'granted');
-  //     })();
-  //   }
-  // }, [scanning]);
+  // Demander les permissions de galerie quand le scan est activé
+  useEffect(() => {
+    if (scanning) {
+      (async () => {
+        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (status !== 'granted') {
+          Alert.alert(
+            'Permission requise',
+            'L\'accès à la galerie est nécessaire pour sélectionner des images de QR code.',
+            [{ text: 'OK' }]
+          );
+          setScanning(false);
+          setSelectedImage(null);
+        }
+      })();
+    }
+  }, [scanning]);
+
+  // Ouvrir la galerie pour sélectionner une image
+  const openGallery = async () => {
+    const hasPermission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (hasPermission.status !== 'granted') {
+      Alert.alert(
+        'Permission requise',
+        'L\'accès à la galerie est nécessaire pour sélectionner des images de QR code.',
+        [{ text: 'OK' }]
+      );
+      return;
+    }
+
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 1,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        setSelectedImage(result.assets[0].uri);
+        setScanning(true);
+        // Simuler le traitement du QR code (dans une vraie app, on utiliserait une librairie de décodage)
+        simulateQRCodeProcessing();
+      }
+    } catch (error) {
+      console.error('Erreur lors de la sélection d\'image:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'Erreur',
+        text2: 'Impossible d\'ouvrir la galerie',
+        position: 'top',
+        topOffset: 40,
+        visibilityTime: 3000,
+      });
+    }
+  };
+
+  // Simuler le traitement du QR code (remplacez par une vraie librairie de décodage)
+  const simulateQRCodeProcessing = () => {
+    // Simulation d'un délai de traitement
+    setTimeout(() => {
+      // Pour la démonstration, on simule un QR code valide
+      const simulatedQRData = `trytowin://addfriend/test-user-${Date.now()}`;
+      handleQRCodeData(simulatedQRData);
+    }, 2000);
+  };
 
   // Récupérer les informations d'un utilisateur depuis Firestore
   const getUserFromFirestore = async (userId) => {
@@ -283,45 +341,91 @@ export default function SocialScreen() {
     }
   };
 
-  const handleBarCodeScanned = async ({ data }) => {
+  // Traiter les données du QR code
+  const handleQRCodeData = async (data) => {
     setScanning(false);
-    Toast.show({
-      type: 'info',
-      text1: 'Fonctionnalité temporairement désactivée',
-      text2: 'Le scan QR code sera bientôt disponible',
-      position: 'top',
-      topOffset: 40,
-      visibilityTime: 2000,
-    });
+    setSelectedImage(null);
+    
+    try {
+      // Vérifier si le lien est un lien de profil TryToWin
+      if (data.startsWith('trytowin://addfriend/')) {
+        const userId = data.split('/').pop();
+        
+        if (userId === user?.id) {
+          Toast.show({
+            type: 'error',
+            text1: 'Erreur',
+            text2: 'Vous ne pouvez pas vous ajouter vous-même !',
+            position: 'top',
+            topOffset: 40,
+            visibilityTime: 3000,
+          });
+          return;
+        }
+
+        // Récupérer les informations de l'utilisateur depuis Firestore
+        const scannedUser = await getUserFromFirestore(userId);
+        
+        if (scannedUser) {
+          // Vérifier si l'utilisateur est déjà un ami
+          if (friends.find(f => f.id === userId)) {
+            Toast.show({
+              type: 'info',
+              text1: 'Déjà ami',
+              text2: `${scannedUser.username} est déjà dans votre liste d'amis`,
+              position: 'top',
+              topOffset: 40,
+              visibilityTime: 3000,
+            });
+            return;
+          }
+
+          // Ajouter l'utilisateur comme ami
+          addFriend(scannedUser);
+          
+          Toast.show({
+            type: 'success',
+            text1: 'Ami ajouté !',
+            text2: `${scannedUser.username} a été ajouté à vos amis`,
+            position: 'top',
+            topOffset: 40,
+            visibilityTime: 3000,
+          });
+        } else {
+          Toast.show({
+            type: 'error',
+            text1: 'Utilisateur non trouvé',
+            text2: 'Ce QR code ne correspond à aucun utilisateur valide',
+            position: 'top',
+            topOffset: 40,
+            visibilityTime: 3000,
+          });
+        }
+      } else {
+        Toast.show({
+          type: 'error',
+          text1: 'QR code invalide',
+          text2: 'Ce QR code n\'est pas un lien de profil TryToWin valide',
+          position: 'top',
+          topOffset: 40,
+          visibilityTime: 3000,
+        });
+      }
+    } catch (error) {
+      console.error('Erreur lors du traitement:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'Erreur',
+        text2: 'Impossible de traiter ce QR code',
+        position: 'top',
+        topOffset: 40,
+        visibilityTime: 3000,
+      });
+    }
   };
 
   // Lien unique de profil avec le vrai ID de l'utilisateur connecté
   const myProfileLink = user?.id ? `trytowin://addfriend/${user.id}` : `trytowin://addfriend/1234`;
-
-  // Fonction pour copier le lien avec gestion d'erreur
-  const copyToClipboard = async () => {
-    try {
-      await Clipboard.setString(myProfileLink);
-      Toast.show({
-        type: "success",
-        text1: "Lien copié",
-        text2: "Le lien de votre profil a été copié !",
-        position: "top",
-        topOffset: 40,
-        visibilityTime: 2000,
-      });
-    } catch (error) {
-      console.error("Erreur lors de la copie:", error);
-      Toast.show({
-        type: "error",
-        text1: "Erreur",
-        text2: "Impossible de copier le lien",
-        position: "top",
-        topOffset: 40,
-        visibilityTime: 2000,
-      });
-    }
-  };
 
   // Ajouter un ami avec vérification
   const addFriend = useCallback(
@@ -353,14 +457,14 @@ export default function SocialScreen() {
   }, []);
 
   // Filtrage des utilisateurs selon la recherche
-  const filteredUsers = allUsers.filter(
-    (u) =>
-      u &&
-      u.id &&
-      u.username &&
-      !friends.find((f) => f.id === u.id) &&
-      u.username.toLowerCase().includes(search.toLowerCase())
-  );
+  // const filteredUsers = allUsers.filter(
+  //   (u) =>
+  //     u &&
+  //     u.id &&
+  //     u.username &&
+  //     !friends.find((f) => f.id === u.id) &&
+  //     u.username.toLowerCase().includes(search.toLowerCase())
+  // );
 
   // Rendu optimisé des messages
   const renderMessage = useCallback(
@@ -439,18 +543,18 @@ export default function SocialScreen() {
   );
 
   // Rendu optimisé des utilisateurs
-  const renderUser = useCallback(
-    ({ item }) => (
-      <View style={styles.userItem}>
-        <Ionicons name='person-add' size={24} color='#FFD700' />
-        <Text style={styles.userName}>{item.username}</Text>
-        <TouchableOpacity onPress={() => addFriend(item)}>
-          <Ionicons name='add-circle' size={24} color='#4ECDC4' />
-        </TouchableOpacity>
-      </View>
-    ),
-    [addFriend]
-  );
+  // const renderUser = useCallback(
+  //   ({ item }) => (
+  //     <View style={styles.userItem}>
+  //       <Ionicons name='person-add' size={24} color='#FFD700' />
+  //       <Text style={styles.userName}>{item.username}</Text>
+  //       <TouchableOpacity onPress={() => addFriend(item)}>
+  //         <Ionicons name='add-circle' size={24} color='#4ECDC4' />
+  //       </TouchableOpacity>
+  //     </View>
+  //   ),
+  //   [addFriend]
+  // );
 
   // Affichage du chat avec un ami
   const renderChat = () => (
@@ -524,19 +628,10 @@ export default function SocialScreen() {
         <Text style={styles.shareTitle}>Partager mon profil</Text>
         <View style={styles.qrAndLinkRow}>
           <QRCode value={myProfileLink} size={90} />
-          <View style={styles.linkColumn}>
-            <Text style={styles.profileLink}>{myProfileLink}</Text>
-            <TouchableOpacity
-              style={styles.copyButton}
-              onPress={copyToClipboard}>
-              <Ionicons name='copy' size={18} color='#667eea' />
-              <Text style={styles.copyButtonText}>Copier le lien</Text>
-            </TouchableOpacity>
-          </View>
         </View>
         <TouchableOpacity
           style={[styles.copyButton, { marginTop: 16, alignSelf: 'center' }]}
-          onPress={() => setScanning(true)}>
+          onPress={openGallery}>
           <Ionicons name='qr-code' size={18} color='#667eea' />
           <Text style={styles.copyButtonText}>Scanner un QR code</Text>
         </TouchableOpacity>
@@ -546,20 +641,41 @@ export default function SocialScreen() {
           style={[styles.testButton, { marginTop: 12, alignSelf: 'center' }]}
           onPress={enableTestMode}>
           <Ionicons name='flask' size={18} color='#fff' />
-          <Text style={styles.testButtonText}>Mode Test (1 appareil)</Text>
+          <Text style={styles.testButtonText}>Test QR code</Text>
         </TouchableOpacity>
       </View>
-             {scanning && (
-         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#00000099', position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 10 }}>
-           <View style={{ backgroundColor: '#fff', padding: 20, borderRadius: 10, alignItems: 'center' }}>
-             <Text style={{ color: '#667eea', fontWeight: 'bold', marginBottom: 10 }}>Scanner QR Code</Text>
-             <Text style={{ color: '#666', textAlign: 'center', marginBottom: 15 }}>Cette fonctionnalité sera bientôt disponible</Text>
-             <TouchableOpacity onPress={() => setScanning(false)} style={{ backgroundColor: '#667eea', padding: 10, borderRadius: 8 }}>
-               <Text style={{ color: '#fff', fontWeight: 'bold' }}>Fermer</Text>
-             </TouchableOpacity>
-           </View>
-         </View>
-       )}
+
+      {/* Scanner QR Code - Interface de traitement */}
+      {scanning && (
+        <View style={styles.scannerOverlay}>
+          <View style={styles.scannerContent}>
+            <Text style={styles.scannerTitle}>Traitement du QR code</Text>
+            {selectedImage && (
+              <Image 
+                source={{ uri: selectedImage }} 
+                style={styles.selectedImage}
+                resizeMode="contain"
+              />
+            )}
+            <Text style={styles.scannerMessage}>
+              Analyse de l'image en cours...
+            </Text>
+            <View style={styles.loadingIndicator}>
+              <Ionicons name="sync" size={24} color="#667eea" />
+              <Text style={styles.loadingText}>Traitement...</Text>
+            </View>
+            <TouchableOpacity 
+              onPress={() => {
+                setScanning(false);
+                setSelectedImage(null);
+              }} 
+              style={styles.scannerButton}>
+              <Text style={styles.scannerButtonText}>Annuler</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+
       {/* Toast pour feedback */}
       <Toast />
       {selectedFriend ? (
@@ -594,7 +710,7 @@ export default function SocialScreen() {
             maxToRenderPerBatch={10}
             windowSize={10}
           />
-          <Text style={styles.sectionTitle}>Ajouter des personnes</Text>
+          {/* <Text style={styles.sectionTitle}>Ajouter des personnes</Text>
           <FlatList
             data={filteredUsers}
             keyExtractor={(item) => item.id}
@@ -605,7 +721,7 @@ export default function SocialScreen() {
             removeClippedSubviews={true}
             maxToRenderPerBatch={10}
             windowSize={10}
-          />
+          /> */}
         </>
       )}
     </View>
@@ -760,18 +876,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 18,
   },
-  linkColumn: {
-    flexDirection: "column",
-    alignItems: "flex-start",
-    marginLeft: 10,
-    flex: 1,
-  },
-  profileLink: {
-    color: "#23272a",
-    fontSize: 13,
-    marginBottom: 6,
-    maxWidth: 170,
-  },
   copyButton: {
     flexDirection: "row",
     alignItems: "center",
@@ -820,5 +924,129 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: 'bold',
     marginLeft: 8,
+  },
+  scannerOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: '#000000',
+    zIndex: 1000,
+  },
+  scannerContainer: {
+    flex: 1,
+    position: 'relative',
+  },
+  scanner: {
+    flex: 1,
+  },
+  scannerOverlayContent: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  scannerFrame: {
+    width: 250,
+    height: 250,
+    position: 'relative',
+  },
+  scannerCorner: {
+    position: 'absolute',
+    width: 30,
+    height: 30,
+    borderColor: '#667eea',
+    borderWidth: 3,
+  },
+  scannerCornerTopRight: {
+    top: 0,
+    right: 0,
+    borderLeftWidth: 0,
+    borderBottomWidth: 0,
+  },
+  scannerCornerBottomLeft: {
+    bottom: 0,
+    left: 0,
+    borderRightWidth: 0,
+    borderTopWidth: 0,
+  },
+  scannerCornerBottomRight: {
+    bottom: 0,
+    right: 0,
+    borderLeftWidth: 0,
+    borderTopWidth: 0,
+  },
+  scannerInstruction: {
+    color: '#fff',
+    fontSize: 16,
+    textAlign: 'center',
+    marginTop: 30,
+    paddingHorizontal: 20,
+  },
+  scannerCloseButton: {
+    position: 'absolute',
+    top: 50,
+    right: 20,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    borderRadius: 20,
+    padding: 10,
+  },
+  scannerContent: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 20,
+  },
+  scannerTitle: {
+    color: '#667eea',
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  scannerMessage: {
+    color: '#666',
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  scannerButton: {
+    backgroundColor: '#667eea',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+  },
+  scannerButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  selectedImage: {
+    width: 150,
+    height: 150,
+    borderRadius: 8,
+    marginBottom: 15,
+    borderWidth: 2,
+    borderColor: '#667eea',
+  },
+  loadingIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 15,
+  },
+  loadingText: {
+    marginLeft: 8,
+    fontSize: 16,
+    color: '#667eea',
+  },
+  scannerNote: {
+    color: '#666',
+    fontSize: 14,
+    textAlign: 'center',
+    marginTop: 10,
+    paddingHorizontal: 20,
   },
 });
