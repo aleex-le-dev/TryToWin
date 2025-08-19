@@ -2,6 +2,7 @@ import React from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createStackNavigator } from "@react-navigation/stack";
 import { Ionicons } from "@expo/vector-icons";
+import { useTheme } from "../contexts/ThemeContext";
 
 // Import des écrans
 import GameScreen from "../screens/jeux/GameScreen";
@@ -46,6 +47,7 @@ const MainTabNavigator = () => {
   const [profileTabResetKey, setProfileTabResetKey] = React.useState(0);
   const [socialTabResetKey, setSocialTabResetKey] = React.useState(0);
   const [forceHomeReset, setForceHomeReset] = React.useState(0);
+  const { theme } = useTheme();
 
   return (
     <Tab.Navigator
@@ -64,11 +66,11 @@ const MainTabNavigator = () => {
           return <Ionicons name={iconName} size={size} color={color} />;
         },
         tabBarActiveTintColor: "#667eea",
-        tabBarInactiveTintColor: "#6c757d",
+        tabBarInactiveTintColor: theme.textSecondary,
         tabBarStyle: {
-          backgroundColor: "#fff",
+          backgroundColor: theme.card,
           borderTopWidth: 1,
-          borderTopColor: "#e9ecef",
+          borderTopColor: theme.border,
           paddingBottom: 5,
           paddingTop: 5,
           height: 60,
@@ -84,6 +86,7 @@ const MainTabNavigator = () => {
         tabBarLabelStyle: {
           fontSize: 12,
           fontWeight: "500",
+          color: theme.text,
         },
         headerShown: false,
       })}>

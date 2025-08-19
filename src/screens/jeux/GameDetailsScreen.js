@@ -513,7 +513,6 @@ const GameDetailsScreen = ({ route, navigation }) => {
                 </TouchableOpacity>
                 <View style={{ justifyContent: "center", marginLeft: 8 }}>
                   <Text style={styles.gameTitle}>{game.title}</Text>
-                  <Text style={styles.gameDescription}>{game.description}</Text>
                 </View>
               </View>
               {/* Bouton jouer à droite */}
