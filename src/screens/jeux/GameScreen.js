@@ -22,6 +22,8 @@ import { categories } from "../../constants/categories";
 import { getUserAllGameStats } from "../../services/scoreService";
 import { useRef } from "react";
 import { useAccessibility } from "../../contexts/AccessibilityContext";
+import { useTheme } from "../../contexts/ThemeContext";
+import ThemedLayout from "../../components/ThemedLayout";
 
 const { width } = Dimensions.get("window");
 
@@ -204,6 +206,7 @@ function useDecryptedText(
 const GameScreen = ({ navigation, resetCategoryTrigger, forceHomeReset }) => {
   const { user, loading } = useAuth();
   const { highContrast, largeTouchTargets, largerSpacing, reduceMotion } = useAccessibility();
+  const { theme } = useTheme();
   const [selectedCategory, setSelectedCategory] = useState("Tous");
   const [profile, setProfile] = useState(null);
   const [profileLoading, setProfileLoading] = useState(true);
@@ -289,14 +292,16 @@ const GameScreen = ({ navigation, resetCategoryTrigger, forceHomeReset }) => {
     <TouchableOpacity
       style={[
         styles.categoryButton,
-        selectedCategory === item && styles.categoryButtonActive,
+        { backgroundColor: theme.surface, borderColor: theme.border },
+        selectedCategory === item && { backgroundColor: theme.primary, borderColor: theme.primary },
         largeTouchTargets && { paddingVertical: 12, paddingHorizontal: 24 }
       ]}
       onPress={() => setSelectedCategory(item)}>
       <Text
         style={[
           styles.categoryButtonText,
-          selectedCategory === item && styles.categoryButtonTextActive,
+          { color: theme.textSecondary },
+          selectedCategory === item && { color: '#fff' },
           largerSpacing && { letterSpacing: 0.3 }
         ]}>
         {item}
@@ -339,7 +344,7 @@ const GameScreen = ({ navigation, resetCategoryTrigger, forceHomeReset }) => {
   const decryptedReady = useDecryptedText("Prêt à jouer ?", 3000);
 
   return (
-    <View style={styles.container}>
+    <ThemedLayout style={styles.container}>
       <ScrollView ref={scrollViewRef} showsVerticalScrollIndicator={false}>
         {/* Header avec salutation */}
         <LinearGradient colors={highContrast ? ["#3730a3", "#3b0764"] : ["#667eea", "#764ba2"]} style={styles.header}>
@@ -361,7 +366,7 @@ const GameScreen = ({ navigation, resetCategoryTrigger, forceHomeReset }) => {
         </LinearGradient>
 
         {/* Filtres par catégorie */}
-        <View style={[styles.filtersContainer, largerSpacing && { paddingVertical: 20 }]}>
+        <View style={[styles.filtersContainer, { backgroundColor: theme.card, borderBottomColor: theme.border }, largerSpacing && { paddingVertical: 20 }]}>
           <FlatList
             data={categories}
             renderItem={renderCategoryButton}
@@ -375,8 +380,8 @@ const GameScreen = ({ navigation, resetCategoryTrigger, forceHomeReset }) => {
         {/* Liste des jeux (2 par ligne) */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Jeux disponibles</Text>
-            <Text style={styles.gamesCount}>{filteredGames.length} jeux</Text>
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>Jeux disponibles</Text>
+            <Text style={[styles.gamesCount, { color: theme.textSecondary }]}>{filteredGames.length} jeux</Text>
           </View>
           <FlatList
             data={filteredGames}
@@ -389,14 +394,13 @@ const GameScreen = ({ navigation, resetCategoryTrigger, forceHomeReset }) => {
           />
         </View>
       </ScrollView>
-    </View>
+    </ThemedLayout>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f8f9fa",
   },
   header: {
     paddingTop: 50,
@@ -497,7 +501,6 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 20,
     fontWeight: "bold",
-    color: "#333",
   },
   seeAllText: {
     fontSize: 14,
@@ -506,7 +509,6 @@ const styles = StyleSheet.create({
   },
   gamesCount: {
     fontSize: 14,
-    color: "#6c757d",
   },
   challengesList: {
     marginBottom: 10,
@@ -564,10 +566,8 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   filtersContainer: {
-    backgroundColor: "#fff",
     paddingVertical: 15,
     borderBottomWidth: 1,
-    borderBottomColor: "#e9ecef",
   },
   categoriesList: {
     paddingHorizontal: 20,
@@ -577,9 +577,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     marginRight: 10,
     borderRadius: 20,
-    backgroundColor: "#f8f9fa",
     borderWidth: 1,
-    borderColor: "#e9ecef",
   },
   categoryButtonActive: {
     backgroundColor: "#667eea",
@@ -587,7 +585,6 @@ const styles = StyleSheet.create({
   },
   categoryButtonText: {
     fontSize: 14,
-    color: "#6c757d",
     fontWeight: "500",
   },
   categoryButtonTextActive: {

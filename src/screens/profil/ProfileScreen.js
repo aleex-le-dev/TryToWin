@@ -51,6 +51,8 @@ import { uploadProfilePhoto } from "../../services/storageService";
 import { uploadToCloudinary } from "../../services/cloudinaryService";
 import * as ImageManipulator from "expo-image-manipulator";
 import SkeletonProfile from "../../components/SkeletonProfile";
+import { useTheme } from "../../contexts/ThemeContext";
+import ThemedLayout from "../../components/ThemedLayout";
 
 const { width } = Dimensions.get("window");
 
@@ -114,6 +116,7 @@ const loadProfileQueue = async (userId) => {
 // Écran de profil avec classement et statistiques
 const ProfileScreen = ({ navigation, profileTabResetKey }) => {
   const { logout, user, loading } = useAuth();
+  const { theme } = useTheme();
   const [activeTab, setActiveTab] = useState("profile");
   const [profileBanner, setProfileBanner] = useState("");
   const [profileAvatar, setProfileAvatar] = useState("👑");
@@ -432,10 +435,10 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
   };
 
   const renderStatCard = (icon, value, label, color) => (
-    <View style={[styles.statCard, { backgroundColor: color + "22" }]}>
+    <View style={[styles.statCard, { backgroundColor: theme.card }]}> 
       <Ionicons name={icon} size={32} color={color} style={styles.statIcon} />
-      <Text style={styles.statValue}>{value}</Text>
-      <Text style={styles.statLabel}>{label}</Text>
+      <Text style={[styles.statValue, { color: theme.text }]}>{value}</Text>
+      <Text style={[styles.statLabel, { color: theme.textSecondary }]}>{label}</Text>
     </View>
   );
 
@@ -776,15 +779,13 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
 
   if (!profileFromFirestoreLoaded || !profile?.username) {
     return (
-      <View
+      <ThemedLayout
         style={{
-          flex: 1,
-          backgroundColor: "#fff",
           justifyContent: "center",
           alignItems: "center",
         }}>
         <SkeletonProfile />
-      </View>
+      </ThemedLayout>
     );
   }
 
@@ -793,7 +794,7 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
   }
 
   return (
-    <View style={styles.container}>
+    <ThemedLayout style={styles.container}>
       {/* Header du profil */}
       <LinearGradient colors={["#667eea", "#764ba2"]} style={styles.header}>
         <View
@@ -871,14 +872,15 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
       </LinearGradient>
 
       {/* Onglets */}
-      <View style={styles.tabsContainer}>
+      <View style={[styles.tabsContainer, { borderBottomColor: theme.border }]}>
         <TouchableOpacity
           style={[styles.tab, activeTab === "profile" && styles.activeTab]}
           onPress={() => setActiveTab("profile")}>
           <Text
             style={[
               styles.tabText,
-              activeTab === "profile" && styles.activeTabText,
+              { color: theme.text },
+              activeTab === "profile" && { color: theme.primary },
             ]}>
             Profil
           </Text>
@@ -890,7 +892,8 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
           <Text
             style={[
               styles.tabText,
-              activeTab === "stat" && styles.activeTabText,
+              { color: theme.text },
+              activeTab === "stat" && { color: theme.primary },
             ]}>
             Statistique
           </Text>
@@ -902,7 +905,8 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
           <Text
             style={[
               styles.tabText,
-              activeTab === "leaderboard" && styles.activeTabText,
+              { color: theme.text },
+              activeTab === "leaderboard" && { color: theme.primary },
             ]}>
             Classement
           </Text>
@@ -918,7 +922,7 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
           profile={profile}
         />
       ) : (
-        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        <ScrollView style={[styles.content, { backgroundColor: theme.background }]} showsVerticalScrollIndicator={false}>
           {activeTab === "profile" ? (
             <ProfileTab
               user={user}
@@ -956,13 +960,13 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
           }}>
           <View
             style={{
-              backgroundColor: "#fff",
+              backgroundColor: theme.card,
               borderRadius: 18,
               padding: 24,
               width: "85%",
             }}>
             <Text
-              style={{ fontWeight: "bold", fontSize: 18, marginBottom: 12 }}>
+              style={{ fontWeight: "bold", fontSize: 18, marginBottom: 12, color: theme.text }}>
               Modifier le profil
             </Text>
             <View
@@ -978,6 +982,7 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
                   fontSize: 16,
                   marginBottom: 8,
                   alignSelf: "flex-start",
+                  color: theme.text
                 }}>
                 Bannière
               </Text>
@@ -990,7 +995,7 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
                     height: 100,
                     marginBottom: 10,
                     borderWidth: 2,
-                    borderColor: "#000",
+                    borderColor: theme.border,
                     borderStyle: "dashed",
                     borderRadius: 0,
                     overflow: "hidden",
@@ -1025,7 +1030,7 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
                     height: 100,
                     marginBottom: 10,
                     borderWidth: 2,
-                    borderColor: "#000",
+                    borderColor: theme.border,
                     borderStyle: "dashed",
                     borderRadius: 0,
                     overflow: "hidden",
@@ -1102,11 +1107,13 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
                       width: 100,
                       textAlign: "center",
                       fontSize: 15,
-                      backgroundColor: "#fff",
+                      backgroundColor: theme.surface,
+                      color: theme.text,
                     }}
                     autoCapitalize='none'
                     autoCorrect={false}
                     placeholder='#RRGGBB'
+                    placeholderTextColor={theme.placeholder}
                   />
                   <TouchableOpacity
                     onPress={() => setShowColorWheel((v) => !v)}
@@ -1129,7 +1136,7 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
                       <TouchableWithoutFeedback>
                         <View
                           style={{
-                            backgroundColor: "#fff",
+                            backgroundColor: theme.card,
                             borderRadius: 22,
                             padding: 16,
                             alignItems: "center",
@@ -1224,7 +1231,9 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
                 borderColor: "#ccc",
                 marginBottom: 12,
                 fontSize: 16,
+                color: theme.text,
               }}
+              placeholderTextColor={theme.placeholder}
             />
             <TextInput
               placeholder='Bio'
@@ -1235,17 +1244,20 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
                 borderColor: "#ccc",
                 marginBottom: 12,
                 fontSize: 16,
+                color: theme.text,
               }}
+              placeholderTextColor={theme.placeholder}
               multiline
             />
-            <Text style={{ marginBottom: 4, fontWeight: "bold" }}>Pays</Text>
+            <Text style={{ marginBottom: 4, fontWeight: "bold", color: theme.text }}>Pays</Text>
             <Picker
               selectedValue={editData.country}
               onValueChange={(v) => setEditData((d) => ({ ...d, country: v }))}
               style={{
-                backgroundColor: "#f3f3f3",
+                backgroundColor: theme.surface,
                 borderRadius: 12,
                 marginBottom: 16,
+                color: theme.text,
               }}>
               <Picker.Item label='Choisir un pays...' value='' />
               {countries.map((c) => (
@@ -1264,6 +1276,7 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
                 marginBottom: 8,
                 alignSelf: "flex-start",
                 marginTop: 18,
+                color: theme.text,
               }}>
               Avatar
             </Text>
@@ -1413,14 +1426,13 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
           <ActivityIndicator size='large' color='#667eea' />
         </View>
       )}
-    </View>
+    </ThemedLayout>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f8f9fa",
   },
   header: {
     paddingTop: 50,
@@ -1472,9 +1484,7 @@ const styles = StyleSheet.create({
   },
   tabsContainer: {
     flexDirection: "row",
-    backgroundColor: "#fff",
     borderBottomWidth: 1,
-    borderBottomColor: "#e9ecef",
   },
   tab: {
     flex: 1,
@@ -1487,7 +1497,6 @@ const styles = StyleSheet.create({
   },
   tabText: {
     fontSize: 16,
-    color: "#6c757d",
     fontWeight: "500",
   },
   activeTabText: {
@@ -1514,7 +1523,6 @@ const styles = StyleSheet.create({
   },
   statCard: {
     width: (width - 60) / 2,
-    backgroundColor: "#fff",
     borderRadius: 15,
     padding: 20,
     marginBottom: 15,
@@ -1539,16 +1547,13 @@ const styles = StyleSheet.create({
   statValue: {
     fontSize: 24,
     fontWeight: "bold",
-    color: "#333",
     marginBottom: 5,
   },
   statLabel: {
     fontSize: 12,
-    color: "#6c757d",
     textAlign: "center",
   },
   detailedStats: {
-    backgroundColor: "#fff",
     borderRadius: 15,
     padding: 20,
     marginBottom: 20,
@@ -1564,7 +1569,6 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#333",
     marginBottom: 15,
   },
   statRow: {
@@ -1577,7 +1581,6 @@ const styles = StyleSheet.create({
   statRowLabel: {
     flex: 1,
     fontSize: 16,
-    color: "#333",
     marginLeft: 10,
   },
   statRowValue: {
@@ -1586,7 +1589,6 @@ const styles = StyleSheet.create({
     color: "#667eea",
   },
   quickActions: {
-    backgroundColor: "#fff",
     borderRadius: 15,
     padding: 20,
     shadowColor: "#000",
