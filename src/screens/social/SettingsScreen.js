@@ -59,7 +59,7 @@ const SettingsScreen = ({ navigation, route }) => {
           <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('PrivacySettings')}>
             <Text style={[styles.menuItemText, styles.menuItemTextBold]}>Données et confidentialité</Text>
           </TouchableOpacity>
-  
+          
         </View>
         {/* Section Abonnement */}
         <View style={styles.section}>

@@ -6,6 +6,11 @@ import { ToastProvider } from './src/contexts/ToastContext';
 import AppNavigator from './src/navigation/AppNavigator';
 import CustomToast from './src/components/CustomToast';
 import { AccessibilityProvider } from './src/contexts/AccessibilityContext';
+import { ThemeProvider } from './src/contexts/ThemeContext';
+
+
+
+
 
 export default function App() {
   return (
@@ -14,8 +19,10 @@ export default function App() {
       <AuthProvider>
         <ToastProvider>
           <AccessibilityProvider>
-            <AppNavigator />
-            <CustomToast />
+            <ThemeProvider>
+              <AppNavigator />
+              <CustomToast />
+            </ThemeProvider>
           </AccessibilityProvider>
         </ToastProvider>
       </AuthProvider>
