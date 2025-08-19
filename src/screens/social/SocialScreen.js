@@ -24,6 +24,8 @@ import { getUserAllGameStats } from "../../services/scoreService";
 import { gamesData } from "../../constants/gamesData";
 import { countries } from "../../constants/countries";
 import { useAccessibility } from "../../contexts/AccessibilityContext";
+import { useTheme } from "../../contexts/ThemeContext";
+import ThemedLayout from "../../components/ThemedLayout";
 
 // Données fictives pour la démonstration (utilisateurs non connectés)
 // const allUsers = [
@@ -36,6 +38,7 @@ import { useAccessibility } from "../../contexts/AccessibilityContext";
 export default function SocialScreen({ route, navigation }) {
   const { user } = useAuth();
   const { highContrast, largeTouchTargets, largerSpacing } = useAccessibility();
+  const { theme } = useTheme();
   // Liste d'amis simulée
   const [friends, setFriends] = useState([]);
   const [friendsRaw, setFriendsRaw] = useState([]);
@@ -218,73 +221,6 @@ export default function SocialScreen({ route, navigation }) {
 
     return unsubscribe;
   }, [selectedFriend, user?.id]);
-
-  // Écouter le statut en ligne des amis (désactivé temporairement)
-  // useEffect(() => {
-  //   if (!friends.length) return;
-
-  //   const unsubscribes = friends.map(friend => {
-  //     const userRef = doc(db, 'users', friend.id);
-  //     return onSnapshot(userRef, (doc) => {
-  //         if (doc.exists()) {
-  //           const data = doc.data();
-  //           setOnlineStatus(prev => ({
-  //             ...prev,
-  //             [friend.id]: data.isOnline || false
-  //           }));
-  //         }
-  //       });
-  //     });
-
-  //     return () => unsubscribes.forEach(unsub => unsub());
-  //   }, [friends]);
-
-  // Écouter le statut de frappe (désactivé temporairement)
-  // useEffect(() => {
-  //   if (!selectedFriend || !user?.id) return;
-
-  //   const chatId = [user.id, selectedFriend.id].sort().join('_');
-  //   const typingRef = doc(db, 'chats', chatId, 'typing', selectedFriend.id);
-
-  //   const unsubscribe = onSnapshot(typingRef, (doc) => {
-  //     if (doc.exists()) {
-  //       setTypingStatus(prev => ({
-  //         ...prev,
-  //         [selectedFriend.id]: doc.data().isTyping || false
-  //       }));
-  //     }
-  //   });
-
-  //   return unsubscribe;
-  // }, [selectedFriend, user?.id]);
-
-  // Mettre à jour le statut en ligne (désactivé temporairement)
-  // useEffect(() => {
-  //   if (!user?.id) return;
-
-  //   const userRef = doc(db, 'users', user.id);
-  //   const updateOnlineStatus = async () => {
-  //     await updateDoc(userRef, {
-  //       isOnline: true,
-  //       lastSeen: serverTimestamp()
-  //     });
-  //   };
-
-  //   updateOnlineStatus();
-
-  //   // Mettre à jour le statut hors ligne quand l'app se ferme
-  //   const handleAppStateChange = () => {
-  //     updateDoc(userRef, {
-  //       isOnline: false,
-  //       lastSeen: serverTimestamp()
-  //     });
-  //   };
-
-  //   // Écouter les changements d'état de l'app
-  //   return () => {
-  //     handleAppStateChange();
-  //   };
-  // }, [user?.id]);
 
   // Gérer la frappe (désactivé temporairement)
   const handleTyping = useCallback(async (isTyping) => {
@@ -571,52 +507,55 @@ export default function SocialScreen({ route, navigation }) {
         }
       }
 
+      const isMine = item.senderId === user?.id;
+
       return (
         <View
           style={[
             styles.messageBubble,
-            item.senderId === user?.id ? styles.myMessage : styles.theirMessage,
+            isMine ? styles.myMessage : styles.theirMessage,
+            { backgroundColor: isMine ? theme.surface : theme.card, borderColor: theme.border }
           ]}>
-          <Text style={styles.messageText}>{item.text}</Text>
-          <Text style={styles.messageTime}>{messageTime}</Text>
+          <Text style={[styles.messageText, { color: theme.text }]}>{item.text}</Text>
+          <Text style={[styles.messageTime, { color: theme.textSecondary }]}>{messageTime}</Text>
         </View>
       );
     },
-    [user?.id]
+    [user?.id, theme]
   );
 
   // Rendu optimisé des amis avec statut en ligne
   const renderFriend = useCallback(
     ({ item }) => (
       <TouchableOpacity
-        style={styles.friendItem}
+        style={[styles.friendItem, { backgroundColor: theme.card }]}
         onPress={() => setSelectedFriend(item)}
         onLongPress={() => setLongPressedFriendId(item.id)}
         activeOpacity={0.7}>
         <View style={styles.avatarContainer}>
-          <Ionicons name='person-circle' size={28} color='#667eea' />
+          <Ionicons name='person-circle' size={28} color={theme.primary} />
           <View style={[
             styles.onlineIndicator,
             { backgroundColor: onlineStatus[item.id] ? '#4cd137' : '#ff6b6b' }
           ]} />
         </View>
         <View style={styles.friendInfo}>
-          <Text style={styles.friendName}>{item.username}</Text>
-          <Text style={styles.onlineStatus}>
+          <Text style={[styles.friendName, { color: theme.text }]}>{item.username}</Text>
+          <Text style={[styles.onlineStatus, { color: theme.textSecondary }]}>
             {onlineStatus[item.id] ? 'En ligne' : 'Hors ligne'}
           </Text>
         </View>
-        <Ionicons name='chatbubble-ellipses' size={20} color='#4ECDC4' />
+        <Ionicons name='chatbubble-ellipses' size={20} color={theme.accent} />
         {longPressedFriendId === item.id && (
           <TouchableOpacity
             onPress={() => removeFriend(item.id)}
-            style={styles.deleteIcon}>
+            style={[styles.deleteIcon, { backgroundColor: theme.card }]}>
             <Ionicons name='trash' size={22} color='#FF6B6B' />
           </TouchableOpacity>
         )}
       </TouchableOpacity>
     ),
-    [longPressedFriendId, removeFriend, onlineStatus]
+    [longPressedFriendId, removeFriend, onlineStatus, theme]
   );
 
   const consumedInitialParam = useRef(false);
@@ -650,20 +589,20 @@ export default function SocialScreen({ route, navigation }) {
   // Affichage du chat avec un ami
   const renderChat = () => (
     <View style={styles.chatContainer}>
-      <View style={[styles.chatHeader, highContrast && { backgroundColor: '#111' }]}>
+      <View style={[styles.chatHeader, { backgroundColor: theme.card, borderBottomColor: theme.border }]}>
         <TouchableOpacity
           style={[styles.backButton, largeTouchTargets && { padding: 10 }]}
           onPress={() => setSelectedFriend(null)}>
-          <Ionicons name='arrow-back' size={22} color={highContrast ? '#fff' : '#667eea'} />
+          <Ionicons name='arrow-back' size={22} color={theme.primary} />
         </TouchableOpacity>
         <View style={styles.chatHeaderInfo}>
-          <Text style={[styles.chatTitle, highContrast && { color: '#fff' }]}>{selectedFriend?.username}</Text>
+          <Text style={[styles.chatTitle, { color: theme.text }]}>{selectedFriend?.username}</Text>
           <View style={styles.chatStatus}>
             <View style={[
               styles.onlineIndicator,
               { backgroundColor: onlineStatus[selectedFriend?.id] ? '#4cd137' : '#ff6b6b' }
             ]} />
-            <Text style={[styles.chatStatusText, highContrast && { color: '#ddd' }]}>
+            <Text style={[styles.chatStatusText, { color: theme.textSecondary }]}>
               {onlineStatus[selectedFriend?.id] ? 'En ligne' : 'Hors ligne'}
             </Text>
           </View>
@@ -671,8 +610,8 @@ export default function SocialScreen({ route, navigation }) {
       </View>
       
       {typingStatus[selectedFriend?.id] && (
-        <View style={styles.typingIndicator}>
-          <Text style={styles.typingText}>{selectedFriend?.username} est en train d'écrire...</Text>
+        <View style={[styles.typingIndicator, { backgroundColor: theme.surface }]}>
+          <Text style={[styles.typingText, { color: theme.text }]}>{selectedFriend?.username} est en train d'écrire...</Text>
         </View>
       )}
 
@@ -682,67 +621,67 @@ export default function SocialScreen({ route, navigation }) {
         renderItem={renderMessage}
         style={{ flex: 1 }}
         ListHeaderComponent={selectedFriend ? (
-          <View style={styles.friendCard}>
+          <View style={[styles.friendCard, { backgroundColor: theme.card }]}>
             {friendProfile?.bannerImage ? (
               <Image source={{ uri: friendProfile.bannerImage }} style={styles.friendCardBanner} resizeMode='cover' />
             ) : (
-              <View style={[styles.friendCardBanner, { backgroundColor: friendProfile?.bannerColor || '#f1f3f4' }]} />
+              <View style={[styles.friendCardBanner, { backgroundColor: friendProfile?.bannerColor || theme.surface }]} />
             )}
             <View style={styles.friendCardAvatarWrap}>
               {friendProfile?.photoURL ? (
                 <Image source={{ uri: friendProfile.photoURL }} style={styles.friendCardAvatar} />
               ) : (
-                <View style={[styles.friendCardAvatar, { backgroundColor: '#667eea', alignItems: 'center', justifyContent: 'center' }]}>
+                <View style={[styles.friendCardAvatar, { backgroundColor: theme.primary, alignItems: 'center', justifyContent: 'center' }]}>
                   <Text style={{ color: '#fff', fontSize: 22, fontWeight: 'bold' }}>
                     {(friendProfile?.username || selectedFriend?.username || 'U').slice(0,1).toUpperCase()}
                   </Text>
                 </View>
               )}
             </View>
-            <Text style={styles.friendCardName}>{friendProfile?.username || selectedFriend?.username || 'Utilisateur'}</Text>
+            <Text style={[styles.friendCardName, { color: theme.text }]}>{friendProfile?.username || selectedFriend?.username || 'Utilisateur'}</Text>
             <View style={styles.friendCardCountryRow}>
               <Text style={styles.friendCardCountryFlag}>
                 {countries.find((c) => c.code === friendProfile?.country)?.flag || '🌍'}
               </Text>
-              <Text style={styles.friendCardCountryName}>
+              <Text style={[styles.friendCardCountryName, { color: theme.textSecondary }]}>
                 {countries.find((c) => c.code === friendProfile?.country)?.name || ''}
               </Text>
             </View>
             <View style={styles.friendCardStatsRow}>
               <View style={styles.friendCardStat}>
                 <Ionicons name='trophy' size={18} color='#FFD700' />
-                <Text style={styles.friendCardStatValue}>{friendStats?.totalPoints ?? 0}</Text>
-                <Text style={styles.friendCardStatLabel}>Points</Text>
+                <Text style={[styles.friendCardStatValue, { color: theme.text }]}>{friendStats?.totalPoints ?? 0}</Text>
+                <Text style={[styles.friendCardStatLabel, { color: theme.textSecondary }]}>Points</Text>
               </View>
               <View style={styles.friendCardStat}>
                 {(() => {
                   const gd = gamesData.find(g => g.id === friendStats?.bestGameId);
-                  if (!gd) return <Ionicons name='extension-puzzle' size={18} color='#667eea' />;
+                  if (!gd) return <Ionicons name='extension-puzzle' size={18} color={theme.primary} />;
                   const img = gd.image;
                   if (typeof img === 'string') {
                     return <Text style={{ fontSize: 18 }}>{img}</Text>;
                   }
                   return <Image source={img} style={{ width: 22, height: 22 }} resizeMode='contain' />;
                 })()}
-                <Text style={styles.friendCardStatValue}>{friendStats?.bestGameId || '-'}</Text>
-                <Text style={styles.friendCardStatLabel}>Meilleur jeu</Text>
+                <Text style={[styles.friendCardStatValue, { color: theme.text }]}>{friendStats?.bestGameId || '-'}</Text>
+                <Text style={[styles.friendCardStatLabel, { color: theme.textSecondary }]}>Meilleur jeu</Text>
               </View>
               <View style={styles.friendCardStat}>
                 <Ionicons name='trending-up' size={18} color='#96CEB4' />
-                <Text style={styles.friendCardStatValue}>{friendStats?.winRate ?? 0}%</Text>
-                <Text style={styles.friendCardStatLabel}>Victoires</Text>
+                <Text style={[styles.friendCardStatValue, { color: theme.text }]}>{friendStats?.winRate ?? 0}%</Text>
+                <Text style={[styles.friendCardStatLabel, { color: theme.textSecondary }]}>Victoires</Text>
               </View>
             </View>
             {!!friendProfile?.bio && (
-              <Text style={styles.friendCardBio}>« {friendProfile.bio} »</Text>
+              <Text style={[styles.friendCardBio, { color: theme.primary }]}>« {friendProfile.bio} »</Text>
             )}
           </View>
         ) : null}
         ListHeaderComponentStyle={{ zIndex: 1, elevation: 2 }}
         ListEmptyComponent={selectedFriend ? (
           <View style={{ paddingVertical: 24, alignItems: 'center' }}>
-            <Ionicons name='chatbubbles-outline' size={22} color='#999' />
-            <Text style={{ color: '#999', marginTop: 6 }}>Commencez la conversation</Text>
+            <Ionicons name='chatbubbles-outline' size={22} color={theme.textSecondary} />
+            <Text style={{ color: theme.textSecondary, marginTop: 6 }}>Commencez la conversation</Text>
           </View>
         ) : null}
         contentContainerStyle={{ paddingBottom: largerSpacing ? 120 : 80 }}
@@ -755,7 +694,10 @@ export default function SocialScreen({ route, navigation }) {
       
       <View style={styles.inputRow}>
         <TextInput
-          style={[styles.input, largeTouchTargets && { paddingVertical: 12, fontSize: 16 }]}
+          style={[styles.input, 
+            { backgroundColor: theme.card, color: theme.text, borderColor: theme.border },
+            largeTouchTargets && { paddingVertical: 12, fontSize: 16 }
+          ]}
           value={input}
           onChangeText={(text) => {
             setInput(text);
@@ -768,10 +710,11 @@ export default function SocialScreen({ route, navigation }) {
             }
           }}
           placeholder='Votre message...'
+          placeholderTextColor={theme.placeholder}
           multiline={false}
         />
         <TouchableOpacity onPress={sendMessage} style={[styles.sendButton, largeTouchTargets && { padding: 10 }]} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-          <Ionicons name='send' size={26} color={highContrast ? '#fff' : '#667eea'} />
+          <Ionicons name='send' size={26} color={theme.primary} />
         </TouchableOpacity>
       </View>
     </View>
@@ -779,19 +722,19 @@ export default function SocialScreen({ route, navigation }) {
 
   // Affichage principal : recherche, liste d'amis et d'utilisateurs
   return (
-    <View style={styles.container}>
+    <ThemedLayout style={styles.container}>
       {/* Section Partager mon profil (affichée uniquement hors conversation) */}
       {!selectedFriend && (
-        <View style={[styles.shareProfileSection, largerSpacing && { padding: 24, marginBottom: 24 }]}>
-          <Text style={styles.shareTitle}>Partager mon profil</Text>
+        <View style={[styles.shareProfileSection, { backgroundColor: theme.card }, largerSpacing && { padding: 24, marginBottom: 24 }]}>
+          <Text style={[styles.shareTitle, { color: theme.primary }]}>Partager mon profil</Text>
           <View style={styles.qrAndLinkRow}>
             <QRCode value={myProfileLink} size={90} />
           </View>
           <TouchableOpacity
-            style={[styles.copyButton, { marginTop: 16, alignSelf: 'center' }]}
+            style={[styles.copyButton, { marginTop: 16, alignSelf: 'center', backgroundColor: theme.surface }]}
             onPress={openGallery}>
-            <Ionicons name='qr-code' size={20} color={highContrast ? '#111' : '#667eea'} />
-            <Text style={styles.copyButtonText}>Scanner un QR code</Text>
+            <Ionicons name='qr-code' size={20} color={theme.primary} />
+            <Text style={[styles.copyButtonText, { color: theme.primary }]}>Scanner un QR code</Text>
           </TouchableOpacity>
           {/* Bouton Mode Test pour appareil unique */}
           <TouchableOpacity
@@ -807,27 +750,27 @@ export default function SocialScreen({ route, navigation }) {
       {scanning && (
         <View style={styles.scannerOverlay}>
           <View style={styles.scannerContent}>
-            <Text style={styles.scannerTitle}>Traitement du QR code</Text>
+            <Text style={[styles.scannerTitle, { color: theme.primary }]}>Traitement du QR code</Text>
             {selectedImage && (
               <Image 
                 source={{ uri: selectedImage }} 
-                style={styles.selectedImage}
+                style={[styles.selectedImage, { borderColor: theme.primary }]}
                 resizeMode="contain"
               />
             )}
-            <Text style={styles.scannerMessage}>
+            <Text style={[styles.scannerMessage, { color: theme.textSecondary }]}>
               Analyse de l'image en cours...
             </Text>
             <View style={styles.loadingIndicator}>
-              <Ionicons name="sync" size={24} color="#667eea" />
-              <Text style={styles.loadingText}>Traitement...</Text>
+              <Ionicons name="sync" size={24} color={theme.primary} />
+              <Text style={[styles.loadingText, { color: theme.primary }]}>Traitement...</Text>
             </View>
             <TouchableOpacity 
               onPress={() => {
                 setScanning(false);
                 setSelectedImage(null);
               }} 
-              style={styles.scannerButton}>
+              style={[styles.scannerButton, { backgroundColor: theme.primary }]}>
               <Text style={styles.scannerButtonText}>Annuler</Text>
             </TouchableOpacity>
           </View>
@@ -840,29 +783,30 @@ export default function SocialScreen({ route, navigation }) {
         renderChat()
       ) : (
         <>
-          <Text style={styles.sectionTitle}>Rechercher une personne</Text>
-          <View style={styles.searchContainer}>
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>Rechercher une personne</Text>
+          <View style={[styles.searchContainer, { backgroundColor: theme.card, borderColor: theme.border }]}>
             <Ionicons
               name='search'
               size={20}
-              color='#667eea'
+              color={theme.primary}
               style={{ marginRight: 8 }}
             />
             <TextInput
-              style={styles.searchInput}
+              style={[styles.searchInput, { color: theme.text }]}
               placeholder="Nom d'utilisateur..."
+              placeholderTextColor={theme.placeholder}
               value={search}
               onChangeText={setSearch}
               multiline={false}
             />
           </View>
-          <Text style={styles.sectionTitle}>Amis</Text>
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>Amis</Text>
           <FlatList
             data={friends}
             keyExtractor={(item) => item.id}
             renderItem={renderFriend}
             ListEmptyComponent={
-              <Text style={styles.emptyText}>Aucun ami pour l'instant.</Text>
+              <Text style={[styles.emptyText, { color: theme.textSecondary }]}>Aucun ami pour l'instant.</Text>
             }
             removeClippedSubviews={true}
             maxToRenderPerBatch={10}
@@ -882,40 +826,36 @@ export default function SocialScreen({ route, navigation }) {
           /> */}
         </>
       )}
-    </View>
+    </ThemedLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f8f9fa", padding: 20 },
+  container: { padding: 20 },
   sectionTitle: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#333",
     marginVertical: 10,
   },
   friendItem: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#fff",
     borderRadius: 12,
     padding: 12,
     marginBottom: 8,
     elevation: 2,
   },
-  friendName: { flex: 1, fontSize: 16, color: "#333", marginLeft: 10 },
+  friendName: { flex: 1, fontSize: 16, marginLeft: 10 },
   userItem: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#fff",
     borderRadius: 12,
     padding: 12,
     marginBottom: 8,
     elevation: 1,
   },
-  userName: { flex: 1, fontSize: 16, color: "#333", marginLeft: 10 },
+  userName: { flex: 1, fontSize: 16, marginLeft: 10 },
   emptyText: {
-    color: "#6c757d",
     fontStyle: "italic",
     textAlign: "center",
     marginVertical: 10,
@@ -925,9 +865,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     padding: 10,
-    backgroundColor: "#fff",
     borderBottomWidth: 1,
-    borderBottomColor: "#e9ecef",
   },
   backButton: {
     padding: 5,
@@ -939,7 +877,6 @@ const styles = StyleSheet.create({
   chatTitle: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#667eea",
   },
   chatStatus: {
     flexDirection: "row",
@@ -948,12 +885,10 @@ const styles = StyleSheet.create({
   },
   chatStatusText: {
     fontSize: 13,
-    color: "#6c757d",
     marginLeft: 5,
   },
   typingIndicator: {
     alignSelf: "center",
-    backgroundColor: "#e0e0e0",
     padding: 8,
     borderRadius: 10,
     marginTop: 10,
@@ -961,20 +896,19 @@ const styles = StyleSheet.create({
   },
   typingText: {
     fontSize: 14,
-    color: "#333",
   },
   messageBubble: {
     padding: 10,
     borderRadius: 10,
     marginVertical: 4,
     maxWidth: "80%",
+    borderWidth: 1,
   },
-  myMessage: { backgroundColor: "#e1f5fe", alignSelf: "flex-end" },
-  theirMessage: { backgroundColor: "#f1f3f4", alignSelf: "flex-start" },
-  messageText: { fontSize: 15, color: "#333" },
+  myMessage: { alignSelf: "flex-end" },
+  theirMessage: { alignSelf: "flex-start" },
+  messageText: { fontSize: 15 },
   messageTime: {
     fontSize: 11,
-    color: "#666",
     marginTop: 4,
     alignSelf: "flex-end",
     fontStyle: "italic",
@@ -982,40 +916,34 @@ const styles = StyleSheet.create({
   inputRow: { flexDirection: "row", alignItems: "center", marginTop: 10 },
   input: {
     flex: 1,
-    backgroundColor: "#fff",
     borderRadius: 20,
     paddingHorizontal: 16,
     paddingVertical: 10,
     fontSize: 15,
     borderWidth: 1,
-    borderColor: "#e9ecef",
     marginRight: 10,
   },
   sendButton: {
     padding: 6,
   },
-  backText: { color: "#667eea", marginLeft: 5, fontSize: 15 },
+  backText: { marginLeft: 5, fontSize: 15 },
   searchContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#fff",
     borderRadius: 20,
     paddingHorizontal: 12,
     paddingVertical: 6,
     marginBottom: 10,
     borderWidth: 1,
-    borderColor: "#e9ecef",
   },
-  searchInput: { flex: 1, fontSize: 15, color: "#333" },
+  searchInput: { flex: 1, fontSize: 15 },
   deleteIcon: {
     marginLeft: 10,
     padding: 4,
     borderRadius: 12,
-    backgroundColor: "#fff",
     elevation: 2,
   },
   shareProfileSection: {
-    backgroundColor: "#fff",
     borderRadius: 16,
     padding: 18,
     marginBottom: 18,
@@ -1026,7 +954,6 @@ const styles = StyleSheet.create({
   shareTitle: {
     fontSize: 17,
     fontWeight: "bold",
-    color: "#667eea",
     marginBottom: 10,
   },
   qrAndLinkRow: {
@@ -1037,13 +964,11 @@ const styles = StyleSheet.create({
   copyButton: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#f1f3f4",
     borderRadius: 8,
     paddingVertical: 5,
     paddingHorizontal: 12,
   },
   copyButtonText: {
-    color: "#667eea",
     fontWeight: "bold",
     marginLeft: 6,
     fontSize: 13,
@@ -1065,12 +990,11 @@ const styles = StyleSheet.create({
   },
   onlineStatus: {
     fontSize: 12,
-    color: "#999",
   },
   testButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#4CAF50', // Vert foncé
+    backgroundColor: '#4CAF50',
     borderRadius: 20,
     paddingVertical: 10,
     paddingHorizontal: 20,
@@ -1188,7 +1112,6 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginBottom: 15,
     borderWidth: 2,
-    borderColor: '#667eea',
   },
   loadingIndicator: {
     flexDirection: 'row',
@@ -1198,7 +1121,6 @@ const styles = StyleSheet.create({
   loadingText: {
     marginLeft: 8,
     fontSize: 16,
-    color: '#667eea',
   },
   scannerNote: {
     color: '#666',
@@ -1208,7 +1130,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   friendCard: {
-    backgroundColor: '#fff',
     borderRadius: 16,
     marginHorizontal: 12,
     marginTop: 8,
@@ -1219,13 +1140,13 @@ const styles = StyleSheet.create({
   friendCardBanner: { width: '100%', height: 80 },
   friendCardAvatarWrap: { alignItems: 'center', marginTop: -24 },
   friendCardAvatar: { width: 60, height: 60, borderRadius: 30, borderWidth: 3, borderColor: '#fff' },
-  friendCardName: { textAlign: 'center', fontWeight: 'bold', fontSize: 16, color: '#23272a', marginTop: 6 },
+  friendCardName: { textAlign: 'center', fontWeight: 'bold', fontSize: 16, marginTop: 6 },
   friendCardCountryRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 6 },
   friendCardCountryFlag: { fontSize: 18 },
-  friendCardCountryName: { textAlign: 'center', color: '#6c757d', fontSize: 12 },
+  friendCardCountryName: { textAlign: 'center', fontSize: 12 },
   friendCardStatsRow: { flexDirection: 'row', justifyContent: 'space-around', paddingVertical: 10 },
   friendCardStat: { alignItems: 'center' },
-  friendCardStatValue: { fontWeight: 'bold', color: '#23272a', marginTop: 2 },
-  friendCardStatLabel: { color: '#6c757d', fontSize: 11 },
-  friendCardBio: { textAlign: 'center', color: '#667eea', fontStyle: 'italic', paddingBottom: 10 },
+  friendCardStatValue: { fontWeight: 'bold', marginTop: 2 },
+  friendCardStatLabel: { fontSize: 11 },
+  friendCardBio: { textAlign: 'center', fontStyle: 'italic', paddingBottom: 10 },
 });
