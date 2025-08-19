@@ -341,7 +341,7 @@ const GameScreen = ({ navigation, resetCategoryTrigger, forceHomeReset }) => {
     profile?.username ? profile.username + " 👋" : "",
     3000
   );
-  const decryptedReady = useDecryptedText("Prêt à jouer ?", 3000);
+  const decryptedReady = useDecryptedText("Prêt à relever les défis ?", 3000);
 
   return (
     <ThemedLayout style={styles.container}>
@@ -358,8 +358,7 @@ const GameScreen = ({ navigation, resetCategoryTrigger, forceHomeReset }) => {
             </View>
             <View style={[styles.headerStats, highContrast && { backgroundColor: "rgba(255,255,255,0.35)" }]}>
               <View style={[styles.statItem, largerSpacing && { marginRight: 8 }]}>
-                <Text style={styles.statNumber}>{totalPoints}</Text>
-                <Text style={styles.statLabel}>Points</Text>
+                <Text style={styles.statNumber}>{totalPoints} points</Text>
               </View>
             </View>
           </View>
