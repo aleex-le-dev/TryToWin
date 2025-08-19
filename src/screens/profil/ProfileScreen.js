@@ -820,9 +820,52 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
   };
 
   // Lors de la sélection d'un avatar dans l'AvatarLibrary ou autre :
-  const handleAvatarSelect = (avatarKey) => {
-    setEditData((d) => ({ ...d, avatar: avatarKey, photoURL: "" }));
-    setShowAvatarLibrary(false);
+  const handleAvatarSelect = async (avatarKey) => {
+    try {
+      console.log("[handleAvatarSelect] Avatar sélectionné:", avatarKey);
+      
+      // Mettre à jour les données
+      setEditData((d) => ({ 
+        ...d, 
+        avatar: avatarKey, 
+        photoURL: "" 
+      }));
+      
+      // Sauvegarder en base de données
+      await setDoc(
+        doc(db, "users", user.id),
+        { 
+          avatar: avatarKey,
+          photoURL: "" // Vider photoURL quand on sélectionne un avatar
+        },
+        { merge: true }
+      );
+      
+      // Mettre à jour l'état local
+      setProfile((prev) => ({
+        ...prev,
+        avatar: avatarKey,
+        photoURL: "",
+      }));
+      
+      // Sauvegarder localement
+      if (user?.id) {
+        await saveProfileLocally(user.id, {
+          ...profile,
+          avatar: avatarKey,
+          photoURL: "",
+        });
+      }
+      
+      // Fermer automatiquement la modale
+      setEditModalVisible(false);
+      setShowAvatarLibrary(false);
+      
+    } catch (error) {
+      console.error("[handleAvatarSelect] Erreur:", error);
+      // En cas d'erreur, fermer quand même les modales
+      setShowAvatarLibrary(false);
+    }
   };
   // Lors de la sélection d'une photo de profil :
   const handlePhotoSelect = (photoUrl) => {
