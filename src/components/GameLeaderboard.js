@@ -8,7 +8,7 @@ import {
   Image,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import SkeletonProfile from "./SkeletonProfile";
+import SkeletonLeaderboard from "./SkeletonLeaderboard";
 import Toast from "react-native-toast-message";
 
 const GameLeaderboard = ({
@@ -106,7 +106,7 @@ const GameLeaderboard = ({
       {/* Liste du classement */}
       <View style={styles.leaderboardList}>
         {loading ? (
-          <SkeletonProfile />
+          <SkeletonLeaderboard />
         ) : centeredLeaderboardData.length === 0 ? (
           <View style={styles.emptyState}>
             <Text style={styles.emptyStateText}>
@@ -235,42 +235,7 @@ const GameLeaderboard = ({
             showsVerticalScrollIndicator={false}
             contentContainerStyle={{ paddingBottom: 20 }}
             getItemLayout={(data, index) => ({ length: 80, offset: 80 * index, index })}
-            onScrollToIndexFailed={(info) => {
-              try {
-                const safeIndex = Math.max(0, Math.min(info.index, info.highestMeasuredFrameIndex || 0));
-                flatListRef.current?.scrollToIndex({
-                  index: safeIndex,
-                  animated: true,
-                  viewPosition: 0.5,
-                });
-              } catch (e) {
-                try {
-                  flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
-                } catch {}
-              }
-            }}
-            onContentSizeChange={() => {
-              if (pendingScrollToUserCountry) {
-                try {
-                  const userIdx = getUserIndexWithPlaceholders();
-                  const total = centeredLeaderboardData.length;
-                  if (
-                    typeof userIdx === "number" &&
-                    userIdx >= 0 &&
-                    total > 0 &&
-                    userIdx < total &&
-                    flatListRef.current
-                  ) {
-                    flatListRef.current.scrollToIndex({
-                      index: userIdx,
-                      animated: true,
-                      viewPosition: 0.5,
-                    });
-                  }
-                } catch (e) {}
-                setPendingScrollToUserCountry(false);
-              }
-            }}
+            onScrollToIndexFailed={handleScrollToIndexFailed}
           />
         )}
       </View>

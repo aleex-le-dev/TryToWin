@@ -20,7 +20,7 @@ import { doc, getDoc } from "firebase/firestore";
 import { db } from "../utils/firebaseConfig";
 import { countries } from "../constants";
 import { AVATAR_COLLECTIONS } from "../constants/avatars";
-import SkeletonProfile from "./SkeletonProfile";
+import SkeletonLeaderboard from "./SkeletonLeaderboard";
 import { useTheme } from "../contexts/ThemeContext";
 
 /**
@@ -583,7 +583,7 @@ const LeaderboardProfil = ({
 
       {/* Liste du classement */}
       {loading ? (
-        <SkeletonProfile />
+        <SkeletonLeaderboard />
       ) : leaderboard.length > 0 ? (
         <FlatList
           ref={flatListRef}
