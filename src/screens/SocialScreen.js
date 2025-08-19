@@ -14,6 +14,8 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import QRCode from "react-native-qrcode-svg";
 import Toast from "react-native-toast-message";
+import { useTheme } from "../contexts/ThemeContext";
+import ThemedLayout from "../components/ThemedLayout";
 
 // Données fictives pour la démonstration
 const allUsers = [
@@ -24,6 +26,8 @@ const allUsers = [
 ];
 
 export default function SocialScreen() {
+  const { theme } = useTheme();
+  
   // Liste d'amis simulée
   const [friends, setFriends] = useState([
     { id: "2", username: "PierreMaster" },
@@ -116,54 +120,58 @@ export default function SocialScreen() {
         style={[
           styles.messageBubble,
           item.fromMe ? styles.myMessage : styles.theirMessage,
+          { 
+            backgroundColor: item.fromMe ? theme.surface : theme.card,
+            borderColor: theme.border 
+          }
         ]}>
-        <Text style={styles.messageText}>{item.text}</Text>
+        <Text style={[styles.messageText, { color: theme.text }]}>{item.text}</Text>
       </View>
     ),
-    []
+    [theme]
   );
 
   // Rendu optimisé des amis
   const renderFriend = useCallback(
     ({ item }) => (
       <TouchableOpacity
-        style={styles.friendItem}
+        style={[styles.friendItem, { backgroundColor: theme.card }]}
         onPress={() => setSelectedFriend(item)}
         onLongPress={() => setLongPressedFriendId(item.id)}
         activeOpacity={0.7}>
-        <Ionicons name='person-circle' size={28} color='#667eea' />
-        <Text style={styles.friendName}>{item.username}</Text>
-        <Ionicons name='chatbubble-ellipses' size={20} color='#4ECDC4' />
+        <Ionicons name='person-circle' size={28} color={theme.primary} />
+        <Text style={[styles.friendName, { color: theme.text }]}>{item.username}</Text>
+        <Ionicons name='chatbubble-ellipses' size={20} color={theme.accent} />
         {longPressedFriendId === item.id && (
           <TouchableOpacity
             onPress={() => removeFriend(item.id)}
-            style={styles.deleteIcon}>
+            style={[styles.deleteIcon, { backgroundColor: theme.card }]}>
             <Ionicons name='trash' size={22} color='#FF6B6B' />
           </TouchableOpacity>
         )}
       </TouchableOpacity>
     ),
-    [longPressedFriendId, removeFriend]
+    [longPressedFriendId, removeFriend, theme]
   );
 
   // Rendu optimisé des utilisateurs
   const renderUser = useCallback(
     ({ item }) => (
-      <View style={styles.userItem}>
+      <View style={[styles.userItem, { backgroundColor: theme.card }]}>
         <Ionicons name='person-add' size={24} color='#FFD700' />
-        <Text style={styles.userName}>{item.username}</Text>
+        <Text style={[styles.userName, { color: theme.text }]}>{item.username}</Text>
         <TouchableOpacity onPress={() => addFriend(item)}>
-          <Ionicons name='add-circle' size={24} color='#4ECDC4' />
+          <Ionicons name='add-circle' size={24} color={theme.accent} />
         </TouchableOpacity>
       </View>
     ),
-    [addFriend]
+    [addFriend, theme]
   );
 
   // Affichage du chat avec un ami
   const renderChat = () => (
     <View style={styles.chatContainer}>
-      <Text style={styles.chatTitle}>Chat avec {selectedFriend?.username}</Text>
+      <Text style={[styles.chatTitle, { color: theme.primary }]}>Chat avec {selectedFriend?.username}</Text>
       <FlatList
         data={messages}
         keyExtractor={(_, i) => i.toString()}
@@ -175,40 +183,45 @@ export default function SocialScreen() {
       />
       <View style={styles.inputRow}>
         <TextInput
-          style={styles.input}
+          style={[styles.input, { 
+            backgroundColor: theme.card, 
+            color: theme.text, 
+            borderColor: theme.border 
+          }]}
           value={input}
           onChangeText={setInput}
           placeholder='Votre message...'
+          placeholderTextColor={theme.placeholder}
           multiline={false}
         />
         <TouchableOpacity onPress={sendMessage}>
-          <Ionicons name='send' size={24} color='#667eea' />
+          <Ionicons name='send' size={24} color={theme.primary} />
         </TouchableOpacity>
       </View>
       <TouchableOpacity
         style={styles.backButton}
         onPress={() => setSelectedFriend(null)}>
-        <Ionicons name='arrow-back' size={20} color='#667eea' />
-        <Text style={styles.backText}>Retour</Text>
+        <Ionicons name='arrow-back' size={20} color={theme.primary} />
+        <Text style={[styles.backText, { color: theme.primary }]}>Retour</Text>
       </TouchableOpacity>
     </View>
   );
 
   // Affichage principal : recherche, liste d'amis et d'utilisateurs
   return (
-    <View style={styles.container}>
+    <ThemedLayout style={styles.container}>
       {/* Section Partager mon profil avec QR code et lien */}
-      <View style={styles.shareProfileSection}>
-        <Text style={styles.shareTitle}>Partager mon profil</Text>
+      <View style={[styles.shareProfileSection, { backgroundColor: theme.card }]}>
+        <Text style={[styles.shareTitle, { color: theme.primary }]}>Partager mon profil</Text>
         <View style={styles.qrAndLinkRow}>
           <QRCode value={myProfileLink} size={90} />
           <View style={styles.linkColumn}>
-            <Text style={styles.profileLink}>{myProfileLink}</Text>
+            <Text style={[styles.profileLink, { color: theme.text }]}>{myProfileLink}</Text>
             <TouchableOpacity
-              style={styles.copyButton}
+              style={[styles.copyButton, { backgroundColor: theme.surface }]}
               onPress={copyToClipboard}>
-              <Ionicons name='copy' size={18} color='#667eea' />
-              <Text style={styles.copyButtonText}>Copier le lien</Text>
+              <Ionicons name='copy' size={18} color={theme.primary} />
+              <Text style={[styles.copyButtonText, { color: theme.primary }]}>Copier le lien</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -219,41 +232,42 @@ export default function SocialScreen() {
         renderChat()
       ) : (
         <>
-          <Text style={styles.sectionTitle}>Rechercher une personne</Text>
-          <View style={styles.searchContainer}>
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>Rechercher une personne</Text>
+          <View style={[styles.searchContainer, { backgroundColor: theme.card, borderColor: theme.border }]}>
             <Ionicons
               name='search'
               size={20}
-              color='#667eea'
+              color={theme.primary}
               style={{ marginRight: 8 }}
             />
             <TextInput
-              style={styles.searchInput}
+              style={[styles.searchInput, { color: theme.text }]}
               placeholder="Nom d'utilisateur..."
+              placeholderTextColor={theme.placeholder}
               value={search}
               onChangeText={setSearch}
               multiline={false}
             />
           </View>
-          <Text style={styles.sectionTitle}>Amis</Text>
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>Amis</Text>
           <FlatList
             data={friends}
             keyExtractor={(item) => item.id}
             renderItem={renderFriend}
             ListEmptyComponent={
-              <Text style={styles.emptyText}>Aucun ami pour l'instant.</Text>
+              <Text style={[styles.emptyText, { color: theme.textSecondary }]}>Aucun ami pour l'instant.</Text>
             }
             removeClippedSubviews={true}
             maxToRenderPerBatch={10}
             windowSize={10}
           />
-          <Text style={styles.sectionTitle}>Ajouter des personnes</Text>
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>Ajouter des personnes</Text>
           <FlatList
             data={filteredUsers}
             keyExtractor={(item) => item.id}
             renderItem={renderUser}
             ListEmptyComponent={
-              <Text style={styles.emptyText}>Aucun utilisateur trouvé.</Text>
+              <Text style={[styles.emptyText, { color: theme.textSecondary }]}>Aucun utilisateur trouvé.</Text>
             }
             removeClippedSubviews={true}
             maxToRenderPerBatch={10}
@@ -261,40 +275,36 @@ export default function SocialScreen() {
           />
         </>
       )}
-    </View>
+    </ThemedLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f8f9fa", padding: 20 },
+  container: { padding: 20 },
   sectionTitle: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#333",
     marginVertical: 10,
   },
   friendItem: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#fff",
     borderRadius: 12,
     padding: 12,
     marginBottom: 8,
     elevation: 2,
   },
-  friendName: { flex: 1, fontSize: 16, color: "#333", marginLeft: 10 },
+  friendName: { flex: 1, fontSize: 16, marginLeft: 10 },
   userItem: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#fff",
     borderRadius: 12,
     padding: 12,
     marginBottom: 8,
     elevation: 1,
   },
-  userName: { flex: 1, fontSize: 16, color: "#333", marginLeft: 10 },
+  userName: { flex: 1, fontSize: 16, marginLeft: 10 },
   emptyText: {
-    color: "#6c757d",
     fontStyle: "italic",
     textAlign: "center",
     marginVertical: 10,
@@ -303,7 +313,6 @@ const styles = StyleSheet.create({
   chatTitle: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#667eea",
     marginBottom: 10,
   },
   messageBubble: {
@@ -312,44 +321,38 @@ const styles = StyleSheet.create({
     marginVertical: 4,
     maxWidth: "80%",
   },
-  myMessage: { backgroundColor: "#e1f5fe", alignSelf: "flex-end" },
-  theirMessage: { backgroundColor: "#f1f3f4", alignSelf: "flex-start" },
-  messageText: { fontSize: 15, color: "#333" },
+  myMessage: { alignSelf: "flex-end" },
+  theirMessage: { alignSelf: "flex-start" },
+  messageText: { fontSize: 15 },
   inputRow: { flexDirection: "row", alignItems: "center", marginTop: 10 },
   input: {
     flex: 1,
-    backgroundColor: "#fff",
     borderRadius: 20,
     paddingHorizontal: 15,
     paddingVertical: 8,
     fontSize: 15,
     borderWidth: 1,
-    borderColor: "#e9ecef",
     marginRight: 10,
   },
   backButton: { flexDirection: "row", alignItems: "center", marginTop: 10 },
-  backText: { color: "#667eea", marginLeft: 5, fontSize: 15 },
+  backText: { marginLeft: 5, fontSize: 15 },
   searchContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#fff",
     borderRadius: 20,
     paddingHorizontal: 12,
     paddingVertical: 6,
     marginBottom: 10,
     borderWidth: 1,
-    borderColor: "#e9ecef",
   },
-  searchInput: { flex: 1, fontSize: 15, color: "#333" },
+  searchInput: { flex: 1, fontSize: 15 },
   deleteIcon: {
     marginLeft: 10,
     padding: 4,
     borderRadius: 12,
-    backgroundColor: "#fff",
     elevation: 2,
   },
   shareProfileSection: {
-    backgroundColor: "#fff",
     borderRadius: 16,
     padding: 18,
     marginBottom: 18,
@@ -360,7 +363,6 @@ const styles = StyleSheet.create({
   shareTitle: {
     fontSize: 17,
     fontWeight: "bold",
-    color: "#667eea",
     marginBottom: 10,
   },
   qrAndLinkRow: {
@@ -375,7 +377,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   profileLink: {
-    color: "#23272a",
     fontSize: 13,
     marginBottom: 6,
     maxWidth: 170,
@@ -383,13 +384,11 @@ const styles = StyleSheet.create({
   copyButton: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#f1f3f4",
     borderRadius: 8,
     paddingVertical: 5,
     paddingHorizontal: 12,
   },
   copyButtonText: {
-    color: "#667eea",
     fontWeight: "bold",
     marginLeft: 6,
     fontSize: 13,

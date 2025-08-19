@@ -29,7 +29,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import ProfileAvatar from "../components/ProfileAvatar";
 import * as ImagePicker from "expo-image-picker";
 import { uploadProfilePhoto } from "../services/storageService";
-import AvatarLibrary from "../components/AvatarLibrary";
+import AvatarLibrary from "../components/ProfileAvatar";
 import ProfileHeaderAvatar from "../components/ProfileHeaderAvatar";
 import ProfileTab from "../components/ProfileTab";
 import StatsTab from "../components/StatsTab";
@@ -50,6 +50,8 @@ import {
   useRoute,
 } from "@react-navigation/native";
 import VisualStatsTab from "../components/VisualStatsTab";
+import { useTheme } from "../contexts/ThemeContext";
+import ThemedLayout from "../components/ThemedLayout";
 
 const { width } = Dimensions.get("window");
 
@@ -232,6 +234,7 @@ const SkeletonProfile = () => {
 // Écran de profil avec classement et statistiques
 const ProfileScreen = ({ navigation, profileTabResetKey }) => {
   const { logout, user, loading } = useAuth();
+  const { theme } = useTheme();
   const [activeTab, setActiveTab] = useState("profile");
   const [profileBanner, setProfileBanner] = useState("");
   const [profileAvatar, setProfileAvatar] = useState("👑");
@@ -909,20 +912,18 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
 
   if (!profileFromFirestoreLoaded || !profile?.username) {
     return (
-      <View
+      <ThemedLayout
         style={{
-          flex: 1,
-          backgroundColor: "#fff",
           justifyContent: "center",
           alignItems: "center",
         }}>
         <SkeletonProfile />
-      </View>
+      </ThemedLayout>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <ThemedLayout style={styles.container}>
       {/* Header du profil */}
       <LinearGradient colors={["#667eea", "#764ba2"]} style={styles.header}>
         <View
@@ -975,7 +976,7 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
       </LinearGradient>
 
       {/* Onglets */}
-      <View style={styles.tabsContainer}>
+      <View style={[styles.tabsContainer, { backgroundColor: theme.card }]}>
         <TouchableOpacity
           style={[styles.tab, activeTab === "profile" && styles.activeTab]}
           onPress={() => setActiveTab("profile")}>
@@ -983,6 +984,7 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
             style={[
               styles.tabText,
               activeTab === "profile" && styles.activeTabText,
+              { color: theme.text }
             ]}>
             Profil
           </Text>
@@ -994,6 +996,7 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
             style={[
               styles.tabText,
               activeTab === "leaderboard" && styles.activeTabText,
+              { color: theme.text }
             ]}>
             Classement
           </Text>
@@ -1005,13 +1008,14 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
             style={[
               styles.tabText,
               activeTab === "stat" && styles.activeTabText,
+              { color: theme.text }
             ]}>
             Statistique
           </Text>
         </TouchableOpacity>
       </View>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView style={[styles.content, { backgroundColor: theme.background }]} showsVerticalScrollIndicator={false}>
         {activeTab === "profile" ? (
           <ProfileTab
             user={user}
@@ -1046,21 +1050,11 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
         {/* Modal d'édition du profil */}
         <Modal visible={editModalVisible} animationType='slide' transparent>
           <View
-            style={{
-              flex: 1,
-              backgroundColor: "rgba(0,0,0,0.3)",
-              justifyContent: "center",
-              alignItems: "center",
-            }}>
+            style={[styles.modalOverlay, { backgroundColor: "rgba(0,0,0,0.3)" }]}>
             <View
-              style={{
-                backgroundColor: "#fff",
-                borderRadius: 18,
-                padding: 24,
-                width: "85%",
-              }}>
+              style={[styles.modalContent, { backgroundColor: theme.card }]}>
               <Text
-                style={{ fontWeight: "bold", fontSize: 18, marginBottom: 12 }}>
+                style={[styles.modalTitle, { color: theme.text }]}>
                 Modifier le profil
               </Text>
               <View
@@ -1071,12 +1065,7 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
                 }}>
                 {/* Titre bannière */}
                 <Text
-                  style={{
-                    fontWeight: "bold",
-                    fontSize: 16,
-                    marginBottom: 8,
-                    alignSelf: "flex-start",
-                  }}>
+                  style={[styles.modalLabel, { color: theme.text }]}>
                   Bannière
                 </Text>
                 {/* Aperçu de la bannière */}
@@ -1387,14 +1376,13 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
           </View>
         </Modal>
       </ScrollView>
-    </View>
+    </ThemedLayout>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f8f9fa",
   },
   header: {
     paddingTop: 50,
@@ -1446,9 +1434,7 @@ const styles = StyleSheet.create({
   },
   tabsContainer: {
     flexDirection: "row",
-    backgroundColor: "#fff",
     borderBottomWidth: 1,
-    borderBottomColor: "#e9ecef",
   },
   tab: {
     flex: 1,
@@ -1461,7 +1447,6 @@ const styles = StyleSheet.create({
   },
   tabText: {
     fontSize: 16,
-    color: "#6c757d",
     fontWeight: "500",
   },
   activeTabText: {
@@ -1488,7 +1473,6 @@ const styles = StyleSheet.create({
   },
   statCard: {
     width: (width - 60) / 2,
-    backgroundColor: "#fff",
     borderRadius: 15,
     padding: 20,
     marginBottom: 15,
@@ -1501,296 +1485,30 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 3.84,
     elevation: 5,
-  },
-  statIcon: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 10,
   },
   statValue: {
     fontSize: 24,
     fontWeight: "bold",
-    color: "#333",
     marginBottom: 5,
   },
   statLabel: {
     fontSize: 12,
-    color: "#6c757d",
     textAlign: "center",
   },
-  detailedStats: {
-    backgroundColor: "#fff",
-    borderRadius: 15,
-    padding: 20,
+  profileSection: {
     marginBottom: 20,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
   },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#333",
+  profileHeader: {
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  profileAvatar: {
+    fontSize: 80,
     marginBottom: 15,
   },
-  statRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: "#f1f3f4",
-  },
-  statRowLabel: {
-    flex: 1,
-    fontSize: 16,
-    color: "#333",
-    marginLeft: 10,
-  },
-  statRowValue: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#667eea",
-  },
-  quickActions: {
-    backgroundColor: "#fff",
-    borderRadius: 15,
-    padding: 20,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  testDataContainer: {
-    paddingHorizontal: 20,
-    paddingVertical: 20,
-  },
-  testDataButton: {
-    backgroundColor: "#667eea",
-    borderRadius: 12,
-    paddingVertical: 15,
-    paddingHorizontal: 20,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  testDataButtonText: {
-    color: "#fff",
-    fontWeight: "bold",
-    fontSize: 14,
-    marginLeft: 8,
-  },
-  actionButtons: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-  },
-  actionButton: {
-    alignItems: "center",
-    padding: 15,
-  },
-  actionButtonText: {
-    fontSize: 12,
-    color: "#667eea",
-    marginTop: 5,
-    fontWeight: "500",
-  },
-  leaderboardContent: {
-    padding: 20,
-  },
-  leaderboardHeader: {
-    alignItems: "center",
-    marginBottom: 20,
-  },
-  leaderboardTitle: {
+  profileName: {
     fontSize: 24,
     fontWeight: "bold",
-    color: "#333",
-    marginBottom: 5,
-  },
-  leaderboardSubtitle: {
-    fontSize: 14,
-    color: "#6c757d",
-  },
-  leaderboardList: {
-    marginBottom: 20,
-  },
-  leaderboardItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#fff",
-    borderRadius: 15,
-    padding: 15,
-    marginBottom: 10,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  currentUserItem: {
-    backgroundColor: "#667eea",
-  },
-  rankContainer: {
-    width: 40,
-    alignItems: "center",
-    marginRight: 15,
-  },
-  rankText: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#333",
-  },
-  userInfo: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  userAvatar: {
-    fontSize: 24,
-    marginRight: 10,
-  },
-  userDetails: {
-    flex: 1,
-  },
-  username: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#333",
-    marginBottom: 2,
-  },
-  currentUsername: {
-    color: "#fff",
-  },
-  userStats: {
-    fontSize: 12,
-    color: "#6c757d",
-  },
-  scoreContainer: {
-    alignItems: "center",
-  },
-  scoreText: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#667eea",
-  },
-  scoreLabel: {
-    fontSize: 10,
-    color: "#6c757d",
-  },
-  leaderboardInfo: {
-    backgroundColor: "#fff",
-    borderRadius: 15,
-    padding: 20,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  infoItem: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  infoText: {
-    fontSize: 14,
-    color: "#6c757d",
-    marginLeft: 10,
-    flex: 1,
-  },
-  customProfileContent: {
-    backgroundColor: "#18191c",
-    flex: 1,
-    padding: 0,
-    minHeight: "100%",
-  },
-  bannerContainer: {
-    width: "100%",
-    height: 120,
-    backgroundColor: "#18191c",
-    position: "relative",
-    marginBottom: 0,
-    overflow: "visible",
-  },
-  banner: {
-    width: "100%",
-    height: "100%",
-    resizeMode: "cover",
-    backgroundColor: "#18191c",
-  },
-  profileAvatarWrapper: {
-    position: "absolute",
-    left: 24,
-    bottom: -40,
-    zIndex: 2,
-    backgroundColor: "#18191c",
-    borderRadius: 48,
-    width: 80,
-    height: 80,
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 4,
-    borderColor: "#23272a",
-    elevation: 6,
-  },
-  avatarBig: {
-    fontSize: 48,
-  },
-  profileMainCard: {
-    backgroundColor: "#23272a",
-    borderRadius: 18,
-    marginTop: 48,
-    marginHorizontal: 16,
-    padding: 24,
-    alignItems: "flex-start",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.12,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  profileEditRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 4,
-  },
-  editIcon: {
-    marginLeft: 8,
-    padding: 4,
-  },
-  profileUserName: {
-    fontSize: 22,
-    fontWeight: "bold",
-    color: "#fff",
-    marginBottom: 2,
-  },
-  profileTagRow: {
-    flexDirection: "row",
-    alignItems: "center",
     marginBottom: 8,
   },
   profileTag: {
@@ -1814,14 +1532,12 @@ const styles = StyleSheet.create({
   },
   profileBio: {
     fontSize: 15,
-    color: "#b9bbbe",
     marginTop: 8,
     textAlign: "left",
     marginBottom: 10,
   },
   profileHint: {
     fontSize: 12,
-    color: "#6c757d",
     marginTop: 10,
     textAlign: "center",
   },
@@ -1844,8 +1560,6 @@ const styles = StyleSheet.create({
   countryPicker: {
     flex: 1,
     height: 40,
-    color: "#333",
-    backgroundColor: "#f8f9fa",
     borderRadius: 10,
   },
   bannerEditIconFixed: {
@@ -1871,7 +1585,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   modalContent: {
-    backgroundColor: "#23272a",
     borderRadius: 18,
     padding: 24,
     width: "85%",
@@ -1880,11 +1593,9 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#fff",
     marginBottom: 12,
   },
   modalLabel: {
-    color: "#b9bbbe",
     marginBottom: 8,
   },
   colorPreview: {
@@ -1900,99 +1611,178 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: "#fff",
   },
-  colorPreviewText: {
-    color: "#fff",
-    fontSize: 15,
+  colorInput: {
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    fontSize: 16,
+    width: 120,
   },
-  uploadButton: {
+  modalButtons: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    width: "100%",
+    marginTop: 20,
+  },
+  modalButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    minWidth: 80,
+    alignItems: "center",
+  },
+  modalButtonCancel: {
+    backgroundColor: "#6c757d",
+  },
+  modalButtonSave: {
+    backgroundColor: "#667eea",
+  },
+  modalButtonText: {
+    color: "#fff",
+    fontWeight: "bold",
+  },
+  testDataButton: {
+    backgroundColor: "#667eea",
+    borderRadius: 20,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#fff",
-    borderRadius: 18,
-    paddingVertical: 8,
-    paddingHorizontal: 18,
-    marginTop: 16,
+    alignSelf: "center",
+    marginTop: 20,
+    elevation: 4,
   },
-  uploadButtonText: {
-    color: "#667eea",
+  testDataButtonText: {
+    color: "#fff",
     fontWeight: "bold",
+    fontSize: 14,
     marginLeft: 8,
   },
-  closeModalButton: {
-    marginTop: 18,
+  actionButtons: {
+    flexDirection: "row",
+    justifyContent: "space-around",
   },
-  closeModalText: {
-    color: "#fff",
-    fontSize: 15,
-    textDecorationLine: "underline",
-  },
-  bannerDefault: {
-    width: "100%",
-    height: "100%",
-    backgroundColor: "#fff",
-    borderWidth: 3,
-    borderColor: "#18191c",
-    borderRadius: 0,
-  },
-  playerCardWrapper: {
-    flex: 1,
+  actionButton: {
     alignItems: "center",
-    justifyContent: "flex-start",
-    backgroundColor: "#18191c",
-    paddingTop: 0,
-    paddingBottom: 32,
+    padding: 15,
   },
-  bannerBg: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    width: "100%",
-    height: 140,
-    zIndex: 1,
+  actionButtonText: {
+    fontSize: 12,
+    marginTop: 5,
+    fontWeight: "500",
   },
-  playerCard: {
-    width: "92%",
-    backgroundColor: "#fff",
-    borderRadius: 24,
-    borderBottomLeftRadius: 32,
-    borderBottomRightRadius: 32,
+  leaderboardContent: {
+    padding: 20,
+  },
+  leaderboardHeader: {
     alignItems: "center",
-    paddingVertical: 32,
-    paddingHorizontal: 18,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.18,
-    shadowRadius: 12,
-    elevation: 8,
-    marginTop: 80,
-    marginBottom: 18,
-    zIndex: 2,
+    marginBottom: 20,
   },
-  playerAvatarContainer: {
-    marginTop: -60,
-    marginBottom: 12,
-    width: 100,
-    height: 100,
-    alignItems: "center",
-    justifyContent: "center",
-    zIndex: 3,
+  leaderboardTitle: {
+    fontSize: 24,
+    fontWeight: "bold",
+    marginBottom: 5,
   },
-  playerAvatar: {
-    fontSize: 60,
+  leaderboardSubtitle: {
+    fontSize: 14,
   },
-  playerIdentityRow: {
+  leaderboardList: {
+    marginBottom: 20,
+  },
+  leaderboardItem: {
     flexDirection: "row",
     alignItems: "center",
+    borderRadius: 15,
+    padding: 15,
     marginBottom: 10,
-    gap: 8,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  currentUserItem: {
+    backgroundColor: "#667eea",
+  },
+  rankContainer: {
+    width: 40,
+    alignItems: "center",
+    marginRight: 15,
+  },
+  rankText: {
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+  userInfo: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  userAvatar: {
+    fontSize: 24,
+    marginRight: 10,
+  },
+  userDetails: {
+    flex: 1,
+  },
+  username: {
+    fontSize: 16,
+    fontWeight: "600",
+    marginBottom: 2,
+  },
+  currentUsername: {
+    color: "#fff",
+  },
+  userStats: {
+    fontSize: 12,
+  },
+  scoreContainer: {
+    alignItems: "center",
+  },
+  scoreText: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#667eea",
+  },
+  scoreLabel: {
+    fontSize: 12,
+    marginTop: 2,
+  },
+  playerCard: {
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 16,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  playerHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  playerAvatar: {
+    fontSize: 50,
+    marginRight: 15,
+  },
+  playerInfo: {
+    flex: 1,
   },
   playerName: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: "bold",
-    color: "#23272a",
+    marginBottom: 4,
   },
   playerTag: {
-    backgroundColor: "#667eea",
     color: "#fff",
     borderRadius: 8,
     paddingHorizontal: 8,
@@ -2011,7 +1801,6 @@ const styles = StyleSheet.create({
     marginRight: 4,
   },
   playerCountryName: {
-    color: "#23272a",
     fontSize: 14,
   },
   playerStatsRow: {
@@ -2027,7 +1816,6 @@ const styles = StyleSheet.create({
     minWidth: 140,
     marginVertical: 8,
     marginHorizontal: 0,
-    backgroundColor: "#f8f9fa",
     borderRadius: 14,
     alignItems: "center",
     paddingVertical: 12,
@@ -2036,17 +1824,14 @@ const styles = StyleSheet.create({
   playerStatValue: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#23272a",
     marginTop: 2,
   },
   playerStatLabel: {
     fontSize: 11,
-    color: "#6c757d",
     marginTop: 1,
   },
   playerBio: {
     fontSize: 15,
-    color: "#667eea",
     fontStyle: "italic",
     textAlign: "center",
     marginTop: 10,
@@ -2064,7 +1849,6 @@ const styles = StyleSheet.create({
   },
   playerActionText: {
     fontSize: 12,
-    color: "#667eea",
     marginTop: 3,
     fontWeight: "500",
   },
@@ -2075,7 +1859,6 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   leaderboardSwitchBtn: {
-    backgroundColor: "#f1f3f4",
     borderRadius: 16,
     paddingVertical: 7,
     paddingHorizontal: 18,
@@ -2085,7 +1868,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#667eea",
   },
   leaderboardSwitchText: {
-    color: "#667eea",
     fontWeight: "bold",
     fontSize: 15,
   },
