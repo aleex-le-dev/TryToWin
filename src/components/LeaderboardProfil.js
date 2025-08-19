@@ -519,50 +519,13 @@ const LeaderboardProfil = ({
     );
   }
 
+  const isGlobal = activeTab === "global";
+  const isCountry = activeTab === "country";
+
   return (
     <View style={[styles.container, { backgroundColor: theme.background }, style]}>
-      {/* Onglets - Style identique à GameDetailsScreen */}
-      <View style={[styles.tabContainer, { backgroundColor: theme.card }]}>
-        <TouchableOpacity
-          style={{
-            backgroundColor: activeTab === "global" ? gameColor : theme.surface,
-            borderRadius: 16,
-            paddingVertical: 7,
-            paddingHorizontal: 18,
-            marginHorizontal: 2,
-          }}
-          onPress={() => setActiveTab("global")}>
-          <Text
-            style={{
-              color: activeTab === "global" ? "#fff" : gameColor,
-              fontWeight: "bold",
-              fontSize: 14,
-            }}>
-            🌍 Mondial
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={{
-            backgroundColor: activeTab === "country" ? gameColor : theme.surface,
-            borderRadius: 16,
-            paddingVertical: 7,
-            paddingHorizontal: 18,
-            marginHorizontal: 2,
-          }}
-          onPress={() => setActiveTab("country")}>
-          <Text
-            style={{
-              color: activeTab === "country" ? "#fff" : gameColor,
-              fontWeight: "bold",
-              fontSize: 14,
-            }}>
-            {getCountryFlag(selectedCountry)} {getCountryName(selectedCountry)}
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      <View style={{ alignItems: "center", marginBottom: 20 }}>
+      {/* Header titre (même style que GameLeaderboard) */}
+      <View style={{ paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: theme.border, paddingHorizontal: 16 }}>
         <Text
           style={{
             fontSize: 24,
@@ -570,15 +533,54 @@ const LeaderboardProfil = ({
             color: theme.text,
             marginBottom: 5,
           }}>
-          {activeTab === "global"
-            ? "Classement Général (Mondial)"
+          {isGlobal
+            ? "Classement Mondial"
             : `Classement ${getCountryFlag(selectedCountry)} ${getCountryName(selectedCountry)}`}
         </Text>
         <Text style={{ fontSize: 14, color: theme.textSecondary }}>
-          {activeTab === "global"
+          {isGlobal
             ? "Top des meilleurs joueurs tous pays"
             : `Top des meilleurs joueurs de ${getCountryName(selectedCountry)}`}
         </Text>
+      </View>
+
+      {/* Switch Monde / Pays unifié (style GameLeaderboard) */}
+      <View style={{
+        flexDirection: "row",
+        marginTop: 12,
+        marginBottom: 16,
+        marginHorizontal: 16,
+        backgroundColor: theme.card,
+        borderRadius: 10,
+        padding: 4,
+        borderWidth: 1,
+        borderColor: theme.border,
+      }}>
+        <TouchableOpacity
+          style={{
+            flex: 1,
+            paddingVertical: 10,
+            alignItems: "center",
+            borderRadius: 8,
+            backgroundColor: isGlobal ? theme.primary : "transparent",
+          }}
+          onPress={() => setActiveTab("global")}>
+          <Text style={{ fontSize: 14, fontWeight: "600", color: isGlobal ? "#fff" : theme.textSecondary }}>🌍 Mondial</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={{
+            flex: 1,
+            paddingVertical: 10,
+            alignItems: "center",
+            borderRadius: 8,
+            backgroundColor: isCountry ? theme.primary : "transparent",
+          }}
+          onPress={() => setActiveTab("country")}>
+          <Text style={{ fontSize: 14, fontWeight: "600", color: isCountry ? "#fff" : theme.textSecondary }}>
+            {getCountryFlag(selectedCountry)} {getCountryName(selectedCountry)}
+          </Text>
+        </TouchableOpacity>
       </View>
 
       {/* Liste du classement */}
@@ -608,12 +610,12 @@ const LeaderboardProfil = ({
       ) : (
         <View style={styles.emptyContainer}>
           <Text style={[styles.emptyText, { color: theme.text }]}>
-            {activeTab === "global"
+            {isGlobal
               ? "Aucun joueur classé pour le moment"
               : `Aucun joueur classé en ${getCountryName(selectedCountry)}`}
           </Text>
           <Text style={[styles.emptySubtext, { color: theme.textSecondary }]}>
-            {activeTab === "global"
+            {isGlobal
               ? "Jouez pour apparaître dans le classement !"
               : `Jouez pour apparaître dans le classement de ${getCountryName(selectedCountry)} !`}
           </Text>

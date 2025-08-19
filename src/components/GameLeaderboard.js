@@ -6,10 +6,12 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Image,
+  StyleSheet,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import SkeletonLeaderboard from "./SkeletonLeaderboard";
 import Toast from "react-native-toast-message";
+import { useTheme } from "../contexts/ThemeContext";
 
 const GameLeaderboard = ({
   leaderboardData,
@@ -34,87 +36,87 @@ const GameLeaderboard = ({
   scrollToUserInCountry,
   onPressPlayer,
 }) => {
-  // Calcul dynamique de la position utilisateur dans la liste affichée
-  const userIndex = centeredLeaderboardData.findIndex(
-    (item) => item.isCurrentUser
-  );
+  const { theme } = useTheme();
+  const userIndex = centeredLeaderboardData.findIndex((item) => item.isCurrentUser);
   const userPosition = userIndex !== -1 ? userIndex + 1 : "-";
 
+  const isGlobal = leaderboardType === "global";
+  const isCountry = leaderboardType === "country";
+
   return (
-    <View style={styles.leaderboardContent}>
-      <View style={styles.leaderboardHeader}>
-        <Text style={styles.leaderboardTitle}>Classement {game.title}</Text>
-        <Text style={styles.leaderboardSubtitle}>{`Votre position : #${userPosition}`}</Text>
+    <View style={[styles.leaderboardContent, { backgroundColor: theme.background }]}>
+      {/* Header titre */}
+      <View style={{ paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: theme.border }}>
+        <Text style={[styles.leaderboardTitle, { color: theme.text }]}>Classement {game.title}</Text>
+        <Text style={[styles.leaderboardSubtitle, { color: theme.textSecondary }]}>{`Votre position : #${userPosition}`}</Text>
       </View>
 
-      {/* Onglets de classement */}
-      <View style={styles.leaderboardSwitchRow}>
+      {/* Switch Monde / Pays avec contraste renforcé */}
+      <View style={{
+        flexDirection: "row",
+        marginTop: 12,
+        marginBottom: 16,
+        backgroundColor: theme.card,
+        borderRadius: 10,
+        padding: 4,
+        borderWidth: 1,
+        borderColor: theme.border,
+      }}>
         <TouchableOpacity
-          style={[
-            styles.leaderboardSwitchBtn,
-            leaderboardType === "global" && styles.leaderboardSwitchActive,
-          ]}
+          style={{
+            flex: 1,
+            paddingVertical: 10,
+            alignItems: "center",
+            borderRadius: 8,
+            backgroundColor: isGlobal ? theme.primary : "transparent",
+          }}
           onPress={() => {
             setLeaderboardType("global");
-            setTimeout(() => {
-              try {
-                scrollToUserInWorld && scrollToUserInWorld();
-              } catch (e) {}
-            }, 400);
+            setTimeout(() => { try { scrollToUserInWorld && scrollToUserInWorld(); } catch (e) {} }, 400);
           }}>
-          <Text
-            style={[
-              styles.leaderboardSwitchText,
-              leaderboardType === "global" && styles.leaderboardSwitchTextActive,
-            ]}>
-            Mondial
-          </Text>
+          <Text style={{
+            fontSize: 14,
+            fontWeight: "600",
+            color: isGlobal ? "#fff" : theme.textSecondary,
+          }}>Mondial</Text>
         </TouchableOpacity>
+
         <TouchableOpacity
-          style={[
-            styles.leaderboardSwitchBtn,
-            leaderboardType === "country" && styles.leaderboardSwitchActive,
-            (!userCountry || userCountry === "") && { opacity: 0.5 },
-          ]}
-          // Toujours actif pour permettre le toast
+          style={{
+            flex: 1,
+            paddingVertical: 10,
+            alignItems: "center",
+            borderRadius: 8,
+            backgroundColor: isCountry ? theme.primary : "transparent",
+            opacity: !userCountry ? 0.6 : 1,
+          }}
           disabled={false}
           onPress={() => {
-            if (!userCountry || userCountry === "") {
-              Toast.show({
-                type: "info",
-                text1: "Veuillez entrer votre pays dans le profil",
-                position: "top",
-              });
+            if (!userCountry) {
+              Toast.show({ type: "info", text1: "Veuillez entrer votre pays dans le profil", position: "top" });
               return;
             }
             setLeaderboardType("country");
             setPendingScrollToUserCountry && setPendingScrollToUserCountry(true);
           }}>
-          <Text
-            style={[
-              styles.leaderboardSwitchText,
-              leaderboardType === "country" && styles.leaderboardSwitchTextActive,
-              (!userCountry || userCountry === "") && { color: "#aaa" },
-            ]}>
-            {(countries.find((c) => c.code === userCountry)?.flag || "🌍") +
-              " " +
-              (countries.find((c) => c.code === userCountry)?.name || "Pays")}
+          <Text style={{
+            fontSize: 14,
+            fontWeight: "600",
+            color: isCountry ? "#fff" : theme.textSecondary,
+          }}>
+            {(countries.find((c) => c.code === userCountry)?.flag || "🌍") + " " + (countries.find((c) => c.code === userCountry)?.name || "Pays")}
           </Text>
         </TouchableOpacity>
       </View>
 
       {/* Liste du classement */}
-      <View style={styles.leaderboardList}>
+      <View style={[styles.leaderboardList, { backgroundColor: theme.background }]}>
         {loading ? (
           <SkeletonLeaderboard />
         ) : centeredLeaderboardData.length === 0 ? (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyStateText}>
-              Aucun joueur n'a encore joué à ce jeu
-            </Text>
-            <Text style={styles.emptyStateSubtext}>
-              Soyez le premier à marquer des points !
-            </Text>
+          <View style={{ paddingVertical: 40, alignItems: "center" }}>
+            <Text style={[styles.emptyStateText, { color: theme.text }]}>Aucun joueur n'a encore joué à ce jeu</Text>
+            <Text style={[styles.emptyStateSubtext, { color: theme.textSecondary }]}>Soyez le premier à marquer des points !</Text>
           </View>
         ) : (
           <FlatList
@@ -128,110 +130,50 @@ const GameLeaderboard = ({
                   <View
                     style={[
                       styles.leaderboardItem,
+                      { backgroundColor: theme.card, borderRadius: 16 },
                       item.isCurrentUser && { backgroundColor: game.color },
                     ]}>
                     <View style={styles.rankContainer}>
-                      <Text
-                        style={[
-                          styles.rankText,
-                          item.isCurrentUser && { color: "#fff" },
-                        ]}>
-                        #{item.rank}
-                      </Text>
+                      <Text style={[styles.rankText, { color: item.isCurrentUser ? "#fff" : theme.text }]}>#{item.rank}</Text>
                       {index < 3 && (
-                        <Ionicons
-                          name='trophy'
-                          size={16}
-                          color={
-                            index === 0
-                              ? "#FFD700"
-                              : index === 1
-                              ? "#C0C0C0"
-                              : "#CD7F32"
-                          }
-                        />
+                        <Ionicons name='trophy' size={16} color={index === 0 ? "#FFD700" : index === 1 ? "#C0C0C0" : "#CD7F32"} />
                       )}
                     </View>
                     <View style={styles.userInfo}>
                       <View style={styles.userAvatar}>
                         {item.avatar && item.avatar.startsWith("http") ? (
-                          <Image
-                            source={{ uri: item.avatar }}
-                            style={{ width: 40, height: 40, borderRadius: 20 }}
-                            resizeMode='cover'
-                          />
+                          <Image source={{ uri: item.avatar }} style={{ width: 40, height: 40, borderRadius: 20 }} resizeMode='cover' />
                         ) : (
-                          <View
-                            style={{
-                              width: 40,
-                              height: 40,
-                              borderRadius: 20,
-                              backgroundColor: "#bbb",
-                              justifyContent: "center",
-                              alignItems: "center",
-                            }}>
-                            <Text
-                              style={{
-                                color: "#fff",
-                                fontSize: 22,
-                                fontWeight: "bold",
-                              }}>
-                              {item.username && item.username.length > 0
-                                ? item.username[0].toUpperCase()
-                                : item.email && item.email.length > 0
-                                ? item.email[0].toUpperCase()
-                                : "U"}
+                          <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: "#bbb", justifyContent: "center", alignItems: "center" }}>
+                            <Text style={{ color: "#fff", fontSize: 22, fontWeight: "bold" }}>
+                              {item.username && item.username.length > 0 ? item.username[0].toUpperCase() : item.email && item.email.length > 0 ? item.email[0].toUpperCase() : "U"}
                             </Text>
                           </View>
                         )}
                       </View>
                       <View style={styles.userDetails}>
                         <View style={{ flexDirection: "row", alignItems: "center" }}>
-                          <Text style={{ fontSize: 18, marginRight: 5 }}>
-                            {item.country?.flag || "🌍"}
-                          </Text>
-                          <Text
-                            style={[
-                              styles.username,
-                              item.isCurrentUser && { color: "#fff" },
-                            ]}>
+                          <Text style={{ fontSize: 18, marginRight: 5 }}>{item.country?.flag || "🌍"}</Text>
+                          <Text style={[styles.username, { color: item.isCurrentUser ? "#fff" : theme.text }]}>
                             {item.username}
                           </Text>
                         </View>
-                        <Text
-                          style={[
-                            styles.userStats,
-                            item.isCurrentUser && { color: "#fff" },
-                          ]}>
+                        <Text style={[styles.userStats, { color: item.isCurrentUser ? "#fff" : theme.textSecondary }]}>
                           {item.gamesPlayed} parties • {item.win || 0} victoires
                         </Text>
                       </View>
                     </View>
                     <View style={styles.scoreContainer}>
-                      <Text
-                        style={[
-                          styles.scoreText,
-                          item.isCurrentUser
-                            ? { color: "#fff" }
-                            : { color: game.color, fontWeight: "bold" },
-                        ]}>
+                      <Text style={[styles.scoreText, item.isCurrentUser ? { color: "#fff" } : { color: game.color, fontWeight: "bold" }]}>
                         {item.score}
                       </Text>
-                      <Text
-                        style={[
-                          styles.scoreLabel,
-                          item.isCurrentUser && { color: "#fff" },
-                        ]}>
-                        points
-                      </Text>
+                      <Text style={[styles.scoreLabel, { color: item.isCurrentUser ? "#fff" : theme.textSecondary }]}>points</Text>
                     </View>
                   </View>
                 </TouchableOpacity>
               )
             }
-            keyExtractor={(item, index) =>
-              item.key || item.userId || item.id || `player_${item.rank}` || `item_${index}`
-            }
+            keyExtractor={(item, index) => item.key || item.userId || item.id || `player_${item.rank}` || `item_${index}`}
             showsVerticalScrollIndicator={false}
             contentContainerStyle={{ paddingBottom: 20 }}
             getItemLayout={(data, index) => ({ length: 80, offset: 80 * index, index })}
@@ -243,60 +185,30 @@ const GameLeaderboard = ({
   );
 };
 
-const styles = {
+const styles = StyleSheet.create({
   leaderboardContent: {
     flex: 1,
     paddingHorizontal: 16,
   },
-  leaderboardHeader: {
-    marginBottom: 16,
-    alignItems: "center",
-  },
   leaderboardTitle: {
     fontSize: 20,
     fontWeight: "bold",
-    color: "#333",
     marginBottom: 4,
   },
   leaderboardSubtitle: {
     fontSize: 14,
-    color: "#666",
-  },
-  leaderboardSwitchRow: {
-    flexDirection: "row",
-    marginBottom: 16,
-    backgroundColor: "#f5f5f5",
-    borderRadius: 8,
-    padding: 4,
-  },
-  leaderboardSwitchBtn: {
-    flex: 1,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 6,
-    alignItems: "center",
-  },
-  leaderboardSwitchActive: {
-    backgroundColor: "#fff",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  leaderboardSwitchText: {
-    fontSize: 14,
-    color: "#666",
-    fontWeight: "500",
-  },
-  leaderboardSwitchTextActive: {
-    color: "#333",
-    fontWeight: "600",
   },
   leaderboardList: {
     flex: 1,
   },
-  // Styles pour chaque carte joueur (rectangle arrondi, ombre, fond blanc ou bleu)
+  emptyStateText: {
+    fontSize: 20,
+    fontWeight: "bold",
+    marginBottom: 10,
+  },
+  emptyStateSubtext: {
+    fontSize: 16,
+  },
   leaderboardItem: {
     flexDirection: "row",
     alignItems: "center",
@@ -304,7 +216,6 @@ const styles = {
     marginHorizontal: 2,
     paddingVertical: 14,
     paddingHorizontal: 16,
-    backgroundColor: "#fff",
     borderRadius: 16,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
@@ -320,7 +231,6 @@ const styles = {
   rankText: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#333",
   },
   userInfo: {
     flex: 1,
@@ -340,11 +250,9 @@ const styles = {
   username: {
     fontSize: 16,
     fontWeight: "bold",
-    color: "#333",
   },
   userStats: {
     fontSize: 14,
-    color: "#666",
     marginTop: 2,
   },
   scoreContainer: {
@@ -355,29 +263,11 @@ const styles = {
   scoreText: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#333",
   },
   scoreLabel: {
     fontSize: 12,
-    color: "#666",
     marginTop: 2,
   },
-  emptyState: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingVertical: 50,
-  },
-  emptyStateText: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#333",
-    marginBottom: 10,
-  },
-  emptyStateSubtext: {
-    fontSize: 16,
-    color: "#666",
-  },
-};
+});
 
 export default GameLeaderboard;
