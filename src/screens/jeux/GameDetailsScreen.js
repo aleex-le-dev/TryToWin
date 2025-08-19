@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
   Image,
   Animated,
+  StatusBar,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
@@ -484,6 +485,12 @@ const GameDetailsScreen = ({ route, navigation }) => {
 
   return (
     <ThemedLayout>
+      {/* StatusBar personnalisé avec la couleur du jeu */}
+      <StatusBar 
+        style="light" 
+        translucent={false}
+        backgroundColor={game.color}
+      />
       {loading && (
         <View
           style={[styles.fullScreenLoading, { backgroundColor: game.color }]}>
@@ -502,6 +509,7 @@ const GameDetailsScreen = ({ route, navigation }) => {
                 flexDirection: "row",
                 alignItems: "center",
                 width: "100%",
+                paddingTop: 30,
               }}>
               {/* Flèche et titre alignés verticalement */}
               <View
