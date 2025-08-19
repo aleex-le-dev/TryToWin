@@ -7,21 +7,21 @@ import AppNavigator from './src/navigation/AppNavigator';
 import CustomToast from './src/components/CustomToast';
 import { AccessibilityProvider } from './src/contexts/AccessibilityContext';
 import { ThemeProvider } from './src/contexts/ThemeContext';
-
-
-
-
+import ThemedApp from './src/components/ThemedApp';
+import ThemedStatusBar from './src/components/ThemedStatusBar';
 
 export default function App() {
   return (
     <View style={styles.container}>
-      <StatusBar style="auto" />
       <AuthProvider>
         <ToastProvider>
           <AccessibilityProvider>
             <ThemeProvider>
-              <AppNavigator />
-              <CustomToast />
+              <ThemedStatusBar />
+              <ThemedApp>
+                <AppNavigator />
+                <CustomToast />
+              </ThemedApp>
             </ThemeProvider>
           </AccessibilityProvider>
         </ToastProvider>

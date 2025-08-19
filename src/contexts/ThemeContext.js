@@ -1,10 +1,12 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { lightTheme, darkTheme } from "../constants/theme";
 
 const THEME_KEY = "app_theme_dark";
 
 const ThemeContext = createContext({
   isDarkMode: false,
+  theme: lightTheme,
   toggleTheme: () => {},
   setDarkMode: () => {},
 });
@@ -40,9 +42,13 @@ export const ThemeProvider = ({ children }) => {
     setDarkMode(!isDarkMode);
   };
 
+  // Sélectionner le thème actuel
+  const theme = isDarkMode ? darkTheme : lightTheme;
+
   return (
     <ThemeContext.Provider value={{
       isDarkMode,
+      theme,
       toggleTheme,
       setDarkMode,
     }}>

@@ -2,6 +2,7 @@
 // Centralise les exports des constantes pour faciliter les imports
 
 export { colors, gradients, themes } from "./colors";
+export { lightTheme, darkTheme } from "./theme";
 export { config, routes, messages } from "./config";
 export {
   emailConfig,

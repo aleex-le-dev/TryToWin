@@ -3,31 +3,32 @@ import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity, Switch } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { useTheme } from "../../contexts/ThemeContext";
+import ThemedLayout from "../../components/ThemedLayout";
 
 const AppearanceSettings = ({ navigation }) => {
-  const { isDarkMode, setDarkMode } = useTheme();
+  const { isDarkMode, setDarkMode, theme } = useTheme();
 
   return (
-    <View style={[styles.container, isDarkMode && styles.containerDark]}>
+    <ThemedLayout style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <Ionicons name='arrow-back' size={22} color={isDarkMode ? '#ffffff' : '#23272a'} />
+          <Ionicons name='arrow-back' size={22} color={theme.icon} />
         </TouchableOpacity>
-        <Text style={[styles.title, isDarkMode && styles.titleDark]}>Apparence</Text>
+        <Text style={[styles.title, { color: theme.text }]}>Apparence</Text>
       </View>
       
-      <View style={styles.settingItem}>
+      <View style={[styles.settingItem, { borderBottomColor: theme.divider }]}>
         <View style={styles.settingInfo}>
           <Ionicons 
             name={isDarkMode ? 'moon' : 'sunny'} 
             size={24} 
-            color={isDarkMode ? '#ffffff' : '#23272a'} 
+            color={theme.icon} 
           />
           <View style={styles.settingText}>
-            <Text style={[styles.settingTitle, isDarkMode && styles.settingTitleDark]}>
+            <Text style={[styles.settingTitle, { color: theme.text }]}>
               Mode sombre
             </Text>
-            <Text style={[styles.settingDescription, isDarkMode && styles.settingDescriptionDark]}>
+            <Text style={[styles.settingDescription, { color: theme.textSecondary }]}>
               Activer le thème sombre pour l'application
             </Text>
           </View>
@@ -35,23 +36,18 @@ const AppearanceSettings = ({ navigation }) => {
         <Switch
           value={isDarkMode}
           onValueChange={setDarkMode}
-          trackColor={{ false: '#e0e0e0', true: '#7289da' }}
-          thumbColor={isDarkMode ? '#ffffff' : '#f4f3f4'}
-          ios_backgroundColor="#e0e0e0"
+          trackColor={{ false: theme.border, true: theme.primary }}
+          thumbColor={isDarkMode ? theme.surface : theme.surface}
+          ios_backgroundColor={theme.border}
         />
       </View>
-    </View>
+    </ThemedLayout>
   );
 };
 
 const styles = StyleSheet.create({
   container: { 
-    flex: 1, 
-    backgroundColor: "#fff", 
     padding: 24 
-  },
-  containerDark: {
-    backgroundColor: "#1a1a1a",
   },
   header: { 
     flexDirection: 'row', 
@@ -63,13 +59,9 @@ const styles = StyleSheet.create({
     padding: 4 
   },
   title: {
-    color: "#23272a",
     fontSize: 22,
     fontWeight: "bold",
     marginBottom: 0,
-  },
-  titleDark: {
-    color: "#ffffff",
   },
   settingItem: {
     flexDirection: 'row',
@@ -77,7 +69,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
   },
   settingInfo: {
     flexDirection: 'row',
@@ -91,19 +82,11 @@ const styles = StyleSheet.create({
   settingTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#23272a',
     marginBottom: 4,
-  },
-  settingTitleDark: {
-    color: '#ffffff',
   },
   settingDescription: {
     fontSize: 14,
-    color: '#6c757d',
     lineHeight: 20,
-  },
-  settingDescriptionDark: {
-    color: '#a0a0a0',
   },
 });
 
