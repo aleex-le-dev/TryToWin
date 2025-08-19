@@ -1,5 +1,6 @@
 import React, { useRef, useEffect } from "react";
 import { View, Animated, Easing } from "react-native";
+import { useTheme } from "../contexts/ThemeContext";
 
 /**
  * Composant SkeletonProfile : affiche un loader premium avec shimmer animé.
@@ -7,6 +8,7 @@ import { View, Animated, Easing } from "react-native";
  */
 const SkeletonProfile = () => {
   const shimmerAnim = useRef(new Animated.Value(0)).current;
+  const { theme, isDarkMode } = useTheme();
 
   useEffect(() => {
     Animated.loop(
@@ -25,9 +27,13 @@ const SkeletonProfile = () => {
     outputRange: [-150, 300],
   });
 
+  // Couleurs adaptatives au thème
+  const baseColor = theme.surface; // fond des blocs
+  const highlightColor = isDarkMode ? "rgba(255,255,255,0.10)" : "rgba(255,255,255,0.60)";
+
   // Utilitaire pour block skeleton
   const Block = ({ style }) => (
-    <View style={[{ backgroundColor: "#e9ecef", overflow: "hidden" }, style]}>
+    <View style={[{ backgroundColor: baseColor, overflow: "hidden", borderRadius: 8 }, style]}>
       <Animated.View
         style={[
           {
@@ -36,8 +42,7 @@ const SkeletonProfile = () => {
             top: 0,
             bottom: 0,
             width: 150,
-            backgroundColor: "#f4f6fa",
-            opacity: 0.6,
+            backgroundColor: highlightColor,
             transform: [{ translateX: shimmerTranslate }],
           },
         ]}
@@ -60,9 +65,7 @@ const SkeletonProfile = () => {
         }}
       />
       {/* Nom */}
-      <Block
-        style={{ width: 120, height: 22, borderRadius: 8, marginBottom: 10 }}
-      />
+      <Block style={{ width: 120, height: 22, borderRadius: 8, marginBottom: 10 }} />
       {/* Stats (4 blocs) */}
       <View
         style={{
@@ -83,9 +86,7 @@ const SkeletonProfile = () => {
         ))}
       </View>
       {/* Bio */}
-      <Block
-        style={{ width: "60%", height: 16, borderRadius: 8, marginTop: 18 }}
-      />
+      <Block style={{ width: "60%", height: 16, borderRadius: 8, marginTop: 18 }} />
     </View>
   );
 };

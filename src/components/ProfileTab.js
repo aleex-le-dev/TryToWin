@@ -191,6 +191,8 @@ const ProfileTab = ({
               paddingVertical: 12,
               margin: 8,
               elevation: 2,
+              borderWidth: 1,
+              borderColor: theme.border,
             }}>
             <Ionicons name='trophy' size={20} color='#FFD700' />
             <Text
@@ -216,6 +218,8 @@ const ProfileTab = ({
               paddingVertical: 12,
               margin: 8,
               elevation: 2,
+              borderWidth: 1,
+              borderColor: theme.border,
             }}>
             <View style={{ height: 8 }} />
             {/* Affichage conditionnel emoji ou image pour le meilleur jeu */}
@@ -286,6 +290,8 @@ const ProfileTab = ({
               paddingVertical: 12,
               margin: 8,
               elevation: 2,
+              borderWidth: 1,
+              borderColor: theme.border,
             }}>
             <Ionicons name='trending-up' size={20} color='#96CEB4' />
             <Text
