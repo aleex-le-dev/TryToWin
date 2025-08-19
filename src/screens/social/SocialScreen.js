@@ -11,13 +11,14 @@ import {
   Alert,
   Image,
   SafeAreaView,
+  ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import QRCode from "react-native-qrcode-svg";
 import Toast from "react-native-toast-message";
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from "../../hooks/useAuth";
-import { doc, getDoc, collection, setDoc, deleteDoc, onSnapshot, updateDoc, serverTimestamp, query, orderBy, where, addDoc } from "firebase/firestore";
+import { doc, getDoc, getDocs, collection, setDoc, deleteDoc, onSnapshot, updateDoc, serverTimestamp, query, orderBy, where, addDoc } from "firebase/firestore";
 import { db } from "../../utils/firebaseConfig";
 import { subscribeFriends, subscribeBlocked, addFriend as addFriendSvc, removeFriend as removeFriendSvc } from "../../services/friendsService";
 import { useFocusEffect } from "@react-navigation/native";
@@ -77,6 +78,12 @@ export default function SocialScreen({ route, navigation }) {
   const [friendProfile, setFriendProfile] = useState(null);
   const [friendStats, setFriendStats] = useState(null);
   const [friendLoading, setFriendLoading] = useState(false);
+  const [searchResults, setSearchResults] = useState([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [userProfile, setUserProfile] = useState(null);
+  const [userStats, setUserStats] = useState(null);
+  const [userLoading, setUserLoading] = useState(false);
 
   // Charger la carte joueur de l’ami sélectionné
   useEffect(() => {
@@ -123,6 +130,8 @@ export default function SocialScreen({ route, navigation }) {
     React.useCallback(() => {
       setSelectedFriend(null);
       setLongPressedFriendId(null);
+      setSelectedUser(null);
+      setSearchResults([]);
     }, [])
   );
 
@@ -430,6 +439,114 @@ export default function SocialScreen({ route, navigation }) {
   // Lien unique de profil avec le vrai ID de l'utilisateur connecté
   const myProfileLink = user?.id ? `trytowin://addfriend/${user.id}` : `trytowin://addfriend/1234`;
 
+  // Rechercher des utilisateurs en base de données
+  const searchUsers = useCallback(async (searchTerm) => {
+    if (!searchTerm.trim() || searchTerm.length < 2) {
+      setSearchResults([]);
+      setSearchLoading(false);
+      return;
+    }
+
+    setSearchLoading(true);
+    try {
+      const usersRef = collection(db, 'users');
+      // Récupérer tous les utilisateurs et filtrer côté client
+      const snapshot = await getDocs(usersRef);
+      console.log(`[searchUsers] Total utilisateurs en BDD : ${snapshot.size}`);
+      
+      const users = [];
+      
+      snapshot.forEach((doc) => {
+        const userData = doc.data();
+        const username = userData.username || '';
+        
+        console.log(`[searchUsers] Utilisateur ${doc.id}: username="${username}", searchTerm="${searchTerm}"`);
+        
+        // Filtrer par nom d'utilisateur (insensible à la casse)
+        if (username.toLowerCase().includes(searchTerm.toLowerCase())) {
+          console.log(`[searchUsers] Match trouvé pour ${username}`);
+          // Exclure seulement l'utilisateur connecté, permettre de voir les amis
+          if (doc.id !== user?.id) {
+            users.push({
+              id: doc.id,
+              username: userData.username || 'Utilisateur',
+              avatar: userData.avatar || '👤',
+              photoURL: userData.photoURL || '',
+              bio: userData.bio || '',
+              country: userData.country || '',
+              isOnline: userData.isOnline || false,
+              isFriend: friends.find(f => f.id === doc.id) ? true : false, // Indiquer si c'est un ami
+            });
+          } else {
+            console.log(`[searchUsers] ${username} exclu (utilisateur connecté)`);
+          }
+        } else {
+          console.log(`[searchUsers] Pas de match pour ${username}`);
+        }
+      });
+      
+      console.log(`[searchUsers] Recherche "${searchTerm}" : ${users.length} utilisateurs trouvés`);
+      setSearchResults(users);
+    } catch (error) {
+      console.error('Erreur lors de la recherche:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'Erreur de recherche',
+        text2: 'Impossible de rechercher les utilisateurs',
+        position: 'top',
+        topOffset: 40,
+      });
+    } finally {
+      setSearchLoading(false);
+    }
+  }, [user?.id, friends]);
+
+  // Charger le profil d'un utilisateur sélectionné
+  const loadUserProfile = useCallback(async (userId) => {
+    if (!userId) {
+      setUserProfile(null);
+      setUserStats(null);
+      return;
+    }
+    
+    setUserLoading(true);
+    try {
+      const userSnap = await getDoc(doc(db, 'users', userId));
+      if (userSnap.exists()) {
+        const prof = userSnap.data();
+        setUserProfile(prof);
+      } else {
+        setUserProfile({ username: 'Utilisateur' });
+      }
+      
+      const allStats = await getUserAllGameStats(userId);
+      let bestGameId = null;
+      let bestPts = 0;
+      if (allStats?.gamesPlayed) {
+        for (const [gid, s] of Object.entries(allStats.gamesPlayed)) {
+          const pts = s?.totalPoints || 0;
+          if (pts > bestPts) { bestPts = pts; bestGameId = gid; }
+        }
+      }
+      const winRate = allStats?.totalGames > 0 ? Math.round((allStats.totalWins / allStats.totalGames) * 100) : 0;
+      setUserStats({
+        totalPoints: allStats?.totalPoints || 0,
+        winRate,
+        bestGameId,
+      });
+    } catch (error) {
+      console.error('Erreur lors du chargement du profil:', error);
+    } finally {
+      setUserLoading(false);
+    }
+  }, []);
+
+  // Sélectionner un utilisateur pour voir son profil
+  const handleUserSelect = useCallback((userData) => {
+    setSelectedUser(userData);
+    loadUserProfile(userData.id);
+  }, [loadUserProfile]);
+
   // Ajouter un ami avec vérification
   const addFriend = useCallback(
     async (friendUser) => {
@@ -557,6 +674,49 @@ export default function SocialScreen({ route, navigation }) {
       </TouchableOpacity>
     ),
     [longPressedFriendId, removeFriend, onlineStatus, theme]
+  );
+
+  // Rendu des résultats de recherche
+  const renderSearchResult = useCallback(
+    ({ item }) => (
+      <TouchableOpacity
+        style={[styles.userItem, { backgroundColor: theme.card }]}
+        onPress={() => handleUserSelect(item)}
+        activeOpacity={0.7}>
+        <View style={styles.avatarContainer}>
+          {item.photoURL ? (
+            <Image source={{ uri: item.photoURL }} style={styles.userAvatar} />
+          ) : (
+            <Text style={[styles.userAvatarText, { color: theme.primary }]}>{item.avatar}</Text>
+          )}
+        </View>
+        <View style={styles.userInfo}>
+          <Text style={[styles.userName, { color: theme.text }]}>{item.username}</Text>
+          {item.bio && (
+            <Text style={[styles.userBio, { color: theme.textSecondary }]} numberOfLines={1}>
+              {item.bio}
+            </Text>
+          )}
+          {item.isFriend && (
+            <Text style={[styles.userFriendStatus, { color: theme.primary }]}>
+              ✓ Déjà ami
+            </Text>
+          )}
+        </View>
+        {!item.isFriend ? (
+          <TouchableOpacity
+            onPress={() => addFriend(item)}
+            style={[styles.addFriendButton, { backgroundColor: theme.primary }]}>
+            <Ionicons name='add' size={20} color='#fff' />
+          </TouchableOpacity>
+        ) : (
+          <View style={[styles.friendIndicator, { backgroundColor: theme.primary }]}>
+            <Ionicons name='checkmark' size={20} color='#fff' />
+          </View>
+        )}
+      </TouchableOpacity>
+    ),
+    [handleUserSelect, addFriend, theme]
   );
 
   const consumedInitialParam = useRef(false);
@@ -739,7 +899,7 @@ export default function SocialScreen({ route, navigation }) {
           </TouchableOpacity>
           {/* Bouton Mode Test pour appareil unique */}
           <TouchableOpacity
-            style={[styles.testButton, { marginTop: 12, alignSelf: 'center' }]}
+            style={styles.testButton}
             onPress={enableTestMode}>
             <Ionicons name='flask' size={18} color='#fff' />
             <Text style={styles.testButtonText}>Test QR code</Text>
@@ -797,10 +957,124 @@ export default function SocialScreen({ route, navigation }) {
               placeholder="Nom d'utilisateur..."
               placeholderTextColor={theme.placeholder}
               value={search}
-              onChangeText={setSearch}
+              onChangeText={(text) => {
+                setSearch(text);
+                // Ne lancer la recherche qu'après 2 caractères
+                if (text.length >= 2) {
+                  searchUsers(text);
+                } else if (text.length < 2) {
+                  setSearchResults([]);
+                  setSearchLoading(false);
+                }
+              }}
               multiline={false}
             />
           </View>
+
+          {/* Résultats de recherche */}
+          {searchLoading && search.length >= 2 && (
+            <View style={styles.searchLoadingContainer}>
+              <ActivityIndicator size="small" color={theme.primary} />
+              <Text style={[styles.searchLoadingText, { color: theme.textSecondary }]}>Recherche en cours...</Text>
+            </View>
+          )}
+
+          {searchResults.length > 0 && (
+            <View style={styles.searchResultsContainer}>
+              {searchResults.map((item) => (
+                <View key={item.id} style={[
+                  styles.userItemContainer,
+                  selectedUser && selectedUser.id === item.id && {
+                    ...styles.userItemContainerExpanded,
+                    backgroundColor: theme.card,
+                    borderWidth: 1,
+                    borderColor: theme.border,
+                    position: 'relative',
+                    zIndex: selectedUser && selectedUser.id === item.id ? 10 : 1,
+                  }
+                ]}>
+                  {/* Ligne du joueur qui s'agrandit vers le haut */}
+                  <View style={[
+                    styles.userItemExpanded,
+                    selectedUser && selectedUser.id === item.id && {
+                      position: 'absolute',
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      minHeight: 300,
+                      backgroundColor: theme.card,
+                      borderWidth: 1,
+                      borderColor: theme.border,
+                      borderRadius: 12,
+                      zIndex: selectedUser && selectedUser.id === item.id ? 10 : 1,
+                      elevation: selectedUser && selectedUser.id === item.id ? 5 : 1,
+                      shadowColor: '#000',
+                      shadowOffset: { width: 0, height: -2 },
+                      shadowOpacity: selectedUser && selectedUser.id === item.id ? 0.1 : 0,
+                      shadowRadius: 4,
+                    }
+                  ]}>
+                    {/* Ligne du joueur - reste en bas */}
+                    <TouchableOpacity
+                      style={[
+                        styles.userItem, 
+                        { 
+                          backgroundColor: theme.card,
+                          position: 'absolute',
+                          bottom: 0,
+                          left: 0,
+                          right: 0,
+                        }
+                      ]}
+                      onPress={() => selectedUser && selectedUser.id === item.id ? setSelectedUser(null) : handleUserSelect(item)}
+                      activeOpacity={0.7}>
+                      <View style={styles.avatarContainer}>
+                        {item.photoURL ? (
+                          <Image source={{ uri: item.photoURL }} style={styles.userAvatar} />
+                        ) : (
+                          <Text style={[styles.userAvatarText, { color: theme.primary }]}>{item.avatar}</Text>
+                        )}
+                      </View>
+                      <View style={styles.userInfo}>
+                        <Text style={[styles.userName, { color: theme.text }]}>{item.username}</Text>
+                        {item.bio && (
+                          <Text style={[styles.userBio, { color: theme.textSecondary }]} numberOfLines={1}>
+                            {item.bio}
+                          </Text>
+                        )}
+                        {item.isFriend && (
+                          <Text style={[styles.userFriendStatus, { color: theme.primary }]}>
+                            ✓ Déjà ami
+                          </Text>
+                        )}
+                      </View>
+                      {!item.isFriend ? (
+                        <TouchableOpacity
+                          onPress={() => addFriend(item)}
+                          style={[styles.addFriendButton, { backgroundColor: theme.primary }]}>
+                          <Ionicons name='add' size={20} color='#fff' />
+                        </TouchableOpacity>
+                      ) : (
+                        <View style={[styles.friendIndicator, { backgroundColor: theme.primary }]}>
+                          <Ionicons name='checkmark' size={20} color='#fff' />
+                        </View>
+                      )}
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              ))}
+            </View>
+          )}
+
+          {/* Message quand la recherche est vide mais qu'il y a du texte */}
+          {search.length >= 2 && !searchLoading && searchResults.length === 0 && (
+            <View style={styles.searchEmptyContainer}>
+              <Text style={[styles.searchEmptyText, { color: theme.textSecondary }]}>
+                Aucun utilisateur trouvé pour "{search}"
+              </Text>
+            </View>
+          )}
+
           <Text style={[styles.sectionTitle, { color: theme.text }]}>Amis</Text>
           <FlatList
             data={friends}
@@ -813,18 +1087,6 @@ export default function SocialScreen({ route, navigation }) {
             maxToRenderPerBatch={10}
             windowSize={10}
           />
-          {/* <Text style={styles.sectionTitle}>Ajouter des personnes</Text>
-          <FlatList
-            data={filteredUsers}
-            keyExtractor={(item) => item.id}
-            renderItem={renderUser}
-            ListEmptyComponent={
-              <Text style={styles.emptyText}>Aucun utilisateur trouvé.</Text>
-            }
-            removeClippedSubviews={true}
-            maxToRenderPerBatch={10}
-            windowSize={10}
-          /> */}
         </>
       )}
     </SafeAreaView>
@@ -853,13 +1115,9 @@ const styles = StyleSheet.create({
   },
   friendName: { flex: 1, fontSize: 16, marginLeft: 10 },
   userItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
     padding: 12,
-    marginBottom: 8,
-    marginHorizontal: 16,
-    elevation: 1,
   },
   userName: { flex: 1, fontSize: 16, marginLeft: 10 },
   emptyText: {
@@ -1159,4 +1417,263 @@ const styles = StyleSheet.create({
   friendCardStatValue: { fontWeight: 'bold', marginTop: 2 },
   friendCardStatLabel: { fontSize: 11 },
   friendCardBio: { textAlign: 'center', fontStyle: 'italic', paddingBottom: 10 },
+  
+  // Styles pour la recherche et la carte utilisateur
+  searchLoadingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 20,
+    marginHorizontal: 16,
+  },
+  searchLoadingText: {
+    marginLeft: 10,
+    fontSize: 14,
+  },
+  searchEmptyContainer: {
+    paddingVertical: 20,
+    alignItems: 'center',
+    marginHorizontal: 16,
+  },
+  searchEmptyText: {
+    fontSize: 14,
+    textAlign: 'center',
+    fontStyle: 'italic',
+  },
+  userItemContainer: {
+    marginBottom: 8,
+    marginHorizontal: 16,
+    borderRadius: 12,
+    overflow: 'visible',
+    elevation: 1,
+    position: 'relative',
+    zIndex: 1,
+  },
+  userItemContainerExpanded: {
+    marginBottom: 8,
+    marginHorizontal: 16,
+    borderRadius: 12,
+    overflow: 'visible',
+    elevation: 1,
+    position: 'relative',
+    zIndex: 10,
+  },
+  userItemExpanded: {
+    flexDirection: 'column',
+    transition: 'min-height 0.3s ease',
+    position: 'relative',
+  },
+  userItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+  },
+  userAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+  },
+  userAvatarText: {
+    fontSize: 24,
+    width: 40,
+    height: 40,
+    textAlign: 'center',
+    lineHeight: 40,
+  },
+  userInfo: {
+    flex: 1,
+    marginLeft: 10,
+  },
+  userName: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  userBio: {
+    fontSize: 12,
+    marginTop: 2,
+  },
+  userFriendStatus: {
+    fontSize: 11,
+    marginTop: 2,
+    fontWeight: '600',
+  },
+  addFriendButton: {
+    padding: 8,
+    borderRadius: 20,
+  },
+  friendIndicator: {
+    padding: 8,
+    borderRadius: 20,
+  },
+  userCardAbsolute: {
+    position: 'absolute',
+    top: -20, // Position au-dessus de la ligne
+    left: 0,
+    right: 0,
+    zIndex: 1,
+    elevation: 3,
+    borderRadius: 16,
+    marginHorizontal: 12,
+    padding: 20,
+    borderWidth: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  userCardIntegrated: {
+    padding: 20,
+    borderBottomWidth: 1,
+    marginBottom: 0,
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
+  },
+  userCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  backToSearchButton: {
+    padding: 8,
+    marginRight: 12,
+  },
+  userCardTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    flex: 1,
+  },
+  userCardLoading: {
+    alignItems: 'center',
+    paddingVertical: 40,
+  },
+  userCardLoadingText: {
+    marginTop: 10,
+    fontSize: 14,
+  },
+  userCardAvatarSection: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  userCardAvatar: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    marginBottom: 10,
+  },
+  userCardAvatarPlaceholder: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 10,
+  },
+  userCardAvatarText: {
+    color: '#fff',
+    fontSize: 32,
+    fontWeight: 'bold',
+  },
+  userCardUsername: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+  userCardCountryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  userCardCountryFlag: {
+    fontSize: 18,
+  },
+  userCardCountryName: {
+    fontSize: 14,
+  },
+  userCardBio: {
+    textAlign: 'center',
+    fontStyle: 'italic',
+    marginBottom: 20,
+    paddingHorizontal: 20,
+  },
+  userCardStatsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginBottom: 20,
+  },
+  userCardStat: {
+    alignItems: 'center',
+  },
+  userCardStatValue: {
+    fontWeight: 'bold',
+    marginTop: 4,
+    fontSize: 16,
+  },
+  userCardStatLabel: {
+    fontSize: 12,
+    marginTop: 2,
+  },
+  addFriendFromCardButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 25,
+    alignSelf: 'center',
+  },
+  addFriendFromCardText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    marginLeft: 8,
+    fontSize: 16,
+  },
+  friendFromCardIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 25,
+    alignSelf: 'center',
+  },
+  friendFromCardText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    marginLeft: 8,
+    fontSize: 16,
+  },
+  userCardOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 1000,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  userCardOverlayContent: {
+    width: '90%',
+    maxHeight: '80%',
+    borderRadius: 20,
+    padding: 20,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  searchResultsContainer: {
+    marginTop: 80,
+    marginHorizontal: 16,
+  },
+  searchResultsTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    marginBottom: 8,
+  },
 });
