@@ -1,4 +1,4 @@
-// Collections d'avatars minimalistes : Drapeaux, Animaux, Personnages
+// Collections d'avatars minimalistes : Drapeaux, Personnages
 export const AVATAR_COLLECTIONS = [
 
   {
@@ -62,29 +62,6 @@ export const AVATAR_COLLECTIONS = [
   },
 
   {
-    id: "animals",
-    name: "Animaux",
-    style: "openmoji",
-    avatars: [
-      { key: "cat", url: "https://openmoji.org/data/color/png/72/1F408.png" },
-      { key: "dog", url: "https://openmoji.org/data/color/png/72/1F415.png" },
-      { key: "fox", url: "https://openmoji.org/data/color/png/72/1F98A.png" },
-      { key: "bear", url: "https://openmoji.org/data/color/png/72/1F43B.png" },
-      { key: "owl", url: "https://openmoji.org/data/color/png/72/1F989.png" },
-      { key: "lion", url: "https://openmoji.org/data/color/png/72/1F981.png" },
-      { key: "panda", url: "https://openmoji.org/data/color/png/72/1F43C.png" },
-      {
-        key: "monkey",
-        url: "https://openmoji.org/data/color/png/72/1F412.png",
-      },
-      {
-        key: "rabbit",
-        url: "https://openmoji.org/data/color/png/72/1F407.png",
-      },
-      { key: "tiger", url: "https://openmoji.org/data/color/png/72/1F42F.png" },
-    ],
-  },
-  {
     id: "characters",
     name: "Personnages",
     style: "avataaars",
@@ -133,18 +110,9 @@ export const AVATAR_COLLECTIONS = [
   },
 ];
 
-// Liste d'avatars prédéfinis (cartoon, illustrations, etc.)
-
+// Liste d'avatars prédéfinis (illustrations, etc.)
 export const AVATAR_LIBRARY = [
   // Exemples d'avatars libres de droits (remplace par tes propres images si besoin)
-  { key: "cat", url: "https://api.dicebear.com/7.x/bottts/png?seed=cat" },
-  { key: "dog", url: "https://api.dicebear.com/7.x/bottts/png?seed=dog" },
-  { key: "fox", url: "https://api.dicebear.com/7.x/bottts/png?seed=fox" },
-  { key: "alien", url: "https://api.dicebear.com/7.x/bottts/png?seed=alien" },
   { key: "robot", url: "https://api.dicebear.com/7.x/bottts/png?seed=robot" },
-  { key: "bear", url: "https://api.dicebear.com/7.x/bottts/png?seed=bear" },
-  { key: "owl", url: "https://api.dicebear.com/7.x/bottts/png?seed=owl" },
-  { key: "lion", url: "https://api.dicebear.com/7.x/bottts/png?seed=lion" },
-  { key: "panda", url: "https://api.dicebear.com/7.x/bottts/png?seed=panda" },
-  { key: "monkey", url: "https://api.dicebear.com/7.x/bottts/png?seed=monkey" },
+  { key: "alien", url: "https://api.dicebear.com/7.x/bottts/png?seed=alien" },
 ];

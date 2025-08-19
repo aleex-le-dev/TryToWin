@@ -490,8 +490,8 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
       let avatar = editData.avatar;
       let bannerImage = editData.bannerImage;
       // Si une photo a été uploadée, on la compress et on la upload
-      if (photoURL && photoURL.startsWith("file")) {
-        console.log("[handleSaveProfile] Début compression photoURL", photoURL);
+      if (photoURL && (photoURL.startsWith("file") || photoURL.startsWith("content") || photoURL.startsWith("data") || photoURL.includes("://") === false)) {
+        console.log("[handleSaveProfile] Image locale détectée, début compression", photoURL);
         const manipResult = await ImageManipulator.manipulateAsync(
           photoURL,
           [{ resize: { width: 900 } }],
@@ -507,6 +507,8 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
           photoURL
         );
         setProfilePhoto(photoURL);
+      } else {
+        console.log("[handleSaveProfile] Pas d'image locale à traiter, photoURL:", photoURL);
       }
       if (bannerImage && bannerImage.startsWith("file")) {
         console.log(
@@ -547,6 +549,8 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
         { merge: true }
       );
       console.log("[handleSaveProfile] après setDoc");
+      
+      // Mettre à jour l'état local
       setProfile((prev) => ({
         ...prev,
         ...editData,
@@ -554,11 +558,14 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
         photoURL: photoURL || "",
         bannerImage: bannerImage || null,
       }));
+      
+      // Récupérer le document mis à jour
       const docSnap = await getDoc(userRef);
       if (docSnap.exists()) {
         setProfile(docSnap.data());
         setProfilePhoto(docSnap.data().photoURL || "");
       }
+      
       if (typeof fetchProfile === "function") fetchProfile();
       setEditModalVisible(false);
       Toast.show({
@@ -568,6 +575,9 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
         topOffset: 40,
         visibilityTime: 2000,
       });
+      
+      // Retourner l'URL de l'image uploadée (Cloudinary ou locale)
+      return photoURL;
     } catch (error) {
       console.log("[handleSaveProfile] ERREUR", error);
       Toast.show({
@@ -578,6 +588,7 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
         topOffset: 40,
         visibilityTime: 2000,
       });
+      return null; // Retourne null en cas d'erreur
     }
   };
 
@@ -757,11 +768,52 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
         multiple: false,
       });
       if (!result.canceled && result.assets && result.assets[0].uri) {
+        const imageUri = result.assets[0].uri;
+        console.log("[pickImageAvatar] Image sélectionnée:", imageUri);
+        
+        // Compresser et uploader directement l'image
+        const manipResult = await ImageManipulator.manipulateAsync(
+          imageUri,
+          [{ resize: { width: 900 } }],
+          { compress: 0.85, format: ImageManipulator.SaveFormat.JPEG }
+        );
+        
+        const cloudinaryURL = await uploadToCloudinary(manipResult.uri, "trytowin avatar");
+        console.log("[pickImageAvatar] URL Cloudinary:", cloudinaryURL);
+        
+        // Mettre à jour les données
         setEditData((d) => ({
           ...d,
-          photoURL: result.assets[0].uri,
+          photoURL: cloudinaryURL,
         }));
+        
+        // Sauvegarder en base de données
+        await setDoc(
+          doc(db, "users", user.id),
+          { photoURL: cloudinaryURL },
+          { merge: true }
+        );
+        
+        // Mettre à jour l'état local
+        setProfilePhoto(cloudinaryURL);
+        setProfile((prev) => ({
+          ...prev,
+          photoURL: cloudinaryURL,
+        }));
+        
+        // Sauvegarder localement
+        if (user?.id) {
+          await saveProfileLocally(user.id, {
+            ...profile,
+            photoURL: cloudinaryURL,
+          });
+        }
+        
+        // Fermer automatiquement la modale
+        setEditModalVisible(false);
       }
+    } catch (error) {
+      console.error("[pickImageAvatar] Erreur:", error);
     } finally {
       setAvatarUploading(false);
     }
