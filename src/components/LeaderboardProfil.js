@@ -21,6 +21,7 @@ import { db } from "../utils/firebaseConfig";
 import { countries } from "../constants";
 import { AVATAR_COLLECTIONS } from "../constants/avatars";
 import SkeletonProfile from "./SkeletonProfile";
+import { useTheme } from "../contexts/ThemeContext";
 
 /**
  * Composant de classement pour le profil utilisateur (ProfileScreen)
@@ -35,6 +36,7 @@ const LeaderboardProfil = ({
   profile = null,
 }) => {
   const { user } = useAuth();
+  const { theme } = useTheme();
   const [activeTab, setActiveTab] = useState("global");
   const [leaderboard, setLeaderboard] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -379,13 +381,14 @@ const LeaderboardProfil = ({
       <View
         style={[
           styles.playerItem,
+          { backgroundColor: theme.card },
           item.userId === currentUserId && { backgroundColor: gameColor },
         ]}>
         <View style={styles.rankContainer}>
           <Text
             style={[
               styles.rankText,
-              item.userId === currentUserId && styles.currentUserText,
+              { color: item.userId === currentUserId ? "#fff" : theme.text },
             ]}>
             #{item.rank}
           </Text>
@@ -443,8 +446,8 @@ const LeaderboardProfil = ({
               accessibilityLabel={`Avatar de ${item.username}`}
             />
           ) : (
-            <View style={styles.avatarFallback}>
-              <Text style={styles.avatarText}>
+            <View style={[styles.avatarFallback, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+              <Text style={[styles.avatarText, { color: theme.text }]}>
                 {(item.username || "U")[0].toUpperCase()}
               </Text>
             </View>
@@ -460,7 +463,7 @@ const LeaderboardProfil = ({
             <Text
               style={[
                 styles.username,
-                item.userId === currentUserId && styles.currentUserText,
+                { color: item.userId === currentUserId ? "#fff" : theme.text },
               ]}>
               {item.username}
             </Text>
@@ -468,7 +471,7 @@ const LeaderboardProfil = ({
           <Text
             style={[
               styles.userStats,
-              item.userId === currentUserId && styles.currentUserText,
+              { color: item.userId === currentUserId ? "#fff" : theme.textSecondary },
             ]}>
             {item.totalGames || 0} parties • {item.win || 0} victoires
           </Text>
@@ -477,7 +480,6 @@ const LeaderboardProfil = ({
           <Text
             style={[
               styles.scoreText,
-              item.userId === currentUserId && styles.currentUserText,
               { color: item.userId === currentUserId ? "#fff" : gameColor },
             ]}>
             {item.totalPoints}
@@ -485,7 +487,7 @@ const LeaderboardProfil = ({
           <Text
             style={[
               styles.scoreLabel,
-              item.userId === currentUserId && styles.currentUserText,
+              { color: item.userId === currentUserId ? "#fff" : theme.textSecondary },
             ]}>
             points
           </Text>
@@ -518,12 +520,12 @@ const LeaderboardProfil = ({
   }
 
   return (
-    <View style={[styles.container, style]}>
+    <View style={[styles.container, { backgroundColor: theme.background }, style]}>
       {/* Onglets - Style identique à GameDetailsScreen */}
-      <View style={styles.tabContainer}>
+      <View style={[styles.tabContainer, { backgroundColor: theme.card }]}>
         <TouchableOpacity
           style={{
-            backgroundColor: activeTab === "global" ? gameColor : "#f1f3f4",
+            backgroundColor: activeTab === "global" ? gameColor : theme.surface,
             borderRadius: 16,
             paddingVertical: 7,
             paddingHorizontal: 18,
@@ -542,7 +544,7 @@ const LeaderboardProfil = ({
 
         <TouchableOpacity
           style={{
-            backgroundColor: activeTab === "country" ? gameColor : "#f1f3f4",
+            backgroundColor: activeTab === "country" ? gameColor : theme.surface,
             borderRadius: 16,
             paddingVertical: 7,
             paddingHorizontal: 18,
@@ -565,14 +567,14 @@ const LeaderboardProfil = ({
           style={{
             fontSize: 24,
             fontWeight: "bold",
-            color: "#333",
+            color: theme.text,
             marginBottom: 5,
           }}>
           {activeTab === "global"
             ? "Classement Général (Mondial)"
             : `Classement ${getCountryFlag(selectedCountry)} ${getCountryName(selectedCountry)}`}
         </Text>
-        <Text style={{ fontSize: 14, color: "#6c757d" }}>
+        <Text style={{ fontSize: 14, color: theme.textSecondary }}>
           {activeTab === "global"
             ? "Top des meilleurs joueurs tous pays"
             : `Top des meilleurs joueurs de ${getCountryName(selectedCountry)}`}
@@ -605,12 +607,12 @@ const LeaderboardProfil = ({
         />
       ) : (
         <View style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>
+          <Text style={[styles.emptyText, { color: theme.text }]}>
             {activeTab === "global"
               ? "Aucun joueur classé pour le moment"
               : `Aucun joueur classé en ${getCountryName(selectedCountry)}`}
           </Text>
-          <Text style={styles.emptySubtext}>
+          <Text style={[styles.emptySubtext, { color: theme.textSecondary }]}>
             {activeTab === "global"
               ? "Jouez pour apparaître dans le classement !"
               : `Jouez pour apparaître dans le classement de ${getCountryName(selectedCountry)} !`}
@@ -624,20 +626,17 @@ const LeaderboardProfil = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f8f9fa",
   },
   tabContainer: {
     flexDirection: "row",
     justifyContent: "center",
     paddingHorizontal: 20,
     paddingVertical: 15,
-    backgroundColor: "#fff",
     marginBottom: 10,
   },
   playerItem: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#fff",
     borderRadius: 15,
     padding: 15,
     marginBottom: 10,
@@ -662,7 +661,6 @@ const styles = StyleSheet.create({
   rankText: {
     fontSize: 16,
     fontWeight: "bold",
-    color: "#333",
   },
   currentUserText: {
     color: "#fff",
@@ -703,11 +701,9 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: "#f8f9fa",
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "#e9ecef",
   },
   userDetails: {
     flex: 1,
@@ -724,11 +720,9 @@ const styles = StyleSheet.create({
   username: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#333",
   },
   userStats: {
     fontSize: 12,
-    color: "#6c757d",
   },
   scoreContainer: {
     alignItems: "flex-end",
@@ -736,11 +730,9 @@ const styles = StyleSheet.create({
   scoreText: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#667eea", // Sera remplacé dynamiquement
   },
   scoreLabel: {
     fontSize: 12,
-    color: "#6c757d",
   },
   userRankContainer: {
     backgroundColor: "#667eea",
@@ -763,7 +755,6 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 10,
     fontSize: 16,
-    color: "#6c757d",
   },
   emptyContainer: {
     flex: 1,
@@ -774,13 +765,11 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#333",
     textAlign: "center",
     marginBottom: 10,
   },
   emptySubtext: {
     fontSize: 14,
-    color: "#6c757d",
     textAlign: "center",
   },
   listContainer: {
@@ -789,7 +778,6 @@ const styles = StyleSheet.create({
   errorText: {
     textAlign: "center",
     fontSize: 16,
-    color: "#6c757d",
     marginTop: 50,
   },
 });

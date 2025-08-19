@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { gamesData as GAMES_DATA } from "../constants/gamesData";
+import { useTheme } from "../contexts/ThemeContext";
 
 /**
  * Composant de statistiques de jeu réutilisable
@@ -22,13 +23,14 @@ const ProfileStats = ({
   generateAllGamesTestData,
   style,
 }) => {
+  const { theme } = useTheme();
   const [selectedGame, setSelectedGame] = useState(null);
 
   if (statsLoading) {
     return (
       <View style={[styles.loadingContainer, style]}>
         <ActivityIndicator size='large' color={gameColor} />
-        <Text style={styles.loadingText}>Chargement des statistiques...</Text>
+        <Text style={[styles.loadingText, { color: theme.textSecondary }]}>Chargement des statistiques...</Text>
       </View>
     );
   }
@@ -46,13 +48,13 @@ const ProfileStats = ({
   };
 
   const renderStatCard = (icon, value, label, color) => (
-    <View style={styles.premiumStatCard}>
+    <View style={[styles.premiumStatCard, { backgroundColor: theme.card }]}>
       <View style={[styles.premiumStatIcon, { backgroundColor: color + "22" }]}>
         {/* Couleur pastel */}
         <Ionicons name={icon} size={28} color={color} />
       </View>
-      <Text style={styles.premiumStatValue}>{value}</Text>
-      <Text style={styles.premiumStatLabel}>{label}</Text>
+      <Text style={[styles.premiumStatValue, { color: theme.text }]}>{value}</Text>
+      <Text style={[styles.premiumStatLabel, { color: theme.textSecondary }]}>{label}</Text>
     </View>
   );
 
@@ -63,58 +65,58 @@ const ProfileStats = ({
     return (
       <View key={gameId} style={styles.gameStatsSection}>
         <View style={styles.gameHeader}>
-          <Text style={styles.gameTitle}>{game.title}</Text>
+          <Text style={[styles.gameTitle, { color: theme.text }]}>{game.title}</Text>
           <View
             style={[styles.gameColorIndicator, { backgroundColor: game.color }]}
           />
         </View>
 
-        <View style={styles.personalStats}>
-          <View style={styles.personalStatRow}>
+        <View style={[styles.personalStats, { backgroundColor: theme.card }]}>
+          <View style={[styles.personalStatRow, { borderBottomColor: theme.divider }]}>
             <Ionicons name='trophy' size={20} color='#FFD700' />
-            <Text style={styles.personalStatLabel}>Meilleur score</Text>
-            <Text style={styles.personalStatValue}>
+            <Text style={[styles.personalStatLabel, { color: theme.text }]}>Meilleur score</Text>
+            <Text style={[styles.personalStatValue, { color: theme.primary }]}>
               {gameStats.bestScore || 0}
             </Text>
           </View>
 
-          <View style={styles.personalStatRow}>
+          <View style={[styles.personalStatRow, { borderBottomColor: theme.divider }]}>
             <Ionicons name='checkmark-circle' size={20} color='#4CAF50' />
-            <Text style={styles.personalStatLabel}>Victoires</Text>
-            <Text style={styles.personalStatValue}>
+            <Text style={[styles.personalStatLabel, { color: theme.text }]}>Victoires</Text>
+            <Text style={[styles.personalStatValue, { color: theme.primary }]}>
               {gameStats.win || 0} sur {gameStats.totalGames || 0}
             </Text>
           </View>
 
-          <View style={styles.personalStatRow}>
+          <View style={[styles.personalStatRow, { borderBottomColor: theme.divider }]}>
             <Ionicons name='trending-up' size={20} color='#2196F3' />
-            <Text style={styles.personalStatLabel}>Taux de victoire</Text>
-            <Text style={styles.personalStatValue}>
+            <Text style={[styles.personalStatLabel, { color: theme.text }]}>Taux de victoire</Text>
+            <Text style={[styles.personalStatValue, { color: theme.primary }]}>
               {gameStats.winRate || 0}%
             </Text>
           </View>
 
-          <View style={styles.personalStatRow}>
+          <View style={[styles.personalStatRow, { borderBottomColor: theme.divider }]}>
             <Ionicons name='flame' size={20} color='#FF5722' />
-            <Text style={styles.personalStatLabel}>Série actuelle</Text>
-            <Text style={styles.personalStatValue}>
+            <Text style={[styles.personalStatLabel, { color: theme.text }]}>Série actuelle</Text>
+            <Text style={[styles.personalStatValue, { color: theme.primary }]}>
               {gameStats.currentStreak || 0} victoire
               {(gameStats.currentStreak || 0) > 1 ? "s" : ""}
             </Text>
           </View>
 
-          <View style={styles.personalStatRow}>
+          <View style={[styles.personalStatRow, { borderBottomColor: theme.divider }]}>
             <Ionicons name='game-controller' size={20} color='#9C27B0' />
-            <Text style={styles.personalStatLabel}>Points</Text>
-            <Text style={styles.personalStatValue}>
+            <Text style={[styles.personalStatLabel, { color: theme.text }]}>Points</Text>
+            <Text style={[styles.personalStatValue, { color: theme.primary }]}>
               {gameStats.totalPoints || 0} points
             </Text>
           </View>
 
-          <View style={styles.personalStatRow}>
+          <View style={[styles.personalStatRow, { borderBottomColor: theme.divider }]}>
             <Ionicons name='game-controller' size={20} color='#607D8B' />
-            <Text style={styles.personalStatLabel}>Parties jouées</Text>
-            <Text style={styles.personalStatValue}>
+            <Text style={[styles.personalStatLabel, { color: theme.text }]}>Parties jouées</Text>
+            <Text style={[styles.personalStatValue, { color: theme.primary }]}>
               {gameStats.totalGames || 0}
             </Text>
           </View>
@@ -130,7 +132,7 @@ const ProfileStats = ({
       <View style={styles.statsContent}>
         {/* Statistiques globales */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Statistiques globales</Text>
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>Statistiques globales</Text>
 
           {/* Chips statistiques */}
           <View style={styles.statsChips}>
@@ -158,28 +160,28 @@ const ProfileStats = ({
         {/* Statistiques par jeu */}
         {statsByGame && Object.keys(statsByGame).length > 0 && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Par jeu (debug)</Text>
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>Par jeu (debug)</Text>
             <View
               style={{
                 flexDirection: "row",
                 justifyContent: "space-between",
                 marginBottom: 6,
               }}>
-              <Text style={{ flex: 2, fontWeight: "bold" }}>Jeu</Text>
+              <Text style={{ flex: 2, fontWeight: "bold", color: theme.text }}>Jeu</Text>
               <Text
-                style={{ flex: 1, textAlign: "center", fontWeight: "bold" }}>
+                style={{ flex: 1, textAlign: "center", fontWeight: "bold", color: theme.text }}>
                 Parties
               </Text>
               <Text
-                style={{ flex: 1, textAlign: "center", fontWeight: "bold" }}>
+                style={{ flex: 1, textAlign: "center", fontWeight: "bold", color: theme.text }}>
                 V
               </Text>
               <Text
-                style={{ flex: 1, textAlign: "center", fontWeight: "bold" }}>
+                style={{ flex: 1, textAlign: "center", fontWeight: "bold", color: theme.text }}>
                 D
               </Text>
               <Text
-                style={{ flex: 1, textAlign: "center", fontWeight: "bold" }}>
+                style={{ flex: 1, textAlign: "center", fontWeight: "bold", color: theme.text }}>
                 Points
               </Text>
             </View>
@@ -193,17 +195,17 @@ const ProfileStats = ({
                     justifyContent: "space-between",
                     marginBottom: 2,
                   }}>
-                  <Text style={{ flex: 2 }}>{game?.title || gameId}</Text>
-                  <Text style={{ flex: 1, textAlign: "center" }}>
+                  <Text style={{ flex: 2, color: theme.text }}>{game?.title || gameId}</Text>
+                  <Text style={{ flex: 1, textAlign: "center", color: theme.text }}>
                     {gameStats.totalGames || 0}
                   </Text>
-                  <Text style={{ flex: 1, textAlign: "center" }}>
+                  <Text style={{ flex: 1, textAlign: "center", color: theme.text }}>
                     {gameStats.wins || 0}
                   </Text>
-                  <Text style={{ flex: 1, textAlign: "center" }}>
+                  <Text style={{ flex: 1, textAlign: "center", color: theme.text }}>
                     {gameStats.loses || 0}
                   </Text>
-                  <Text style={{ flex: 1, textAlign: "center" }}>
+                  <Text style={{ flex: 1, textAlign: "center", color: theme.text }}>
                     {gameStats.points || 0}
                   </Text>
                 </View>
@@ -242,7 +244,6 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 16,
     fontSize: 16,
-    color: "#666",
   },
   statsContent: {
     padding: 20,
@@ -253,7 +254,6 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 20,
     fontWeight: "bold",
-    color: "#333",
     marginBottom: 16,
   },
   statsChips: {
@@ -265,7 +265,6 @@ const styles = StyleSheet.create({
   statCard: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#fff",
     borderRadius: 18,
     paddingVertical: 8,
     paddingHorizontal: 14,
@@ -288,11 +287,9 @@ const styles = StyleSheet.create({
   statValue: {
     fontWeight: "bold",
     fontSize: 15,
-    color: "#23272a",
   },
   statLabel: {
     fontSize: 11,
-    color: "#6c757d",
     marginLeft: 4,
   },
   gameStatsSection: {
@@ -306,7 +303,6 @@ const styles = StyleSheet.create({
   gameTitle: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#333",
     marginRight: 8,
   },
   gameColorIndicator: {
@@ -315,7 +311,6 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   personalStats: {
-    backgroundColor: "#fff",
     borderRadius: 12,
     padding: 16,
     shadowColor: "#000",
@@ -329,18 +324,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
   },
   personalStatLabel: {
     flex: 1,
     fontSize: 16,
-    color: "#333",
     marginLeft: 12,
   },
   personalStatValue: {
     fontSize: 16,
     fontWeight: "bold",
-    color: "#667eea",
   },
   testDataSection: {
     alignItems: "center",
@@ -360,7 +352,6 @@ const styles = StyleSheet.create({
   },
   premiumStatCard: {
     flex: 1,
-    backgroundColor: "#fff",
     borderRadius: 16,
     alignItems: "center",
     paddingVertical: 18,
@@ -382,12 +373,10 @@ const styles = StyleSheet.create({
   premiumStatValue: {
     fontSize: 26,
     fontWeight: "bold",
-    color: "#23272a",
     marginBottom: 2,
   },
   premiumStatLabel: {
     fontSize: 12,
-    color: "#6c757d",
     marginTop: 1,
   },
 });

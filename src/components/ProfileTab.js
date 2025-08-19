@@ -6,6 +6,7 @@ import ProfileHeaderAvatar from "./ProfileHeaderAvatar";
 import { Button } from "react-native";
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
 import { gamesData } from "../constants/gamesData";
+import { useTheme } from "../contexts/ThemeContext";
 
 const ProfileTab = ({
   user,
@@ -19,22 +20,7 @@ const ProfileTab = ({
   openEditModal,
   onLogout,
 }) => {
-  const fondBanniere = profileBanner
-    ? { flex: 1, width: "100%", height: "100%" }
-    : {
-        flex: 1,
-        width: "100%",
-        height: "100%",
-        backgroundColor: bannerColor || "#fff",
-      };
-
-  console.log("[DEBUG] ProfileTab props", {
-    profile,
-    profilePhoto,
-    profileBanner,
-    avatar: profile?.avatar,
-    photoURL: profile?.photoURL,
-  });
+  const { theme } = useTheme();
 
   return (
     <View
@@ -43,7 +29,7 @@ const ProfileTab = ({
         alignItems: "center",
         justifyContent: "flex-start",
         paddingTop: 24,
-        backgroundColor: "#18191c",
+        backgroundColor: theme.background,
       }}>
       {/* Bannière dynamique uniquement en haut */}
       {profileBanner ? (
@@ -56,7 +42,7 @@ const ProfileTab = ({
             width: "100%",
             height: 140,
             zIndex: 1,
-            backgroundColor: bannerColor || "#fff",
+            backgroundColor: bannerColor || theme.surface,
           }}
           resizeMode='cover'
         />
@@ -69,18 +55,16 @@ const ProfileTab = ({
             width: "100%",
             height: 140,
             zIndex: 1,
-            backgroundColor: bannerColor ? bannerColor : "#fff",
+            backgroundColor: bannerColor ? bannerColor : theme.surface,
           }}
         />
       )}
-      {/* Fond blanc sur la moitié haute - SUPPRIMÉ */}
-      {/* Fond noir sur la moitié basse - SUPPRIMÉ car tout le fond est noir */}
-      {/* Bannière en arrière-plan, en haut */}
+
       {/* Carte de joueur principale en overlay */}
       <View
         style={{
           width: "92%",
-          backgroundColor: "#fff",
+          backgroundColor: theme.card,
           borderRadius: 24,
           borderBottomLeftRadius: 32,
           borderBottomRightRadius: 32,
@@ -104,7 +88,7 @@ const ProfileTab = ({
             position: "absolute",
             top: 14,
             right: 14,
-            backgroundColor: "#667eea",
+            backgroundColor: theme.primary,
             borderRadius: 20,
             width: 36,
             height: 36,
@@ -170,7 +154,7 @@ const ProfileTab = ({
             marginBottom: 4,
             gap: 6,
           }}>
-          <Text style={{ fontSize: 22, fontWeight: "bold", color: "#23272a" }}>
+          <Text style={{ fontSize: 22, fontWeight: "bold", color: theme.text }}>
             {profile?.username || user?.displayName || "Utilisateur"}
           </Text>
         </View>
@@ -184,7 +168,7 @@ const ProfileTab = ({
           <Text style={{ fontSize: 22, marginRight: 4 }}>
             {countries.find((c) => c.code === profile?.country)?.flag || "🌍"}
           </Text>
-          <Text style={{ color: "#23272a", fontSize: 14 }}>
+          <Text style={{ color: theme.textSecondary, fontSize: 14 }}>
             {countries.find((c) => c.code === profile?.country)?.name ||
               "Pays inconnu"}
           </Text>
@@ -201,7 +185,7 @@ const ProfileTab = ({
           <View
             style={{
               flex: 1,
-              backgroundColor: "#f8f9fa",
+              backgroundColor: theme.surface,
               borderRadius: 14,
               alignItems: "center",
               paddingVertical: 12,
@@ -213,12 +197,12 @@ const ProfileTab = ({
               style={{
                 fontSize: 18,
                 fontWeight: "bold",
-                color: "#23272a",
+                color: theme.text,
                 marginTop: 2,
               }}>
               {userStats.totalScore}
             </Text>
-            <Text style={{ fontSize: 11, color: "#6c757d", marginTop: 1 }}>
+            <Text style={{ fontSize: 11, color: theme.textSecondary, marginTop: 1 }}>
               Points
             </Text>
           </View>
@@ -226,7 +210,7 @@ const ProfileTab = ({
           <View
             style={{
               flex: 1,
-              backgroundColor: "#f8f9fa",
+              backgroundColor: theme.surface,
               borderRadius: 14,
               alignItems: "center",
               paddingVertical: 12,
@@ -248,7 +232,7 @@ const ProfileTab = ({
                         style={{
                           fontSize: 24,
                           fontWeight: "bold",
-                          color: "#23272a",
+                          color: theme.text,
                           marginBottom: 10,
                         }}>
                         {img}
@@ -276,7 +260,7 @@ const ProfileTab = ({
                   <Text
                     style={{
                       fontSize: 14,
-                      color: "#aaa",
+                      color: theme.textSecondary,
                       marginBottom: 10,
                       textAlign: "center",
                     }}>
@@ -285,7 +269,7 @@ const ProfileTab = ({
                 </View>
               );
             })()}
-            <Text style={{ fontSize: 11, color: "#6c757d" }}>
+            <Text style={{ fontSize: 11, color: theme.textSecondary }}>
               {userStats.totalScore > 0 && userStats.bestGame
                 ? "Meilleur jeu"
                 : ""}
@@ -296,7 +280,7 @@ const ProfileTab = ({
           <View
             style={{
               flex: 1,
-              backgroundColor: "#f8f9fa",
+              backgroundColor: theme.surface,
               borderRadius: 14,
               alignItems: "center",
               paddingVertical: 12,
@@ -308,12 +292,12 @@ const ProfileTab = ({
               style={{
                 fontSize: 18,
                 fontWeight: "bold",
-                color: "#23272a",
+                color: theme.text,
                 marginTop: 2,
               }}>
               {userStats.winRate}%
             </Text>
-            <Text style={{ fontSize: 11, color: "#6c757d", marginTop: 1 }}>
+            <Text style={{ fontSize: 11, color: theme.textSecondary, marginTop: 1 }}>
               Victoires
             </Text>
           </View>
@@ -322,7 +306,7 @@ const ProfileTab = ({
         <Text
           style={{
             fontSize: 15,
-            color: "#667eea",
+            color: theme.primary,
             fontStyle: "italic",
             textAlign: "center",
             marginTop: 6,
