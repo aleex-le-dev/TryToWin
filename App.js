@@ -1,6 +1,6 @@
 import React from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, SafeAreaView } from 'react-native';
 import { AuthProvider } from './src/contexts/AuthContext';
 import { ToastProvider } from './src/contexts/ToastContext';
 import AppNavigator from './src/navigation/AppNavigator';
@@ -12,7 +12,7 @@ import ThemedStatusBar from './src/components/ThemedStatusBar';
 
 export default function App() {
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <AuthProvider>
         <ToastProvider>
           <AccessibilityProvider>
@@ -26,7 +26,7 @@ export default function App() {
           </AccessibilityProvider>
         </ToastProvider>
       </AuthProvider>
-    </View>
+    </SafeAreaView>
   );
 }
 

@@ -532,12 +532,13 @@ const LeaderboardProfil = ({
             fontWeight: "bold",
             color: theme.text,
             marginBottom: 5,
+            textAlign: "center",
           }}>
           {isGlobal
             ? "Classement Mondial"
-            : `Classement ${getCountryFlag(selectedCountry)} ${getCountryName(selectedCountry)}`}
+            : `Classement ${getCountryName(selectedCountry)} ${getCountryFlag(selectedCountry)}`}
         </Text>
-        <Text style={{ fontSize: 14, color: theme.textSecondary }}>
+        <Text style={{ fontSize: 14, color: theme.textSecondary, textAlign: "center" }}>
           {isGlobal
             ? "Top des meilleurs joueurs tous pays"
             : `Top des meilleurs joueurs de ${getCountryName(selectedCountry)}`}
@@ -578,7 +579,7 @@ const LeaderboardProfil = ({
           }}
           onPress={() => setActiveTab("country")}>
           <Text style={{ fontSize: 14, fontWeight: "600", color: isCountry ? "#fff" : theme.textSecondary }}>
-            {getCountryFlag(selectedCountry)} {getCountryName(selectedCountry)}
+            {getCountryName(selectedCountry)} {getCountryFlag(selectedCountry)}
           </Text>
         </TouchableOpacity>
       </View>

@@ -72,7 +72,7 @@ const GameLeaderboard = ({
             fontSize: 14,
             fontWeight: "600",
             color: isGlobal ? "#fff" : theme.textSecondary,
-          }}>Mondial</Text>
+          }}>🌍 Mondial</Text>
         </TouchableOpacity>
 
         <TouchableOpacity

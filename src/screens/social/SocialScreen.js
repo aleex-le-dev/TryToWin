@@ -10,6 +10,7 @@ import {
   TextInput,
   Alert,
   Image,
+  SafeAreaView,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import QRCode from "react-native-qrcode-svg";
@@ -722,7 +723,7 @@ export default function SocialScreen({ route, navigation }) {
 
   // Affichage principal : recherche, liste d'amis et d'utilisateurs
   return (
-    <ThemedLayout style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       {/* Section Partager mon profil (affichée uniquement hors conversation) */}
       {!selectedFriend && (
         <View style={[styles.shareProfileSection, { backgroundColor: theme.card }, largerSpacing && { padding: 24, marginBottom: 24 }]}>
@@ -826,16 +827,20 @@ export default function SocialScreen({ route, navigation }) {
           /> */}
         </>
       )}
-    </ThemedLayout>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 20 },
+  container: {
+    flex: 1,
+    paddingTop: 10,
+  },
   sectionTitle: {
     fontSize: 18,
     fontWeight: "bold",
     marginVertical: 10,
+    marginHorizontal: 16,
   },
   friendItem: {
     flexDirection: "row",
@@ -843,6 +848,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 12,
     marginBottom: 8,
+    marginHorizontal: 16,
     elevation: 2,
   },
   friendName: { flex: 1, fontSize: 16, marginLeft: 10 },
@@ -852,6 +858,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 12,
     marginBottom: 8,
+    marginHorizontal: 16,
     elevation: 1,
   },
   userName: { flex: 1, fontSize: 16, marginLeft: 10 },
@@ -859,6 +866,7 @@ const styles = StyleSheet.create({
     fontStyle: "italic",
     textAlign: "center",
     marginVertical: 10,
+    marginHorizontal: 16,
   },
   chatContainer: { flex: 1 },
   chatHeader: {
@@ -934,6 +942,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     marginBottom: 10,
+    marginHorizontal: 16,
     borderWidth: 1,
   },
   searchInput: { flex: 1, fontSize: 15 },
@@ -944,11 +953,12 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   shareProfileSection: {
+    marginHorizontal: 16,
+    marginTop: 40,
+    padding: 20,
     borderRadius: 16,
-    padding: 18,
-    marginBottom: 18,
-    alignItems: "center",
     elevation: 3,
+    alignItems: "center",
     flexDirection: "column",
   },
   shareTitle: {
