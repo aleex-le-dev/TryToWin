@@ -29,6 +29,8 @@ import { db } from "../../utils/firebaseConfig";
 import { countries } from "../../constants";
 import { AVATAR_COLLECTIONS } from "../../constants/avatars";
 import GameLeaderboard from "../../components/GameLeaderboard";
+import ThemedLayout from "../../components/ThemedLayout";
+import { useTheme } from "../../contexts/ThemeContext";
 
 const { width } = Dimensions.get("window");
 
@@ -478,8 +480,10 @@ const GameDetailsScreen = ({ route, navigation }) => {
     return userIndex + before;
   };
 
+  const { theme } = useTheme();
+
   return (
-    <View style={styles.container}>
+    <ThemedLayout>
       {loading && (
         <View
           style={[styles.fullScreenLoading, { backgroundColor: game.color }]}>
@@ -540,7 +544,7 @@ const GameDetailsScreen = ({ route, navigation }) => {
           </LinearGradient>
 
           {/* Onglets avec couleur dynamique pour l'onglet actif */}
-          <View style={styles.tabsContainer}>
+          <View style={[styles.tabsContainer, { backgroundColor: theme.card, borderBottomColor: theme.border, justifyContent: "center" }]}>
             <TouchableOpacity
               style={[
                 styles.tab,
@@ -556,12 +560,13 @@ const GameDetailsScreen = ({ route, navigation }) => {
               <Text
                 style={[
                   styles.tabText,
+                  { color: theme.text },
                   activeTab === "leaderboard" && {
                     color: game.color,
                     fontWeight: "bold",
                   },
                 ]}>
-                Classement
+                Classement {game.title}
               </Text>
             </TouchableOpacity>
           </View>
@@ -597,14 +602,13 @@ const GameDetailsScreen = ({ route, navigation }) => {
           />
         </View>
       )}
-    </View>
+    </ThemedLayout>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f8f9fa",
   },
   header: {
     paddingTop: 30,
@@ -657,83 +661,44 @@ const styles = StyleSheet.create({
     color: "#fff",
     marginBottom: 10,
     backgroundColor: "transparent",
-    opacity: 1,
-    zIndex: 2,
-  },
-  gameMeta: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  gameMetaItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginRight: 15,
-  },
-  gameMetaText: {
-    fontSize: 14,
-    color: "#fff",
-    marginLeft: 5,
-  },
-  difficultyBadge: {
-    backgroundColor: "rgba(255,255,255,0.2)",
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 10,
-  },
-  difficultyText: {
-    fontSize: 12,
-    color: "#fff",
-    fontWeight: "500",
   },
   playButtonContainer: {
+    justifyContent: "center",
     alignItems: "center",
-    marginVertical: 20,
+    zIndex: 2,
   },
   playButton: {
+    paddingHorizontal: 20,
+    paddingVertical: 12,
     borderRadius: 25,
-    paddingVertical: 15,
-    paddingHorizontal: 40,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 4.65,
-    elevation: 8,
-    backgroundColor: undefined,
-    opacity: 1,
-    zIndex: 2,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    minWidth: 100,
   },
   playButtonGradientFake: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
   },
   playButtonText: {
     color: "#fff",
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "bold",
-    marginLeft: 10,
-    backgroundColor: "transparent",
-    opacity: 1,
-    zIndex: 2,
+    marginLeft: 8,
   },
   tabsContainer: {
     flexDirection: "row",
-    justifyContent: "center",
-    marginBottom: 20,
+    borderBottomWidth: 1,
     paddingHorizontal: 20,
   },
   tab: {
+    paddingVertical: 15,
     paddingHorizontal: 20,
-    paddingVertical: 10,
-    marginHorizontal: 5,
-    borderRadius: 20,
-    backgroundColor: "#f8f9fa",
+    marginRight: 20,
   },
   tabText: {
     fontSize: 16,
-    color: "#6c757d",
     fontWeight: "500",
   },
   statsContent: {
@@ -931,17 +896,20 @@ const styles = StyleSheet.create({
     color: "#667eea",
   },
   fullScreenLoading: {
-    ...StyleSheet.absoluteFillObject,
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     justifyContent: "center",
     alignItems: "center",
-    zIndex: 100,
+    zIndex: 9999,
   },
   loadingText: {
     color: "#fff",
     fontSize: 18,
-    marginTop: 18,
-    fontWeight: "bold",
-    letterSpacing: 0.5,
+    marginTop: 20,
+    fontWeight: "600",
   },
   loadingContainer: {
     alignItems: "center",

@@ -45,16 +45,10 @@ const GameLeaderboard = ({
 
   return (
     <View style={[styles.leaderboardContent, { backgroundColor: theme.background }]}>
-      {/* Header titre */}
-      <View style={{ paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: theme.border }}>
-        <Text style={[styles.leaderboardTitle, { color: theme.text }]}>Classement {game.title}</Text>
-        <Text style={[styles.leaderboardSubtitle, { color: theme.textSecondary }]}>{`Votre position : #${userPosition}`}</Text>
-      </View>
-
       {/* Switch Monde / Pays avec contraste renforcé */}
       <View style={{
         flexDirection: "row",
-        marginTop: 12,
+        marginTop: 20,
         marginBottom: 16,
         backgroundColor: theme.card,
         borderRadius: 10,
