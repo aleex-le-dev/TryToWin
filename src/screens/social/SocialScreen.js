@@ -1118,6 +1118,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     padding: 12,
+    borderRadius: 8,
   },
   userName: { flex: 1, fontSize: 16, marginLeft: 10 },
   emptyText: {
