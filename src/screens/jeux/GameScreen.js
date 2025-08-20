@@ -10,6 +10,7 @@ import {
   Image,
   Animated,
   Easing,
+  Modal,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
@@ -30,35 +31,88 @@ const { width } = Dimensions.get("window");
 // Composant GameCard : carte de jeu moderne avec gestion de l'appui (pressed)
 function GameCard({ item, onPress }) {
   const [pressed, setPressed] = React.useState(false);
+  const [showComingSoonModal, setShowComingSoonModal] = useState(false);
+  const isChessGame = item.title === "Échecs";
+  
+  const handlePress = () => {
+    if (isChessGame) {
+      setShowComingSoonModal(true);
+      return;
+    }
+    onPress();
+  };
+
   return (
     <TouchableOpacity
-      style={[styles.gameCard, pressed && styles.gameCardPressed]}
-      onPress={onPress}
+      style={[
+        styles.gameCard, 
+        pressed && styles.gameCardPressed,
+        isChessGame && styles.gameCardLocked
+      ]}
+      onPress={handlePress}
       activeOpacity={0.85}
       onPressIn={() => setPressed(true)}
       onPressOut={() => setPressed(false)}>
       <LinearGradient
-        colors={[item.color, item.color + "cc"]}
+        colors={isChessGame ? [item.color + "80", item.color + "60"] : [item.color, item.color + "cc"]}
         style={styles.gameCardGradient}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}>
         <View style={styles.gameCardContent}>
           {typeof item.image === "string" ? (
-            <Text style={styles.gameIconCentered}>{item.image}</Text>
+            <Text style={[styles.gameIconCentered, isChessGame && styles.gameIconLocked]}>{item.image}</Text>
           ) : (
             <Image
               source={item.image}
               style={[
                 styles.gameIconCentered,
                 { width: 80, height: 80, fontSize: undefined },
+                isChessGame && styles.gameIconLocked
               ]}
               resizeMode='contain'
             />
           )}
-          <Text style={styles.gameTitleModern}>{item.title}</Text>
-          <Text style={styles.gameDescriptionModern}>{item.description}</Text>
+          <Text style={[styles.gameTitleModern, isChessGame && styles.gameTitleLocked]}>{item.title}</Text>
+          <Text style={[styles.gameDescriptionModern, isChessGame && styles.gameDescriptionLocked]}>{item.description}</Text>
+          
+
         </View>
       </LinearGradient>
+      
+      {/* Modal "Prochainement" pour le jeu d'échecs */}
+      <Modal
+        visible={showComingSoonModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowComingSoonModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Prochainement...</Text>
+              <TouchableOpacity
+                style={styles.modalCloseButton}
+                onPress={() => setShowComingSoonModal(false)}
+              >
+                <Ionicons name="close" size={24} color="#666" />
+              </TouchableOpacity>
+            </View>
+            <View style={styles.modalBody}>
+              <Text style={styles.modalMessage}>
+                Un mystérieux royaume se prépare...{'\n'}
+                Les pièces s'alignent dans l'ombre.{'\n'}
+                L'échec et mat approche...
+              </Text>
+            </View>
+            <TouchableOpacity
+              style={styles.modalButton}
+              onPress={() => setShowComingSoonModal(false)}
+            >
+              <Text style={styles.modalButtonText}>J'ai hâte !</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </TouchableOpacity>
   );
 }
@@ -224,12 +278,12 @@ const GameScreen = ({ navigation, resetCategoryTrigger, forceHomeReset }) => {
       if (user?.id) {
         setProfileLoading(true);
         try {
-          console.log("[GameScreen] Chargement profil pour user.id:", user.id);
+      
           const docRef = doc(db, "users", user.id);
           const docSnap = await getDoc(docRef);
           if (docSnap.exists()) {
             const profileData = docSnap.data();
-            console.log("[GameScreen] Profil chargé:", profileData);
+
             setProfile(profileData);
           } else {
             console.log(
@@ -243,7 +297,7 @@ const GameScreen = ({ navigation, resetCategoryTrigger, forceHomeReset }) => {
           setProfileLoading(false);
         }
       } else {
-        console.log("[GameScreen] Pas d'user.id disponible");
+
         setProfileLoading(false);
       }
     };
@@ -748,6 +802,85 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#6c757d",
     textAlign: "center",
+  },
+  // Styles pour le jeu d'échecs bloqué
+  gameCardLocked: {
+    opacity: 0.85,
+  },
+  gameIconLocked: {
+    opacity: 0.8,
+  },
+  gameTitleLocked: {
+    opacity: 0.9,
+  },
+  gameDescriptionLocked: {
+    opacity: 0.85,
+  },
+  // Styles pour le modal "Prochainement"
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    padding: 0,
+    width: '85%',
+    maxWidth: 350,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 10,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 25,
+    paddingTop: 25,
+    paddingBottom: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  modalTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#333',
+    textAlign: 'center',
+    flex: 1,
+  },
+  modalCloseButton: {
+    padding: 5,
+  },
+  modalBody: {
+    paddingHorizontal: 25,
+    paddingVertical: 20,
+  },
+  modalMessage: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    lineHeight: 24,
+  },
+  modalButton: {
+    backgroundColor: '#667eea',
+    borderRadius: 15,
+    paddingVertical: 15,
+    paddingHorizontal: 30,
+    marginHorizontal: 25,
+    marginBottom: 25,
+    alignItems: 'center',
+  },
+  modalButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
 

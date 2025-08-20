@@ -280,16 +280,16 @@ export async function getLeaderboard(game, topN = 10, currentUser = null) {
  */
 export async function getGlobalLeaderboard(topN = null) {
   try {
-    console.log("getGlobalLeaderboard called with topN:", topN);
+
     
     const usersSnap = await getDocs(collection(db, "users"));
-    console.log("Found users:", usersSnap.docs.length);
+
     
     const leaderboard = [];
 
     for (const userDoc of usersSnap.docs) {
       const userId = userDoc.id;
-      console.log("Processing user:", userId);
+
 
       try {
         // S'assurer que l'utilisateur a des entrées de score pour tous les jeux
@@ -318,13 +318,13 @@ export async function getGlobalLeaderboard(topN = null) {
           });
         } catch (scoreError) {
           // Si on ne peut pas accéder aux scores, on utilise des valeurs par défaut
-          console.log(`Cannot access scores for user ${userId}, using default values`);
+
           totalPoints = 0;
           totalGames = 0;
           totalWins = 0;
         }
 
-        console.log(`User ${userId}: ${totalPoints} points, ${totalGames} games`);
+
 
         // Inclure TOUS les utilisateurs, même ceux avec 0 points
         leaderboard.push({
@@ -336,7 +336,7 @@ export async function getGlobalLeaderboard(topN = null) {
             totalGames > 0 ? Math.round((totalWins / totalGames) * 100) : 0,
         });
       } catch (userError) {
-        console.log(`Cannot process user ${userId}, using default values:`, userError.message || userError);
+
         // Ajouter quand même l'utilisateur avec 0 points
         leaderboard.push({
           userId,
@@ -348,7 +348,7 @@ export async function getGlobalLeaderboard(topN = null) {
       }
     }
 
-    console.log("Total leaderboard entries:", leaderboard.length);
+
 
     // Trier par points décroissants, puis par nom d'utilisateur pour les égalités
     leaderboard.sort((a, b) => {
@@ -359,15 +359,15 @@ export async function getGlobalLeaderboard(topN = null) {
       return (a.userId || "").localeCompare(b.userId || "");
     });
 
-    console.log("Sorted leaderboard:", leaderboard.slice(0, 5));
+
 
     // Si topN est spécifié, limiter le résultat, sinon retourner tous les utilisateurs
     const result = topN ? leaderboard.slice(0, topN) : leaderboard;
-    console.log("Returning result with", result.length, "entries");
+
     
     return result;
   } catch (error) {
-    console.log("Erreur dans getGlobalLeaderboard:", error.message || error);
+
     return [];
   }
 }
@@ -467,7 +467,7 @@ export async function getUserGlobalRank(userId) {
         });
       } catch (scoreError) {
         // Si on ne peut pas accéder aux scores, on utilise des valeurs par défaut
-        console.log(`Cannot access scores for user ${currentUserId}, using default values`);
+
         totalPoints = 0;
       }
 
@@ -622,6 +622,6 @@ export async function initializeAllUsersScoreEntries() {
       }
     }
   } catch (error) {
-    console.log("Erreur lors de l'initialisation des scores:", error.message || error);
+
   }
 }

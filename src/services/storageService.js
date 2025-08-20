@@ -10,22 +10,22 @@ import { db } from "../utils/firebaseConfig";
  * @returns {Promise<string>} URL publique de la photo
  */
 export async function uploadProfilePhoto(userId, uri) {
-  console.log("[uploadProfilePhoto] Début upload", { userId, uri });
+
   const storage = getStorage();
   let response, blob, storageRef, url;
   try {
     response = await fetch(uri);
-    console.log("[uploadProfilePhoto] fetch OK");
+
     blob = await response.blob();
-    console.log("[uploadProfilePhoto] blob OK");
+    
     storageRef = ref(storage, `profile_photos/${userId}.jpg`);
     await uploadBytes(storageRef, blob);
-    console.log("[uploadProfilePhoto] uploadBytes OK");
+    
     url = await getDownloadURL(storageRef);
-    console.log("[uploadProfilePhoto] getDownloadURL OK", url);
+    
     return url;
   } catch (e) {
-    console.log("[uploadProfilePhoto] ERREUR", e);
+
     throw e;
   }
 }
