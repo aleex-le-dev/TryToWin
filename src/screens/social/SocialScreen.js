@@ -10,7 +10,6 @@ import {
   TextInput,
   Alert,
   Image,
-  SafeAreaView,
   ActivityIndicator,
   Dimensions,
   AppState,
@@ -19,6 +18,7 @@ import { Ionicons } from "@expo/vector-icons";
 import QRCode from "react-native-qrcode-svg";
 import Toast from "react-native-toast-message";
 import * as ImagePicker from 'expo-image-picker';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from "../../hooks/useAuth";
 import { doc, getDoc, getDocs, collection, setDoc, deleteDoc, onSnapshot, updateDoc, serverTimestamp, query, orderBy, where, addDoc, writeBatch } from "firebase/firestore";
 import { db } from "../../utils/firebaseConfig";
@@ -46,6 +46,7 @@ export default function SocialScreen({ route, navigation }) {
   const { highContrast, largeTouchTargets, largerSpacing } = useAccessibility();
   const { theme } = useTheme();
   const { unreadMessages, updateUnreadMessages, markAllAsRead } = useUnreadMessages();
+  const insets = useSafeAreaInsets();
   // Liste d'amis simulée
   const [friends, setFriends] = useState([]);
   const [friendsRaw, setFriendsRaw] = useState([]);
@@ -989,7 +990,8 @@ export default function SocialScreen({ route, navigation }) {
 
   // Affichage principal : recherche, liste d'amis et d'utilisateurs
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
+      <View style={{ paddingTop: insets.top + 10 }}>
              {/* Section Partager mon profil (affichée uniquement hors conversation) */}
        {!selectedFriend && (
          <>
@@ -1210,14 +1212,14 @@ export default function SocialScreen({ route, navigation }) {
           />
         </>
       )}
-    </SafeAreaView>
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: 35,
     paddingBottom: 10,
   },
   sectionTitle: {
