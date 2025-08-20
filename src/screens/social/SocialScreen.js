@@ -74,7 +74,7 @@ export default function SocialScreen({ route, navigation }) {
   const [onlineStatus, setOnlineStatus] = useState({});
   const [typingStatus, setTypingStatus] = useState({});
   const [isTyping, setIsTyping] = useState(false);
-  const [testMode, setTestMode] = useState(false);
+
   const [friendProfile, setFriendProfile] = useState(null);
   const [friendStats, setFriendStats] = useState(null);
   const [friendLoading, setFriendLoading] = useState(false);
@@ -135,81 +135,11 @@ export default function SocialScreen({ route, navigation }) {
     }, [])
   );
 
-  // Mode test : simuler un ami fictif
-  const enableTestMode = useCallback(() => {
-    const testFriend = {
-      id: "test-user-123",
-      username: "TestUser",
-      avatar: "🧪",
-      photoURL: "",
-      bio: "Utilisateur de test",
-      country: "Test",
-      isOnline: true,
-    };
-    
-    setFriends([testFriend]);
-    setOnlineStatus({ "test-user-123": true });
-    setTestMode(true);
-    
-    Toast.show({
-      type: 'success',
-      text1: 'Mode test activé',
-      text2: 'TestUser a été ajouté pour tester le chat',
-      position: 'top',
-      topOffset: 40,
-      visibilityTime: 2000,
-    });
-  }, []);
 
-  // Simuler des messages automatiques en mode test
-  useEffect(() => {
-    if (!testMode || !selectedFriend || selectedFriend.id !== "test-user-123") return;
 
-    const simulateMessages = [
-      "Salut ! Comment ça va ?",
-      "Je teste le chat en temps réel",
-      "C'est vraiment cool !",
-      "Les messages s'affichent instantanément",
-      "Et l'indicateur de frappe fonctionne aussi !"
-    ];
 
-    let messageIndex = 0;
-    const interval = setInterval(() => {
-      if (messageIndex < simulateMessages.length) {
-        const newMessage = {
-          id: `test-msg-${Date.now()}`,
-          text: simulateMessages[messageIndex],
-          senderId: "test-user-123",
-          senderName: "TestUser",
-          timestamp: new Date(),
-          read: false
-        };
-        
-        setMessages(prev => [...prev, newMessage]);
-        messageIndex++;
-      } else {
-        clearInterval(interval);
-      }
-    }, 3000); // Nouveau message toutes les 3 secondes
 
-    return () => clearInterval(interval);
-  }, [testMode, selectedFriend]);
 
-  // Simuler l'indicateur de frappe en mode test
-  useEffect(() => {
-    if (!testMode || !selectedFriend || selectedFriend.id !== "test-user-123") return;
-
-    const simulateTyping = () => {
-      setTypingStatus(prev => ({ ...prev, "test-user-123": true }));
-      
-      setTimeout(() => {
-        setTypingStatus(prev => ({ ...prev, "test-user-123": false }));
-      }, 2000);
-    };
-
-    const typingInterval = setInterval(simulateTyping, 8000); // Toutes les 8 secondes
-    return () => clearInterval(typingInterval);
-  }, [testMode, selectedFriend]);
 
   // Écouter les messages en temps réel (désactivé temporairement)
   useEffect(() => {
@@ -884,28 +814,23 @@ export default function SocialScreen({ route, navigation }) {
   // Affichage principal : recherche, liste d'amis et d'utilisateurs
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
-      {/* Section Partager mon profil (affichée uniquement hors conversation) */}
-      {!selectedFriend && (
-        <View style={[styles.shareProfileSection, { backgroundColor: theme.card }, largerSpacing && { padding: 24, marginBottom: 24 }]}>
-          <Text style={[styles.shareTitle, { color: theme.primary }]}>Partager mon profil</Text>
-          <View style={styles.qrAndLinkRow}>
-            <QRCode value={myProfileLink} size={90} />
-          </View>
-          <TouchableOpacity
-            style={[styles.copyButton, { marginTop: 16, alignSelf: 'center', backgroundColor: theme.surface }]}
-            onPress={openGallery}>
-            <Ionicons name='qr-code' size={20} color={theme.primary} />
-            <Text style={[styles.copyButtonText, { color: theme.primary }]}>Scanner un QR code</Text>
-          </TouchableOpacity>
-          {/* Bouton Mode Test pour appareil unique */}
-          <TouchableOpacity
-            style={styles.testButton}
-            onPress={enableTestMode}>
-            <Ionicons name='flask' size={18} color='#fff' />
-            <Text style={styles.testButtonText}>Test QR code</Text>
-          </TouchableOpacity>
-        </View>
-      )}
+             {/* Section Partager mon profil (affichée uniquement hors conversation) */}
+       {!selectedFriend && (
+         <>
+           <Text style={[styles.sectionTitle, { color: theme.text }]}>Partager mon profil</Text>
+           <View style={[styles.shareProfileSection, { backgroundColor: theme.card }, largerSpacing && { padding: 24, marginBottom: 24 }]}>
+             <View style={styles.qrAndLinkRow}>
+               <QRCode value={myProfileLink} size={90} />
+             </View>
+             <TouchableOpacity
+               style={[styles.copyButton, { marginTop: 16, alignSelf: 'center', backgroundColor: theme.surface }]}
+               onPress={openGallery}>
+               <Ionicons name='qr-code' size={20} color={theme.primary} />
+               <Text style={[styles.copyButtonText, { color: theme.primary }]}>Scanner un QR code</Text>
+             </TouchableOpacity>
+           </View>
+         </>
+       )}
 
       {/* Scanner QR Code - Interface de traitement */}
       {scanning && (
@@ -1096,7 +1021,7 @@ export default function SocialScreen({ route, navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: 10,
+    paddingTop: 25,
   },
   sectionTitle: {
     fontSize: 18,
@@ -1213,18 +1138,14 @@ const styles = StyleSheet.create({
   },
   shareProfileSection: {
     marginHorizontal: 16,
-    marginTop: 40,
+    marginTop: 10,
     padding: 20,
     borderRadius: 16,
     elevation: 3,
     alignItems: "center",
     flexDirection: "column",
   },
-  shareTitle: {
-    fontSize: 17,
-    fontWeight: "bold",
-    marginBottom: 10,
-  },
+
   qrAndLinkRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -1260,22 +1181,7 @@ const styles = StyleSheet.create({
   onlineStatus: {
     fontSize: 12,
   },
-  testButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#4CAF50',
-    borderRadius: 20,
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    marginTop: 10,
-    elevation: 3,
-  },
-  testButtonText: {
-    color: '#fff',
-    fontSize: 15,
-    fontWeight: 'bold',
-    marginLeft: 8,
-  },
+
   scannerOverlay: {
     position: 'absolute',
     top: 0,
