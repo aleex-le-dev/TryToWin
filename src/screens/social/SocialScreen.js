@@ -75,14 +75,13 @@ export default function SocialScreen({ route, navigation }) {
         if (doc.exists()) {
           const userData = doc.data();
           const isOnline = userData.isOnline || false;
-          console.log(`[SocialScreen] Statut ${friend.username}: ${isOnline ? 'En ligne' : 'Hors ligne'}`);
           setOnlineStatus(prev => ({
             ...prev,
             [friend.id]: isOnline
           }));
         }
       }, (error) => {
-        console.error(`Erreur écoute statut ${friend.id}:`, error);
+        // Erreur lors de l'écoute du statut
       });
     });
 
@@ -106,6 +105,7 @@ export default function SocialScreen({ route, navigation }) {
   const [onlineStatus, setOnlineStatus] = useState({});
   const [typingStatus, setTypingStatus] = useState({});
   const [isTyping, setIsTyping] = useState(false);
+  const [showFriendCard, setShowFriendCard] = useState(false);
 
   const [friendProfile, setFriendProfile] = useState(null);
   const [friendStats, setFriendStats] = useState(null);
@@ -121,11 +121,9 @@ export default function SocialScreen({ route, navigation }) {
 
   // Debug: montage et changements d'état clés
   useEffect(() => {
-    console.log('[Social] mounted');
   }, []);
 
   useEffect(() => {
-    console.log('[Social] selectedFriend changed =>', selectedFriend?.id || null);
   }, [selectedFriend?.id]);
 
   // Charger la carte joueur de l’ami sélectionné
@@ -183,7 +181,7 @@ export default function SocialScreen({ route, navigation }) {
           isOnline: true,
           lastSeen: serverTimestamp()
         }).catch(error => {
-          console.error('Erreur mise à jour statut en ligne:', error);
+          // Erreur lors de la mise à jour du statut en ligne
         });
       }
     }, [user?.id])
@@ -198,7 +196,6 @@ export default function SocialScreen({ route, navigation }) {
           isOnline: false,
           lastSeen: serverTimestamp()
         }).catch(error => {
-          console.error('Erreur mise à jour statut hors ligne:', error);
         });
       }
     };
@@ -240,7 +237,7 @@ export default function SocialScreen({ route, navigation }) {
         });
         updateUnreadMessages(friend.id, unreadCount);
       }, (err) => {
-        console.error(`Erreur écoute messages ${friend.id}:`, err);
+        // Erreur lors de l'écoute des messages non lus
       });
     });
 
@@ -252,7 +249,6 @@ export default function SocialScreen({ route, navigation }) {
   // Écouter les messages en temps réel pour le chat actuel
   useEffect(() => {
     if (!selectedFriend || !user?.id) {
-      console.log('[Social] messages listener not attached (no friend or user)');
       return;
     }
 
@@ -260,14 +256,12 @@ export default function SocialScreen({ route, navigation }) {
     const messagesRef = collection(db, 'chats', chatId, 'messages');
     const qMsg = query(messagesRef, orderBy('timestamp', 'asc'));
 
-    console.log('[Social] attach messages listener chatId=', chatId);
     const unsubscribe = onSnapshot(qMsg, (snapshot) => {
       const newMessages = [];
       snapshot.forEach((d) => {
         newMessages.push({ id: d.id, ...d.data() });
       });
       setMessages(newMessages);
-      console.log('[Social] messages count =', newMessages.length);
       
       // Marquer les messages comme lus quand on ouvre le chat
       if (selectedFriend) {
@@ -280,7 +274,6 @@ export default function SocialScreen({ route, navigation }) {
     });
 
     return () => {
-      console.log('[Social] detach messages listener chatId=', chatId);
       unsubscribe();
     };
   }, [selectedFriend, user?.id, markAllAsRead]);
@@ -308,7 +301,7 @@ export default function SocialScreen({ route, navigation }) {
         await batch.commit();
       }
     } catch (error) {
-      console.error('Erreur marquage messages lus:', error);
+      // Erreur lors du marquage des messages comme lus
     }
   };
 
@@ -532,7 +525,7 @@ export default function SocialScreen({ route, navigation }) {
       // Afficher le QR code en plein écran
       setQrCodeExpanded(true);
     } catch (error) {
-      console.error('Erreur lors de l\'expansion du QR code:', error);
+      // Erreur lors de l'expansion du QR code
     }
   };
 
@@ -548,7 +541,7 @@ export default function SocialScreen({ route, navigation }) {
       setQrCodeExpanded(false);
       setOriginalBrightness(null);
     } catch (error) {
-      console.error('Erreur lors de la fermeture du QR code:', error);
+      // Erreur lors de la fermeture du QR code
     }
   };
 
@@ -565,7 +558,7 @@ export default function SocialScreen({ route, navigation }) {
       const usersRef = collection(db, 'users');
       // Récupérer tous les utilisateurs et filtrer côté client
       const snapshot = await getDocs(usersRef);
-      console.log(`[searchUsers] Total utilisateurs en BDD : ${snapshot.size}`);
+      
       
       const users = [];
       
@@ -573,11 +566,11 @@ export default function SocialScreen({ route, navigation }) {
         const userData = doc.data();
         const username = userData.username || '';
         
-        console.log(`[searchUsers] Utilisateur ${doc.id}: username="${username}", searchTerm="${searchTerm}"`);
+        
         
         // Filtrer par nom d'utilisateur (insensible à la casse)
         if (username.toLowerCase().includes(searchTerm.toLowerCase())) {
-          console.log(`[searchUsers] Match trouvé pour ${username}`);
+          
           // Exclure seulement l'utilisateur connecté, permettre de voir les amis
           if (doc.id !== user?.id) {
             users.push({
@@ -591,17 +584,16 @@ export default function SocialScreen({ route, navigation }) {
               isFriend: friends.find(f => f.id === doc.id) ? true : false, // Indiquer si c'est un ami
             });
           } else {
-            console.log(`[searchUsers] ${username} exclu (utilisateur connecté)`);
           }
         } else {
-          console.log(`[searchUsers] Pas de match pour ${username}`);
+          
         }
       });
       
-      console.log(`[searchUsers] Recherche "${searchTerm}" : ${users.length} utilisateurs trouvés`);
+      
       setSearchResults(users);
     } catch (error) {
-      console.error('Erreur lors de la recherche:', error);
+      // Erreur lors de la recherche d'utilisateurs
       Toast.show({
         type: 'error',
         text1: 'Erreur de recherche',
@@ -648,7 +640,7 @@ export default function SocialScreen({ route, navigation }) {
         bestGameId,
       });
     } catch (error) {
-      console.error('Erreur lors du chargement du profil:', error);
+      // Erreur lors du chargement du profil utilisateur
     } finally {
       setUserLoading(false);
     }
@@ -892,12 +884,16 @@ export default function SocialScreen({ route, navigation }) {
       style={{
         flex: 1,
         backgroundColor: theme.background,
-        paddingTop: insets.top,
-        paddingBottom: Math.max(insets.bottom, 8),
+        paddingTop: 0, // Supprimer le padding top
+        paddingBottom: 0, // Supprimer le padding bottom
       }}
     >
       {/* En-tête du chat */}
-      <View style={[styles.chatHeader, { backgroundColor: theme.card, borderBottomColor: theme.border }]}>
+      <View style={[styles.chatHeader, { 
+        backgroundColor: theme.card, 
+        borderBottomColor: theme.border,
+        paddingTop: insets.top, // Ajouter le safe area ici
+      }]}>
         <TouchableOpacity
           style={styles.backButton}
           onPress={() => setSelectedFriend(null)}>
@@ -915,6 +911,29 @@ export default function SocialScreen({ route, navigation }) {
               { backgroundColor: onlineStatus[selectedFriend?.id] ? '#4cd137' : '#ff6b6b' }
             ]} />
           </View>
+        </View>
+        <View style={styles.chatHeaderActions}>
+          <TouchableOpacity
+            accessibilityLabel="Voir la carte du joueur"
+            onPress={() => setShowFriendCard(true)}
+            style={[styles.miniProfileCard, { borderColor: theme.border, backgroundColor: theme.card }]}
+            activeOpacity={0.8}
+          >
+            {friendProfile?.photoURL || selectedFriend?.photoURL ? (
+              <Image source={{ uri: friendProfile?.photoURL || selectedFriend?.photoURL }} style={styles.miniProfileAvatar} />
+            ) : (
+              <View style={[styles.miniProfileAvatar, { backgroundColor: theme.primary }]}> 
+                <Text style={styles.miniProfileAvatarText}>{friendProfile?.avatar || selectedFriend?.avatar || '👤'}</Text>
+              </View>
+            )}
+            <View style={{ width: 8 }} />
+            <View style={{ justifyContent: 'center' }}>
+              <Text style={[styles.miniProfileTextTitle, { color: theme.text }]}>Voir la carte</Text>
+              <Text style={[styles.miniProfileTextSub, { color: theme.textSecondary }]} numberOfLines={1}>
+                {selectedFriend?.username || 'Joueur'}
+              </Text>
+            </View>
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -946,7 +965,8 @@ export default function SocialScreen({ route, navigation }) {
             backgroundColor: theme.card,
             borderTopWidth: 1,
             borderTopColor: theme.border,
-            paddingBottom: Math.max(insets.bottom, 12),
+            paddingBottom: insets.bottom, // Utiliser directement insets.bottom
+            paddingTop: 16, // Réduire le padding top
           },
         ]}
       >
@@ -972,6 +992,110 @@ export default function SocialScreen({ route, navigation }) {
           />
         </TouchableOpacity>
       </View>
+
+      {/* Overlay Carte Joueur */}
+      {showFriendCard && (
+        <View style={styles.userCardOverlay}>
+          <View style={[styles.userCardOverlayContent, { backgroundColor: theme.card }]}>
+            <TouchableOpacity
+              style={styles.userCardCloseButton}
+              onPress={() => setShowFriendCard(false)}
+              accessibilityLabel="Fermer la carte joueur"
+            >
+              <Ionicons name="close" size={24} color={theme.text} />
+            </TouchableOpacity>
+
+            {friendLoading ? (
+              <View style={styles.userCardLoading}>
+                <ActivityIndicator size="large" color={theme.primary} />
+                <Text style={[styles.userCardLoadingText, { color: theme.textSecondary }]}>Chargement…</Text>
+              </View>
+            ) : (
+              <>
+                {/* Bannière en haut de la carte */}
+                {friendProfile?.bannerImage ? (
+                  <Image
+                    source={{ uri: friendProfile.bannerImage }}
+                    style={styles.userCardBanner}
+                    resizeMode='cover'
+                  />
+                ) : (
+                  <View
+                    style={[
+                      styles.userCardBanner,
+                      { backgroundColor: friendProfile?.bannerColor || theme.surface },
+                    ]}
+                  />
+                )}
+                
+                {/* Avatar centré sur la bannière */}
+                <View style={styles.userCardAvatarWrap}>
+                  {friendProfile?.photoURL ? (
+                    <Image 
+                      source={{ uri: friendProfile.photoURL }} 
+                      style={[styles.userCardAvatar, { borderColor: theme.card }]} 
+                    />
+                  ) : (
+                    <View 
+                      style={[
+                        styles.userCardAvatarPlaceholder, 
+                        { 
+                          backgroundColor: theme.primary,
+                          borderColor: theme.card 
+                        }
+                      ]}
+                    >
+                      <Text style={styles.userCardAvatarText}>{friendProfile?.avatar || '👤'}</Text>
+                    </View>
+                  )}
+                </View>
+                
+                {/* Nom du joueur */}
+                <Text style={[styles.userCardName, { color: theme.text }]}>
+                  {friendProfile?.username || selectedFriend?.username || 'Joueur'}
+                </Text>
+                
+                {/* Pays */}
+                {!!friendProfile?.country && (
+                  <View style={styles.userCardCountryRow}>
+                    <Text style={styles.userCardCountryFlag}>
+                      {(countries.find(c => c.code === friendProfile.country)?.flag) || '🏳️'}
+                    </Text>
+                    <Text style={[styles.userCardCountryName, { color: theme.textSecondary }]}>
+                      {(countries.find(c => c.code === friendProfile.country)?.nameFr) || friendProfile.country}
+                    </Text>
+                  </View>
+                )}
+                
+                {/* Bio */}
+                {friendProfile?.bio && (
+                  <Text style={[styles.userCardBio, { color: theme.textSecondary }]}>
+                    {friendProfile.bio}
+                  </Text>
+                )}
+                
+                {/* Stats */}
+                <View style={styles.userCardStatsRow}>
+                  <View style={styles.userCardStat}>
+                    <Text style={[styles.userCardStatValue, { color: theme.text }]}>{friendStats?.totalPoints ?? 0}</Text>
+                    <Text style={[styles.userCardStatLabel, { color: theme.textSecondary }]}>Points</Text>
+                  </View>
+                  <View style={styles.userCardStat}>
+                    <Text style={[styles.userCardStatValue, { color: theme.text }]}>{friendStats?.winRate ?? 0}%</Text>
+                    <Text style={[styles.userCardStatLabel, { color: theme.textSecondary }]}>Winrate</Text>
+                  </View>
+                  <View style={styles.userCardStat}>
+                    <Text style={[styles.userCardStatValue, { color: theme.text }]}> 
+                      {friendStats?.bestGameId ? (gamesData.find(g => g.id === friendStats.bestGameId)?.name || friendStats.bestGameId) : '-'}
+                    </Text>
+                    <Text style={[styles.userCardStatLabel, { color: theme.textSecondary }]}>Meilleur jeu</Text>
+                  </View>
+                </View>
+              </>
+            )}
+          </View>
+        </View>
+      )}
     </View>
   );
 
@@ -1254,6 +1378,44 @@ const styles = StyleSheet.create({
     padding: 16,
     borderBottomWidth: 1,
     elevation: 2,
+  },
+  chatHeaderActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginLeft: 8,
+  },
+  profileButton: {
+    padding: 6,
+    borderRadius: 16,
+  },
+  miniProfileCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 14,
+    borderWidth: 1,
+  },
+  miniProfileAvatar: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  miniProfileAvatarText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  miniProfileTextTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+    marginBottom: 2,
+  },
+  miniProfileTextSub: {
+    fontSize: 11,
+    maxWidth: 120,
   },
   backButton: {
     padding: 8,
@@ -1708,12 +1870,13 @@ const styles = StyleSheet.create({
   userCardAvatarSection: {
     alignItems: 'center',
     marginBottom: 20,
+    paddingVertical: 8,
   },
   userCardAvatar: {
     width: 80,
     height: 80,
     borderRadius: 40,
-    marginBottom: 10,
+    marginBottom: 16,
   },
   userCardAvatarPlaceholder: {
     width: 80,
@@ -1721,7 +1884,7 @@ const styles = StyleSheet.create({
     borderRadius: 40,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 10,
+    marginBottom: 16,
   },
   userCardAvatarText: {
     color: '#fff',
@@ -1731,12 +1894,13 @@ const styles = StyleSheet.create({
   userCardUsername: {
     fontSize: 20,
     fontWeight: 'bold',
-    marginBottom: 8,
+    marginBottom: 12,
   },
   userCardCountryRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
+    marginBottom: 8,
   },
   userCardCountryFlag: {
     fontSize: 18,
@@ -1749,53 +1913,36 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
     marginBottom: 20,
     paddingHorizontal: 20,
+    lineHeight: 20,
   },
   userCardStatsRow: {
     flexDirection: 'row',
     justifyContent: 'space-around',
     marginBottom: 20,
+    paddingVertical: 8,
   },
   userCardStat: {
     alignItems: 'center',
+    minWidth: 80,
   },
   userCardStatValue: {
     fontWeight: 'bold',
     marginTop: 4,
     fontSize: 16,
+    marginBottom: 4,
   },
   userCardStatLabel: {
     fontSize: 12,
     marginTop: 2,
   },
-  addFriendFromCardButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 12,
+  userCardSeparator: {
+    height: 1,
+    width: '100%',
+    marginVertical: 15,
+  },
+  userCardBioSection: {
     paddingHorizontal: 20,
-    borderRadius: 25,
-    alignSelf: 'center',
-  },
-  addFriendFromCardText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    marginLeft: 8,
-    fontSize: 16,
-  },
-  friendFromCardIndicator: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 25,
-    alignSelf: 'center',
-  },
-  friendFromCardText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    marginLeft: 8,
-    fontSize: 16,
+    marginBottom: 15,
   },
   userCardOverlay: {
     position: 'absolute',
@@ -1804,7 +1951,7 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     zIndex: 1000,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(0, 0, 0, 0.7)', // Plus sombre pour plus de contraste
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -1812,65 +1959,143 @@ const styles = StyleSheet.create({
     width: '90%',
     maxHeight: '80%',
     borderRadius: 20,
+    padding: 24, // Plus de padding
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+    borderWidth: 1, // Ajouter une bordure
+  },
+  userCardCloseButton: {
+    position: 'absolute',
+    top: -15,
+    right: -15,
+    padding: 8,
+    borderRadius: 20,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    zIndex: 10,
+  },
+  userCardBanner: {
+    width: '100%',
+    height: 80,
+    borderRadius: 12,
+    marginBottom: 0,
+  },
+  userCardAvatarWrap: {
+    alignItems: 'center',
+    marginTop: -30,
+    marginBottom: 16,
+  },
+  userCardAvatar: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    borderWidth: 3,
+    borderColor: '#fff', // Valeur statique
+  },
+  userCardAvatarPlaceholder: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    borderWidth: 3,
+    borderColor: '#fff', // Valeur statique
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  userCardAvatarText: {
+    color: '#fff',
+    fontSize: 24,
+    fontWeight: 'bold',
+  },
+  userCardName: {
+    textAlign: 'center',
+    fontWeight: 'bold',
+    fontSize: 16,
+    marginTop: 6,
+    marginBottom: 8,
+  },
+  userCardCountryRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 12,
+  },
+  userCardCountryFlag: {
+    fontSize: 18,
+  },
+  userCardCountryName: {
+    textAlign: 'center',
+    fontSize: 12,
+  },
+  userCardBio: {
+    textAlign: 'center',
+    fontStyle: 'italic',
+    paddingBottom: 10,
+    paddingHorizontal: 20,
+    lineHeight: 18,
+  },
+  userCardStatsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    paddingVertical: 10,
+  },
+  userCardStat: {
+    alignItems: 'center',
+    minWidth: 80,
+  },
+  userCardStatValue: {
+    fontWeight: 'bold',
+    marginTop: 2,
+    fontSize: 16,
+    marginBottom: 4,
+  },
+  userCardStatLabel: {
+    fontSize: 11,
+    marginTop: 2,
+  },
+  qrCodeExpandedOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
+  },
+  qrCodeExpandedContent: {
+    backgroundColor: '#fff',
+    borderRadius: 20,
     padding: 20,
     alignItems: 'center',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
   },
-  searchResultsContainer: {
-    marginTop: 80,
-    marginHorizontal: 16,
+  qrCodeExpandedContainer: {
+    alignItems: 'center',
+    marginTop: 20,
   },
-     searchResultsTitle: {
-     fontSize: 16,
-     fontWeight: 'bold',
-     paddingVertical: 10,
-     paddingHorizontal: 12,
-     marginBottom: 8,
-   },
-   
-   // Styles pour le QR code agrandi
-   qrCodeExpandedOverlay: {
-     position: 'absolute',
-     top: 0,
-     left: 0,
-     right: 0,
-     bottom: 0,
-     backgroundColor: '#000000',
-     zIndex: 2000,
-     justifyContent: 'center',
-     alignItems: 'center',
-   },
-   qrCodeExpandedContent: {
-     flex: 1,
-     width: '100%',
-     justifyContent: 'center',
-     alignItems: 'center',
-     position: 'relative',
-   },
-   qrCodeCloseButton: {
-     position: 'absolute',
-     top: 50,
-     right: 20,
-     backgroundColor: 'rgba(0,0,0,0.5)',
-     borderRadius: 25,
-     padding: 10,
-     zIndex: 2001,
-   },
-   qrCodeExpandedContainer: {
-     alignItems: 'center',
-     justifyContent: 'center',
-     padding: 20,
-   },
-   qrCodeExpandedText: {
-     color: '#fff',
-     fontSize: 16,
-     textAlign: 'center',
-     marginTop: 20,
-     paddingHorizontal: 20,
-     lineHeight: 22,
-   },
+  qrCodeExpandedText: {
+    color: '#333',
+    fontSize: 16,
+    textAlign: 'center',
+    marginTop: 15,
+    paddingHorizontal: 20,
+  },
+  qrCodeCloseButton: {
+    position: 'absolute',
+    top: -50,
+    right: 0,
+    padding: 8,
+    borderRadius: 20,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    zIndex: 10,
+  },
 });
