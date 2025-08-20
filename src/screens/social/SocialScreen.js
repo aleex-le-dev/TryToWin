@@ -49,6 +49,41 @@ export default function SocialScreen({ route, navigation }) {
   const { theme } = useTheme();
   const { unreadMessages, updateUnreadMessages, markAllAsRead } = useUnreadMessages();
   const insets = useSafeAreaInsets();
+  const messagesListRef = useRef(null);
+  
+  // Fonction pour forcer le scroll vers le dernier message
+  const scrollToBottom = useCallback((animated = true) => {
+    if (messagesListRef.current && messages && messages.length > 0) {
+      setTimeout(() => {
+        try {
+          messagesListRef.current?.scrollToEnd({ animated });
+        } catch (error) {
+          // Fallback: scroll vers l'index du dernier message
+          messagesListRef.current?.scrollToIndex({ 
+            index: messages.length - 1, 
+            animated,
+            viewPosition: 1
+          });
+        }
+      }, 100);
+    }
+  }, []);
+
+  // Fonction de scroll immédiat (sans délai)
+  const scrollToBottomImmediate = useCallback(() => {
+    if (messagesListRef.current && messages && messages.length > 0) {
+      try {
+        messagesListRef.current.scrollToEnd({ animated: false });
+      } catch (error) {
+        messagesListRef.current.scrollToIndex({ 
+          index: messages.length - 1, 
+          animated: false,
+          viewPosition: 1
+        });
+      }
+    }
+  }, []);
+  
   // Liste d'amis simulée
   const [friends, setFriends] = useState([]);
   const [friendsRaw, setFriendsRaw] = useState([]);
@@ -271,6 +306,9 @@ export default function SocialScreen({ route, navigation }) {
         // Marquer aussi les messages comme lus dans Firestore
         markMessagesAsReadInFirestore(chatId);
       }
+      
+      // Scroll automatique vers le dernier message quand de nouveaux messages arrivent
+      scrollToBottomImmediate();
     }, (err) => {
       Toast.show({ type: 'error', text1: 'Erreur messages', text2: 'Permissions insuffisantes', position: 'top', topOffset: 40 });
     });
@@ -278,7 +316,21 @@ export default function SocialScreen({ route, navigation }) {
     return () => {
       unsubscribe();
     };
-  }, [selectedFriend, user?.id, markAllAsRead]);
+  }, [selectedFriend?.id, user?.id, markAllAsRead]);
+
+  // Vider les messages et scroll automatique quand on change d'ami
+  useEffect(() => {
+    if (selectedFriend) {
+      setMessages([]);
+    }
+  }, [selectedFriend?.id]);
+
+  // Scroll automatique quand les messages changent (seulement si on a des messages)
+  useEffect(() => {
+    if (selectedFriend && messages && messages.length > 0) {
+      scrollToBottomImmediate();
+    }
+  }, [messages.length, scrollToBottomImmediate]);
 
   // Marquer les messages comme lus dans Firestore
   const markMessagesAsReadInFirestore = async (chatId) => {
@@ -331,10 +383,13 @@ export default function SocialScreen({ route, navigation }) {
         setIsTyping(false);
         handleTyping(false);
       }
+      
+      // Scroll automatique vers le dernier message après envoi
+      scrollToBottomImmediate();
     } catch (e) {
       Toast.show({ type: 'error', text1: 'Envoi échoué', position: 'top', topOffset: 40 });
     }
-  }, [input, selectedFriend, user, handleTyping, isTyping]);
+  }, [input, selectedFriend, user, handleTyping, isTyping, messages]);
 
   // Demander les permissions de galerie quand le scan est activé
   useEffect(() => {
@@ -943,23 +998,45 @@ export default function SocialScreen({ route, navigation }) {
 
       {/* Zone des messages */}
       <View style={[styles.messagesContainer, { paddingHorizontal: 16, paddingBottom: 8 }]}>
-        <FlatList
-          data={messages}
-          keyExtractor={(item) => item.id}
-          renderItem={renderMessage}
-          style={{ flex: 1 }}
-          ListEmptyComponent={
-            <View style={{ paddingVertical: 50, alignItems: 'center' }}>
-              <Ionicons name='chatbubbles-outline' size={48} color={theme.textSecondary} />
-              <Text style={{ color: theme.textSecondary, marginTop: 16, fontSize: 16 }}>
-                Commencez la conversation
-              </Text>
-            </View>
-          }
-          contentContainerStyle={{ paddingBottom: 20 }}
-          keyboardShouldPersistTaps='handled'
-          keyboardDismissMode='interactive'
-        />
+        {messages && (
+          <FlatList
+            ref={messagesListRef}
+            data={messages}
+            keyExtractor={(item) => item.id}
+            renderItem={renderMessage}
+            style={{ flex: 1 }}
+            ListEmptyComponent={
+              <View style={{ paddingVertical: 50, alignItems: 'center' }}>
+                <Ionicons name='chatbubbles-outline' size={48} color={theme.textSecondary} />
+                <Text style={{ color: theme.textSecondary, marginTop: 16, fontSize: 16 }}>
+                  Commencez la conversation
+                </Text>
+              </View>
+            }
+            contentContainerStyle={{ paddingBottom: 20 }}
+            keyboardShouldPersistTaps='handled'
+            keyboardDismissMode='interactive'
+            maintainVisibleContentPosition={{
+              minIndexForVisible: 0,
+              autoscrollToTopThreshold: 10,
+            }}
+            onLayout={() => {
+              // Scroll automatique quand la liste se charge
+              if (messages && messages.length > 0) {
+                scrollToBottomImmediate();
+              }
+            }}
+            onContentSizeChange={() => {
+              // Scroll automatique quand le contenu change
+              if (messages && messages.length > 0) {
+                scrollToBottomImmediate();
+              }
+            }}
+            onScrollBeginDrag={() => {
+              // Désactiver le scroll automatique quand l'utilisateur scroll manuellement
+            }}
+          />
+        )}
       </View>
 
                                                        {/* Zone de saisie */}
