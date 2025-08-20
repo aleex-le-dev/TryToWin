@@ -24,6 +24,8 @@ import { colors } from "../../constants/colors";
 import { messages } from "../../constants/config";
 import { logError, logSuccess, logInfo } from "../../utils/errorHandler";
 import FormErrorMessage from "../../components/FormErrorMessage";
+import UnverifiedAccountPopup from "../../components/UnverifiedAccountPopup";
+import { EMAIL_MESSAGES, EMAIL_TIMEOUTS } from "../../constants/emailMessages";
 
 // Écran d'inscription avec validation des champs
 const RegisterScreen = ({ navigation }) => {
@@ -36,6 +38,8 @@ const RegisterScreen = ({ navigation }) => {
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
   const [passwordStrength, setPasswordStrength] = useState(null);
+  const [showUnverifiedPopup, setShowUnverifiedPopup] = useState(false);
+  const [unverifiedEmail, setUnverifiedEmail] = useState("");
 
   // Utilisation du hook d'authentification
   const { register, loading } = useAuth();
@@ -152,18 +156,25 @@ const RegisterScreen = ({ navigation }) => {
         });
         navigation.navigate("EmailValidation", { email });
       } else {
-        logError(
-          new Error(`Registration failed: ${result.error}`),
-          "RegisterScreen.handleRegister"
-        );
-        Toast.show({
-          type: "error",
-          text1: "Erreur d'inscription",
-          text2: result.error,
-          position: "top",
-          topOffset: 40,
-          visibilityTime: 2000,
-        });
+        // Gestion spéciale pour les comptes non validés
+        if (result.code === "unverified_account") {
+          // Compte non validé - afficher le popup
+          setUnverifiedEmail(email);
+          setShowUnverifiedPopup(true);
+        } else {
+          logError(
+            new Error(`Registration failed: ${result.error}`),
+            "RegisterScreen.handleRegister"
+          );
+          Toast.show({
+            type: "error",
+            text1: "Erreur d'inscription",
+            text2: result.error,
+            position: "top",
+            topOffset: 40,
+            visibilityTime: 2000,
+          });
+        }
       }
     } catch (error) {
       logError(error, "RegisterScreen.handleRegister");
@@ -251,6 +262,32 @@ const RegisterScreen = ({ navigation }) => {
                 autoCapitalize='none'
               />
             </View>
+
+            {/* Popup pour compte non validé */}
+            <UnverifiedAccountPopup
+              visible={showUnverifiedPopup}
+              email={unverifiedEmail}
+              onClose={() => setShowUnverifiedPopup(false)}
+              onResendEmail={async (email) => {
+                try {
+                  // Logique pour renvoyer l'email de validation
+                  // Note: Cette fonctionnalité nécessite que l'utilisateur soit connecté
+                  // Pour l'instant, on navigue vers la page de validation
+                  setShowUnverifiedPopup(false);
+                  navigation.navigate("EmailValidation", { email });
+                } catch (error) {
+                  logError(error, "RegisterScreen.onResendEmail");
+                  Toast.show({
+                    type: "error",
+                    text1: "Erreur",
+                    text2: "Impossible de renvoyer l'email pour le moment",
+                    position: "top",
+                    topOffset: 40,
+                    visibilityTime: 2000,
+                  });
+                }
+              }}
+            />
 
             {/* Champ Mot de passe */}
             <FormErrorMessage

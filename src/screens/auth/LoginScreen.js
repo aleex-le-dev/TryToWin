@@ -30,6 +30,7 @@ import { colors } from "../../constants/colors";
 import { messages } from "../../constants/config";
 import { logError, logSuccess, logInfo } from "../../utils/errorHandler";
 import FormErrorMessage from "../../components/FormErrorMessage";
+import EmailVerificationRequiredPopup from "../../components/EmailVerificationRequiredPopup";
 import { useToast } from "../../contexts/ToastContext";
 
 WebBrowser.maybeCompleteAuthSession();
@@ -41,6 +42,8 @@ const LoginScreen = ({ navigation }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
+  const [showVerificationPopup, setShowVerificationPopup] = useState(false);
+  const [verificationEmail, setVerificationEmail] = useState("");
 
   // Utilisation du hook d'authentification
   const { login } = useAuth();
@@ -158,10 +161,8 @@ const LoginScreen = ({ navigation }) => {
       if (result.success) {
         // Vérification de l'email
         if (!result.user?.emailVerified) {
-          Alert.alert(
-            "Validation requise",
-            "Merci de valider votre adresse e-mail avant de vous connecter. Vérifie ta boîte mail et clique sur le lien de validation."
-          );
+          setVerificationEmail(email);
+          setShowVerificationPopup(true);
           return;
         }
         logSuccess(
@@ -380,6 +381,16 @@ const LoginScreen = ({ navigation }) => {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+      <EmailVerificationRequiredPopup
+        visible={showVerificationPopup}
+        email={verificationEmail}
+        onClose={() => setShowVerificationPopup(false)}
+        onResendEmail={(email) => {
+          setShowVerificationPopup(false);
+          // Naviguer vers la page de validation d'email
+          navigation.navigate("EmailValidation", { email });
+        }}
+      />
     </LinearGradient>
   );
 };

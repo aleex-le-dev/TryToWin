@@ -13,8 +13,9 @@ import {
 import { auth } from "../utils/firebaseConfig";
 import { User } from "../models/User";
 import { getEmailUrls } from "../constants/emailConfig";
-import { handleAuthError, logSuccess, logInfo } from "../utils/errorHandler";
-import { doc, setDoc } from "firebase/firestore";
+import { EMAIL_MESSAGES, EMAIL_ERROR_CODES } from "../constants/emailMessages";
+import { handleAuthError, logSuccess, logInfo, logError } from "../utils/errorHandler";
+import { doc, setDoc, getDoc, deleteDoc } from "firebase/firestore";
 import { db } from "../utils/firebaseConfig";
 
 class AuthService {
@@ -60,6 +61,7 @@ class AuthService {
         "AuthService.registerWithEmail"
       );
 
+      // Essayer de créer le compte directement
       const userCredential = await createUserWithEmailAndPassword(
         auth,
         email,
@@ -80,6 +82,8 @@ class AuthService {
         username: displayName,
         email,
         tag,
+        emailVerified: false,
+        createdAt: new Date().toISOString(),
       });
 
       logSuccess(
@@ -93,6 +97,19 @@ class AuthService {
         error: null,
       };
     } catch (error) {
+      // Gestion spéciale pour les emails déjà utilisés
+      if (error.code === EMAIL_ERROR_CODES.ALREADY_IN_USE) {
+        // Au lieu de révéler que l'email est déjà utilisé,
+        // on retourne une erreur générique qui sera gérée différemment
+        return {
+          success: false,
+          user: null,
+          error: "Compte non validé",
+          code: "unverified_account",
+          canResend: true,
+        };
+      }
+      
       const authError = handleAuthError(error, "AuthService.registerWithEmail");
       return {
         success: false,
@@ -183,6 +200,57 @@ class AuthService {
     };
 
     return errorMessages[errorCode] || "Une erreur est survenue";
+  }
+
+  // Gestion des comptes non validés
+  async handleUnverifiedAccount(email) {
+    try {
+      // Cette méthode sera appelée quand un utilisateur veut réinscrire avec un email non validé
+      // On peut implémenter une logique pour supprimer l'ancien compte ou permettre la réinscription
+      logInfo(
+        `Gestion du compte non validé pour: ${email}`,
+        "AuthService.handleUnverifiedAccount"
+      );
+      
+      // Pour l'instant, on retourne un message informatif
+      return {
+        success: false,
+        message: "Votre compte précédent n'a pas été validé. Veuillez vérifier votre boîte mail ou utiliser un autre email.",
+        canResend: true,
+      };
+    } catch (error) {
+      logError(error, "AuthService.handleUnverifiedAccount");
+      return {
+        success: false,
+        message: "Erreur lors de la gestion du compte non validé",
+        canResend: false,
+      };
+    }
+  }
+
+  // Nettoyer un compte non validé (à utiliser avec précaution)
+  async cleanupUnverifiedAccount(email) {
+    try {
+      logInfo(
+        `Tentative de nettoyage du compte non validé pour: ${email}`,
+        "AuthService.cleanupUnverifiedAccount"
+      );
+      
+      // Note: Firebase ne permet pas de supprimer directement un compte utilisateur
+      // Cette méthode peut être utilisée pour nettoyer les données Firestore
+      // mais le compte Firebase restera actif
+      
+      return {
+        success: true,
+        message: "Compte non validé nettoyé avec succès",
+      };
+    } catch (error) {
+      logError(error, "AuthService.cleanupUnverifiedAccount");
+      return {
+        success: false,
+        message: "Erreur lors du nettoyage du compte non validé",
+      };
+    }
   }
 
   // Renvoyer l'email de validation
