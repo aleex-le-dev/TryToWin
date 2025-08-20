@@ -23,6 +23,7 @@ import SupportScreen from "../screens/settingsPage/SupportScreen";
 import PrivacyPolicy from "../screens/settingsPage/PrivacyPolicy";
 import LegalMentions from "../screens/settingsPage/LegalMentions";
 
+
 const Stack = createStackNavigator();
 
 // Écran de chargement pendant la vérification de l'authentification
