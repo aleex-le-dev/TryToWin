@@ -12,6 +12,7 @@ import {
   Image,
   SafeAreaView,
   ActivityIndicator,
+  Dimensions,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import QRCode from "react-native-qrcode-svg";
@@ -28,6 +29,7 @@ import { countries } from "../../constants/countries";
 import { useAccessibility } from "../../contexts/AccessibilityContext";
 import { useTheme } from "../../contexts/ThemeContext";
 import ThemedLayout from "../../components/ThemedLayout";
+import * as Brightness from 'expo-brightness';
 
 // Données fictives pour la démonstration (utilisateurs non connectés)
 // const allUsers = [
@@ -84,6 +86,8 @@ export default function SocialScreen({ route, navigation }) {
   const [userProfile, setUserProfile] = useState(null);
   const [userStats, setUserStats] = useState(null);
   const [userLoading, setUserLoading] = useState(false);
+  const [qrCodeExpanded, setQrCodeExpanded] = useState(false);
+  const [originalBrightness, setOriginalBrightness] = useState(null);
 
   // Charger la carte joueur de l’ami sélectionné
   useEffect(() => {
@@ -368,6 +372,39 @@ export default function SocialScreen({ route, navigation }) {
 
   // Lien unique de profil avec le vrai ID de l'utilisateur connecté
   const myProfileLink = user?.id ? `trytowin://addfriend/${user.id}` : `trytowin://addfriend/1234`;
+
+  // Fonction pour agrandir le QR code en plein écran
+  const expandQRCode = async () => {
+    try {
+      // Sauvegarder la luminosité actuelle
+      const currentBrightness = await Brightness.getBrightnessAsync();
+      setOriginalBrightness(currentBrightness);
+      
+      // Mettre la luminosité au maximum
+      await Brightness.setBrightnessAsync(1.0);
+      
+      // Afficher le QR code en plein écran
+      setQrCodeExpanded(true);
+    } catch (error) {
+      console.error('Erreur lors de l\'expansion du QR code:', error);
+    }
+  };
+
+  // Fonction pour fermer le QR code agrandi
+  const closeExpandedQRCode = async () => {
+    try {
+      // Restaurer la luminosité originale
+      if (originalBrightness !== null) {
+        await Brightness.setBrightnessAsync(originalBrightness);
+      }
+      
+      // Fermer l'affichage plein écran
+      setQrCodeExpanded(false);
+      setOriginalBrightness(null);
+    } catch (error) {
+      console.error('Erreur lors de la fermeture du QR code:', error);
+    }
+  };
 
   // Rechercher des utilisateurs en base de données
   const searchUsers = useCallback(async (searchTerm) => {
@@ -818,22 +855,42 @@ export default function SocialScreen({ route, navigation }) {
        {!selectedFriend && (
          <>
            <Text style={[styles.sectionTitle, { color: theme.text }]}>Partager mon profil</Text>
-           <View style={[styles.shareProfileSection, { backgroundColor: theme.card }, largerSpacing && { padding: 24, marginBottom: 24 }]}>
-             <View style={styles.qrAndLinkRow}>
-               <QRCode value={myProfileLink} size={90} />
-             </View>
-             <TouchableOpacity
-               style={[styles.copyButton, { marginTop: 16, alignSelf: 'center', backgroundColor: theme.surface }]}
-               onPress={openGallery}>
-               <Ionicons name='qr-code' size={20} color={theme.primary} />
-               <Text style={[styles.copyButtonText, { color: theme.primary }]}>Scanner un QR code</Text>
-             </TouchableOpacity>
-           </View>
+                       <View style={[styles.shareProfileSection, { backgroundColor: theme.card }, largerSpacing && { padding: 24, marginBottom: 24 }]}>
+                             <View style={styles.qrAndLinkRow}>
+                 <TouchableOpacity onPress={expandQRCode} activeOpacity={0.7}>
+                   <QRCode value={myProfileLink} size={90} />
+                 </TouchableOpacity>
+                 <View style={[styles.separator, { backgroundColor: theme.border }]} />
+                 <TouchableOpacity
+                   style={[styles.copyButton, { backgroundColor: theme.surface }]}
+                   onPress={openGallery}>
+                   <Ionicons name='qr-code' size={20} color={theme.primary} />
+                   <Text style={[styles.copyButtonText, { color: theme.primary }]}>Scanner un QR code</Text>
+                 </TouchableOpacity>
+               </View>
+            </View>
          </>
        )}
 
-      {/* Scanner QR Code - Interface de traitement */}
-      {scanning && (
+             {/* QR Code agrandi en plein écran */}
+       {qrCodeExpanded && (
+         <View style={styles.qrCodeExpandedOverlay}>
+           <View style={styles.qrCodeExpandedContent}>
+             <TouchableOpacity
+               style={styles.qrCodeCloseButton}
+               onPress={closeExpandedQRCode}>
+               <Ionicons name="close" size={30} color="#fff" />
+             </TouchableOpacity>
+             <View style={styles.qrCodeExpandedContainer}>
+               <QRCode value={myProfileLink} size={300} />
+               <Text style={styles.qrCodeExpandedText}>Scannez ce QR code pour ajouter {user?.displayName || user?.email || 'cet utilisateur'} comme ami</Text>
+             </View>
+           </View>
+         </View>
+       )}
+
+       {/* Scanner QR Code - Interface de traitement */}
+       {scanning && (
         <View style={styles.scannerOverlay}>
           <View style={styles.scannerContent}>
             <Text style={[styles.scannerTitle, { color: theme.primary }]}>Traitement du QR code</Text>
@@ -1021,7 +1078,8 @@ export default function SocialScreen({ route, navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: 25,
+    paddingTop: 35,
+    paddingBottom: 10,
   },
   sectionTitle: {
     fontSize: 18,
@@ -1138,7 +1196,6 @@ const styles = StyleSheet.create({
   },
   shareProfileSection: {
     marginHorizontal: 16,
-    marginTop: 10,
     padding: 20,
     borderRadius: 16,
     elevation: 3,
@@ -1149,7 +1206,13 @@ const styles = StyleSheet.create({
   qrAndLinkRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 18,
+    justifyContent: "space-between",
+    width: "100%",
+  },
+  separator: {
+    width: 1,
+    height: 80,
+    marginHorizontal: 20,
   },
   copyButton: {
     flexDirection: "row",
@@ -1576,11 +1639,53 @@ const styles = StyleSheet.create({
     marginTop: 80,
     marginHorizontal: 16,
   },
-  searchResultsTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    marginBottom: 8,
-  },
+     searchResultsTitle: {
+     fontSize: 16,
+     fontWeight: 'bold',
+     paddingVertical: 10,
+     paddingHorizontal: 12,
+     marginBottom: 8,
+   },
+   
+   // Styles pour le QR code agrandi
+   qrCodeExpandedOverlay: {
+     position: 'absolute',
+     top: 0,
+     left: 0,
+     right: 0,
+     bottom: 0,
+     backgroundColor: '#000000',
+     zIndex: 2000,
+     justifyContent: 'center',
+     alignItems: 'center',
+   },
+   qrCodeExpandedContent: {
+     flex: 1,
+     width: '100%',
+     justifyContent: 'center',
+     alignItems: 'center',
+     position: 'relative',
+   },
+   qrCodeCloseButton: {
+     position: 'absolute',
+     top: 50,
+     right: 20,
+     backgroundColor: 'rgba(0,0,0,0.5)',
+     borderRadius: 25,
+     padding: 10,
+     zIndex: 2001,
+   },
+   qrCodeExpandedContainer: {
+     alignItems: 'center',
+     justifyContent: 'center',
+     padding: 20,
+   },
+   qrCodeExpandedText: {
+     color: '#fff',
+     fontSize: 16,
+     textAlign: 'center',
+     marginTop: 20,
+     paddingHorizontal: 20,
+     lineHeight: 22,
+   },
 });

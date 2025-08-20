@@ -46,7 +46,8 @@
     "yup": "^1.6.1",
     "expo-camera": "~16.1.11",
     "expo-image-picker": "~16.1.4",
-    "expo-linking": "~7.1.7"
+    "expo-linking": "~7.1.7",
+    "expo-brightness": "~13.1.4"
   },
   "expo": {
     "doctor": {
