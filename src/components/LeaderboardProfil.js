@@ -16,6 +16,7 @@ import {
   initializeLeaderboardsForUser,
   getUserAllGameStats,
 } from "../services/scoreService";
+import { generateLeaderboard } from "../utils/leaderboardUtils";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../utils/firebaseConfig";
 import { countries } from "../constants";
@@ -302,34 +303,95 @@ const LeaderboardProfil = ({
           countryPlayersDetails: countryPlayers.map(p => ({ userId: p.userId, points: p.totalPoints }))
         });
         
-        // Trier par points décroissants
-        countryPlayers.sort((a, b) => (b.totalPoints || 0) - (a.totalPoints || 0));
-        
-        data = await Promise.all(
-          countryPlayers.map(async (entry, index) => {
-            let userData = {};
-            try {
-              const userDoc = await getDoc(doc(db, "users", entry.userId));
-              userData = userDoc.exists() ? userDoc.data() : {};
-            } catch (error) {
-              console.log("Erreur lors de la récupération des données utilisateur:", error);
-            }
-            
-            return {
-              userId: entry.userId,
-              username: userData.username || userData.displayName || `Joueur ${entry.userId.slice(0, 6)}`,
-              avatar: userData.photoURL ? undefined : getAvatarUrl(userData.avatar) || "👤",
-              photoURL: userData.photoURL || null,
-              country: entry.country || selectedCountry,
-              totalPoints: entry.totalPoints || 0,
-              totalGames: entry.totalGames || 0,
-              win: entry.win || 0,
-              winRate: entry.winRate || 0,
-              rank: index + 1,
-              isCurrentUser: entry.userId === currentUserId,
-            };
-          })
-        );
+                          // Récupérer les vraies statistiques de chaque joueur pour le classement par pays
+          const playersWithStats = await Promise.all(
+            countryPlayers.map(async (entry) => {
+              try {
+                // Récupérer les données utilisateur pour le nom
+                let userData = {};
+                try {
+                  const userDoc = await getDoc(doc(db, "users", entry.userId));
+                  userData = userDoc.exists() ? userDoc.data() : {};
+                } catch (error) {
+                  console.log("Erreur lors de la récupération des données utilisateur:", error);
+                }
+                
+                // Récupérer les statistiques complètes du joueur
+                const allStats = await getUserAllGameStats(entry.userId);
+                let totalPoints = 0;
+                let totalGames = 0;
+                let totalWins = 0;
+                
+                // Calculer les statistiques globales
+                Object.values(allStats.gamesPlayed || {}).forEach((gameStats) => {
+                  totalPoints += gameStats.totalPoints || 0;
+                  totalGames += gameStats.totalGames || 0;
+                  totalWins += gameStats.win || 0;
+                });
+                
+                const winRate = totalGames > 0 ? Math.round((totalWins / totalGames) * 100) : 0;
+                
+                                 return {
+                   userId: entry.userId,
+                   name: userData.username || userData.displayName || `Joueur ${entry.userId.slice(0, 6)}`,
+                   points: totalPoints,
+                   country: entry.country || selectedCountry,
+                   win: totalWins,
+                   draw: 0,
+                   lose: 0,
+                   totalGames: totalGames,
+                   winRate: winRate,
+                   currentStreak: 0,
+                   totalPoints: totalPoints,
+                 };
+              } catch (error) {
+                                 // Fallback vers les données de base si erreur
+                 return {
+                   userId: entry.userId,
+                   name: `Joueur ${entry.userId.slice(0, 6)}`,
+                   points: entry.totalPoints || 0,
+                   country: entry.country || selectedCountry,
+                   win: entry.win || 0,
+                   draw: 0,
+                   lose: 0,
+                   totalGames: entry.totalGames || 0,
+                   winRate: entry.winRate || 0,
+                   currentStreak: 0,
+                   totalPoints: entry.totalPoints || 0,
+                 };
+              }
+            })
+          );
+         
+                  // Trier par points décroissants
+         playersWithStats.sort((a, b) => (b.points || 0) - (a.points || 0));
+         
+         // Mapper directement les données comme dans le classement mondial
+         data = await Promise.all(
+           playersWithStats.map(async (entry, index) => {
+             let userData = {};
+             try {
+               const userDoc = await getDoc(doc(db, "users", entry.userId));
+               userData = userDoc.exists() ? userDoc.data() : {};
+             } catch (error) {
+               console.log("Erreur lors de la récupération des données utilisateur:", error);
+             }
+             
+             return {
+               userId: entry.userId,
+               username: entry.name || userData.username || userData.displayName || `Joueur ${entry.userId.slice(0, 6)}`,
+               avatar: userData.photoURL ? undefined : getAvatarUrl(userData.avatar) || "👤",
+               photoURL: userData.photoURL || null,
+               country: entry.country || selectedCountry,
+               totalPoints: entry.points || 0,
+               totalGames: entry.totalGames || 0,
+               win: entry.win || 0,
+               winRate: entry.winRate || 0,
+               rank: index + 1,
+               isCurrentUser: entry.userId === currentUserId,
+             };
+           })
+         );
 
         // Trouver le rang de l'utilisateur actuel dans le classement du pays
         const currentUserEntry = data.find(player => player.userId === currentUserId);

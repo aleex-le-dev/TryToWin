@@ -59,13 +59,13 @@ export function generateLeaderboard(
     return (a.name || "").localeCompare(b.name || "");
   });
 
-  // Attribution des rangs pour classement dense strict
-  let prevPoints = null;
+  // Attribution des rangs pour classement dense (même rang pour même points)
   let rank = 1;
+  let prevPoints = null;
 
   allPlayers.forEach((player) => {
-    if (player.points !== prevPoints) {
-      rank = allPlayers.indexOf(player) + 1;
+    if (prevPoints !== null && player.points !== prevPoints) {
+      rank++;
     }
     player.rank = rank;
     prevPoints = player.points;

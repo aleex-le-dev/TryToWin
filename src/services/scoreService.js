@@ -514,7 +514,7 @@ export async function getUserGlobalRank(userId) {
     const userIndex = leaderboard.findIndex((entry) => entry.userId === userId);
     if (userIndex === -1) return { rank: null, total: leaderboard.length };
 
-    // Gestion des égalités de rang
+    // Gestion des égalités de rang (classement dense)
     let rank = 1;
     for (let i = 0; i < userIndex; i++) {
       if (leaderboard[i].totalPoints > leaderboard[i + 1].totalPoints) {
@@ -540,7 +540,7 @@ export async function getUserRankInCountryLeaderboard(userId, game, country) {
   try {
     // Récupérer tous les utilisateurs du pays
     const usersSnap = await getDocs(collection(db, "users"));
-    const leaderboard = [];
+    const players = [];
     for (const userDoc of usersSnap.docs) {
       const userProfile = userDoc.data();
       if ((userProfile.country || "FR") !== country) continue;
@@ -550,23 +550,43 @@ export async function getUserRankInCountryLeaderboard(userId, game, country) {
       const data = scoreSnap.exists() ? scoreSnap.data() : {};
       // Inclure tous les utilisateurs du pays qui ont une entrée de score
       if (scoreSnap.exists()) {
-        leaderboard.push({
+        players.push({
           userId: userDoc.id,
-          totalPoints: data.totalPoints || 0,
+          name: userProfile.username || userProfile.displayName || "Joueur",
+          points: data.totalPoints || 0,
+          country: userProfile.country || "FR",
+          win: data.win || 0,
+          draw: data.draw || 0,
+          lose: data.lose || 0,
+          totalGames: data.totalGames || 0,
+          winRate: data.winRate || 0,
+          currentStreak: data.currentStreak || 0,
         });
       }
     }
-    leaderboard.sort((a, b) => b.totalPoints - a.totalPoints);
-    const userIndex = leaderboard.findIndex((entry) => entry.userId === userId);
-    if (userIndex === -1) return { rank: null, total: leaderboard.length };
-    // Gestion des égalités de rang
-    let rank = 1;
-    for (let i = 0; i < userIndex; i++) {
-      if (leaderboard[i].totalPoints > leaderboard[i + 1].totalPoints) {
-        rank = i + 2;
-      }
-    }
-    return { rank, total: leaderboard.length };
+
+    // Utiliser generateLeaderboard pour la cohérence avec le classement mondial
+    const userProfile = await getDoc(doc(db, "users", userId));
+    const userProfileData = userProfile.exists() ? userProfile.data() : {};
+    const userScoreDoc = await getDoc(doc(db, "users", userId, "scores", game));
+    const userStats = userScoreDoc.exists() ? userScoreDoc.data() : {};
+
+    const leaderboard = generateLeaderboard(
+      players,
+      {
+        id: userId,
+        displayName: userProfileData.username || userProfileData.displayName || "Vous",
+        email: userProfileData.email,
+      },
+      userStats,
+      userProfileData.country || "FR"
+    );
+
+    const myEntry = leaderboard.find((p) => p.isCurrentUser);
+    return {
+      rank: myEntry ? myEntry.rank : null,
+      total: leaderboard.length,
+    };
   } catch (error) {
     return { rank: null, total: 0 };
   }
