@@ -356,14 +356,18 @@ export async function getGlobalLeaderboard(topN = null) {
 
 
         // Inclure TOUS les utilisateurs, même ceux avec 0 points
-        leaderboard.push({
+        const playerEntry = {
           userId,
           totalPoints,
           totalGames,
+          win: totalWins, // Ajouter le champ win pour les victoires
           totalWins,
           winRate:
             totalGames > 0 ? Math.round((totalWins / totalGames) * 100) : 0,
-        });
+        };
+        
+        console.log("[SCORE] getGlobalLeaderboard player entry", { userId, playerEntry });
+        leaderboard.push(playerEntry);
       } catch (userError) {
 
         // Ajouter quand même l'utilisateur avec 0 points
@@ -371,6 +375,7 @@ export async function getGlobalLeaderboard(topN = null) {
           userId,
           totalPoints: 0,
           totalGames: 0,
+          win: 0, // Ajouter le champ win pour les victoires
           totalWins: 0,
           winRate: 0,
         });

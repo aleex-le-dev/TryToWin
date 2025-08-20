@@ -200,7 +200,7 @@ const LeaderboardProfil = ({
               console.log("Erreur lors de la récupération des données utilisateur:", error);
             }
 
-            return {
+            const playerData = {
               userId: entry.userId,
               username: userData.username || userData.displayName || `Joueur ${entry.userId.slice(0, 6)}`,
               avatar: userData.photoURL ? undefined : getAvatarUrl(userData.avatar) || "👤",
@@ -213,6 +213,9 @@ const LeaderboardProfil = ({
               rank: index + 1,
               isCurrentUser: entry.userId === currentUserId,
             };
+            
+            console.log("[LEADERBOARD] Player data mapped", { userId: entry.userId, playerData });
+            return playerData;
           })
         );
 
