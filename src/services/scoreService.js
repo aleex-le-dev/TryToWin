@@ -233,6 +233,7 @@ export async function getUserAllGameStats(userId) {
  */
 export async function getLeaderboard(game, topN = 10, currentUser = null) {
   try {
+    console.log("[SCORE] getLeaderboard start", { game, topN, hasCurrentUser: !!currentUser });
     const usersSnap = await getDocs(collection(db, "users"));
     const leaderboard = [];
 
@@ -242,8 +243,17 @@ export async function getLeaderboard(game, topN = 10, currentUser = null) {
       const scoreSnap = await getDoc(doc(db, "users", userId, "scores", game));
       if (scoreSnap.exists()) {
         const data = scoreSnap.data() || {};
+        console.log("[SCORE] getLeaderboard user score", {
+          game,
+          userId,
+          totalGames: data.totalGames || 0,
+          win: data.win || 0,
+          draw: data.draw || 0,
+          lose: data.lose || 0,
+          totalPoints: data.totalPoints || 0,
+        });
         if ((data.totalGames || 0) > 0) {
-          leaderboard.push({
+          const playerData = {
             userId,
             name:
               userProfile.username ||
@@ -260,15 +270,34 @@ export async function getLeaderboard(game, topN = 10, currentUser = null) {
             currentStreak: data.currentStreak || 0,
             avatar: userProfile.avatar || null,
             email: userProfile.email || null,
-          });
+          };
+          console.log("[SCORE] getLeaderboard player data", { game, userId, playerData });
+          leaderboard.push(playerData);
+        } else {
+          console.log("[SCORE] getLeaderboard skipped (no games)", { game, userId });
         }
       }
     }
 
     // Ajout/actualisation de l'utilisateur courant si besoin
+    console.log("[SCORE] getLeaderboard pre-generate", { game, playersCount: leaderboard.length });
     const leaderboardSorted = generateLeaderboard(leaderboard);
+    console.log(
+      "[SCORE] getLeaderboard done",
+      {
+        game,
+        resultCount: leaderboardSorted?.length || 0,
+        sample: (leaderboardSorted || []).slice(0, 3).map((p) => ({
+          userId: p.userId,
+          points: p.totalPoints,
+          win: p.win,
+          totalGames: p.totalGames,
+        })),
+      }
+    );
     return leaderboardSorted;
   } catch (error) {
+    console.log("[SCORE] getLeaderboard error", { game, error: error?.message || error });
     return [];
   }
 }

@@ -415,8 +415,9 @@ const Puissance4 = ({ navigation }) => {
 
     if (user?.id) {
       try {
-        console.log("🎮 PUISSANCE4: Sauvegarde du résultat...");
+        console.log("🎮 PUISSANCE4: Sauvegarde du résultat...", { userId: user.id, game: "Puissance4", resultatBDD });
         await recordGameResult(user.id, "Puissance4", resultatBDD, 0);
+        console.log("🎮 PUISSANCE4: Résultat sauvegardé, rafraîchissement stats/classements");
         await actualiserStatsClassements();
         const points = GAME_POINTS["Puissance4"][resultatBDD];
         const mult = getSerieMultiplier(statsJeu.currentStreak);
@@ -439,7 +440,7 @@ const Puissance4 = ({ navigation }) => {
         });
         setShowResultOverlay(true);
       } catch (error) {
-        console.log("🎮 PUISSANCE4: Erreur lors de la sauvegarde:", error);
+        console.log("🎮 PUISSANCE4: Erreur lors de la sauvegarde:", error?.message || error);
       }
     } else {
       console.log(

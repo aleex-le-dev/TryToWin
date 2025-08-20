@@ -104,7 +104,20 @@ const GameDetailsScreen = ({ route, navigation }) => {
             const userCountry = userProfile.country || "FR"; // Pays par défaut
 
             // Charger le classement
+            console.log("[DEBUG] getLeaderboard call", { gameId, topN: 51, userId: user.id });
             const leaderboard = await getLeaderboard(gameId, 51, user);
+            try {
+              console.log("[DEBUG] getLeaderboard result", {
+                gameId,
+                count: leaderboard?.length || 0,
+                sample: (leaderboard || []).slice(0, 3).map((p) => ({
+                  userId: p.userId,
+                  totalPoints: p.totalPoints,
+                  win: p.win,
+                  totalGames: p.totalGames,
+                })),
+              });
+            } catch {}
             const processedLeaderboard = leaderboard.map((item, index) => ({
               id: item.userId,
               // Utiliser le vrai nom d'utilisateur pour l'utilisateur actuel
@@ -123,6 +136,17 @@ const GameDetailsScreen = ({ route, navigation }) => {
                 ? countries.find((c) => c.code === userCountry) || countries[0]
                 : countries[index % countries.length],
             }));
+            try {
+              (processedLeaderboard || []).slice(0, 5).forEach((row) => {
+                console.log("[DEBUG] leaderboard row", {
+                  userId: row.id,
+                  rank: row.rank,
+                  win: row.win,
+                  gamesPlayed: row.gamesPlayed,
+                  score: row.score,
+                });
+              });
+            } catch {}
             setLeaderboardData(processedLeaderboard);
             console.log(
               "📊 Nombre de joueurs dans le classement:",

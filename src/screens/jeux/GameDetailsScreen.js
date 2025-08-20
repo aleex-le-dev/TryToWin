@@ -137,7 +137,20 @@ const GameDetailsScreen = ({ route, navigation }) => {
 
             // Charger le classement
             await ensureScoreEntry(user.id, gameId);
+            console.log(`[DEBUG] getLeaderboard call`, { gameId, topN: 51, userId: user.id });
             const leaderboard = await getLeaderboard(gameId, 51, user);
+            try {
+              console.log(`[DEBUG] getLeaderboard result`, {
+                gameId,
+                count: leaderboard?.length || 0,
+                sample: (leaderboard || []).slice(0, 3).map((p) => ({
+                  userId: p.userId,
+                  totalPoints: p.totalPoints,
+                  win: p.win,
+                  totalGames: p.totalGames,
+                })),
+              });
+            } catch {}
 
             console.log(
               `[DEBUG] Classement chargé pour ${gameId}:`,
@@ -166,7 +179,7 @@ const GameDetailsScreen = ({ route, navigation }) => {
                   } catch (e) {}
                 }
 
-                return {
+                const mapped = {
                   id: item.userId,
                   username: item.isCurrentUser
                     ? userUsername
@@ -190,6 +203,16 @@ const GameDetailsScreen = ({ route, navigation }) => {
                       ) || { code: "", name: "Monde", flag: "🌍" }
                     : countries[index % countries.length],
                 };
+                try {
+                  console.log("[DEBUG] leaderboard item mapped", {
+                    userId: mapped.id,
+                    rank: mapped.rank,
+                    win: mapped.win,
+                    gamesPlayed: mapped.gamesPlayed,
+                    score: mapped.score,
+                  });
+                } catch {}
+                return mapped;
               })
             );
             setLeaderboardData(processedLeaderboard);

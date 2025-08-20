@@ -219,7 +219,9 @@ const Othello = ({ navigation }) => {
             const points = GAME_POINTS["Othello"][resultatBDD];
             const mult = getSerieMultiplier(stats.currentStreak);
             const pointsAvecMultiplicateur = mult > 0 ? Math.round(points * (1 + mult)) : points;
+            console.log("[Othello] recordGameResult", { userId: user.id, game: "Othello", resultatBDD, points, mult, pointsAvecMultiplicateur });
             await recordGameResult(user.id, "Othello", resultatBDD, 0);
+            console.log("[Othello] recordGameResult done, refresh leaderboards");
             await actualiserStatsClassements();
             setResultData({
               result: resultatBDD,

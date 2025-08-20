@@ -14,6 +14,18 @@ export function generateLeaderboard(
   userStats = {},
   userCountry = "FR"
 ) {
+  try {
+    console.log("[LEADERBOARD] generateLeaderboard input", {
+      playersCount: Array.isArray(players) ? players.length : 0,
+      hasUser: !!user,
+      userStats: {
+        totalPoints: userStats?.totalPoints || 0,
+        totalGames: userStats?.totalGames || 0,
+        win: userStats?.win || 0,
+      },
+      userCountry,
+    });
+  } catch {}
   let allPlayers = [...players];
 
   // Ajouter l'utilisateur connecté avec ses vraies données
@@ -60,26 +72,35 @@ export function generateLeaderboard(
   });
 
   // Mapping final pour compatibilité avec l'affichage
-  return allPlayers.map((player, index) => ({
+  const mapped = allPlayers.map((player, index) => ({
     userId: player.userId || `player_${index}`,
     username: player.name,
     gameId: player.gameId || "demo",
     totalPoints: player.points,
     rank: player.rank,
-    win: player.isCurrentUser ? player.win : Math.floor(player.points / 10),
-    draw: player.isCurrentUser ? player.draw : Math.floor(player.points / 20),
-    lose: player.isCurrentUser ? player.lose : Math.floor(player.points / 30),
-    totalGames: player.isCurrentUser
-      ? player.totalGames
-      : Math.floor(player.points / 5),
+    win: player.win || 0,
+    draw: player.draw || 0,
+    lose: player.lose || 0,
+    totalGames: player.totalGames || 0,
     winRate: player.isCurrentUser
       ? player.winRate
-      : Math.floor(
-          (Math.floor(player.points / 10) / Math.floor(player.points / 5)) * 100
-        ),
+      : (player.totalGames > 0 ? Math.round((player.win / player.totalGames) * 100) : 0),
     isCurrentUser: player.isCurrentUser || false,
     country: player.country,
     currentStreak: player.isCurrentUser ? player.currentStreak : 0,
 
   }));
+  try {
+    console.log("[LEADERBOARD] generateLeaderboard output", {
+      count: mapped.length,
+      sample: mapped.slice(0, 3).map((p) => ({
+        userId: p.userId,
+        totalPoints: p.totalPoints,
+        win: p.win,
+        totalGames: p.totalGames,
+        isCurrentUser: p.isCurrentUser,
+      })),
+    });
+  } catch {}
+  return mapped;
 }

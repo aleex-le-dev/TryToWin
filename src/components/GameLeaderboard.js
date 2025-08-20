@@ -121,6 +121,7 @@ const GameLeaderboard = ({
                 <View key={item.key} style={{ height: 40 }} />
               ) : (
                 <TouchableOpacity activeOpacity={0.8} onPress={() => onPressPlayer && onPressPlayer(item)}>
+                  {(() => { try { console.log("[UI] Render leaderboard item", { userId: item.userId || item.id, rank: item.rank, win: item.win, gamesPlayed: item.gamesPlayed, score: item.score }); } catch {} })()}
                   <View
                     style={[
                       styles.leaderboardItem,
