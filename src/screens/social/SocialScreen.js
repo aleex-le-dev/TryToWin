@@ -119,6 +119,15 @@ export default function SocialScreen({ route, navigation }) {
   const [qrCodeExpanded, setQrCodeExpanded] = useState(false);
   const [originalBrightness, setOriginalBrightness] = useState(null);
 
+  // Debug: montage et changements d'état clés
+  useEffect(() => {
+    console.log('[Social] mounted');
+  }, []);
+
+  useEffect(() => {
+    console.log('[Social] selectedFriend changed =>', selectedFriend?.id || null);
+  }, [selectedFriend?.id]);
+
   // Charger la carte joueur de l’ami sélectionné
   useEffect(() => {
     const loadFriend = async () => {
@@ -242,18 +251,23 @@ export default function SocialScreen({ route, navigation }) {
 
   // Écouter les messages en temps réel pour le chat actuel
   useEffect(() => {
-    if (!selectedFriend || !user?.id) return;
+    if (!selectedFriend || !user?.id) {
+      console.log('[Social] messages listener not attached (no friend or user)');
+      return;
+    }
 
     const chatId = [user.id, selectedFriend.id].sort().join('_');
     const messagesRef = collection(db, 'chats', chatId, 'messages');
     const qMsg = query(messagesRef, orderBy('timestamp', 'asc'));
 
+    console.log('[Social] attach messages listener chatId=', chatId);
     const unsubscribe = onSnapshot(qMsg, (snapshot) => {
       const newMessages = [];
       snapshot.forEach((d) => {
         newMessages.push({ id: d.id, ...d.data() });
       });
       setMessages(newMessages);
+      console.log('[Social] messages count =', newMessages.length);
       
       // Marquer les messages comme lus quand on ouvre le chat
       if (selectedFriend) {
@@ -265,7 +279,10 @@ export default function SocialScreen({ route, navigation }) {
       Toast.show({ type: 'error', text1: 'Erreur messages', text2: 'Permissions insuffisantes', position: 'top', topOffset: 40 });
     });
 
-    return unsubscribe;
+    return () => {
+      console.log('[Social] detach messages listener chatId=', chatId);
+      unsubscribe();
+    };
   }, [selectedFriend, user?.id, markAllAsRead]);
 
   // Marquer les messages comme lus dans Firestore
@@ -728,10 +745,20 @@ export default function SocialScreen({ route, navigation }) {
           style={[
             styles.messageBubble,
             isMine ? styles.myMessage : styles.theirMessage,
-            { backgroundColor: isMine ? theme.surface : theme.card, borderColor: theme.border }
+            { backgroundColor: isMine ? theme.primary : theme.card, borderColor: isMine ? theme.primary : theme.border }
           ]}>
-          <Text style={[styles.messageText, { color: theme.text }]}>{item.text}</Text>
-          <Text style={[styles.messageTime, { color: theme.textSecondary }]}>{messageTime}</Text>
+          <Text style={[
+            styles.messageText, 
+            { color: isMine ? '#fff' : theme.text }
+          ]}>
+            {item.text}
+          </Text>
+          <Text style={[
+            styles.messageTime, 
+            { color: isMine ? 'rgba(255,255,255,0.7)' : theme.textSecondary }
+          ]}>
+            {messageTime}
+          </Text>
         </View>
       );
     },
@@ -752,13 +779,14 @@ export default function SocialScreen({ route, navigation }) {
         <View style={styles.friendInfo}>
           <Text style={[styles.friendName, { color: theme.text }]}>{item.username}</Text>
           <View style={styles.friendStatusRow}>
+            <Text style={[styles.onlineStatus, { color: theme.textSecondary }]}>
+              {onlineStatus[item.id] ? 'En ligne' : 'Hors ligne'}
+            </Text>
+            <View style={{ width: 6 }} />
             <View style={[
               styles.onlineIndicatorInline,
               { backgroundColor: onlineStatus[item.id] ? '#4cd137' : '#ff6b6b' }
             ]} />
-            <Text style={[styles.onlineStatus, { color: theme.textSecondary }]}>
-              {onlineStatus[item.id] ? 'En ligne' : 'Hors ligne'}
-            </Text>
           </View>
         </View>
         <View style={styles.friendActions}>
@@ -856,133 +884,88 @@ export default function SocialScreen({ route, navigation }) {
 
   // Affichage du chat avec un ami
   const renderChat = () => (
-    <View style={styles.chatContainer}>
+    <View
+      style={{
+        flex: 1,
+        backgroundColor: theme.background,
+        paddingTop: insets.top,
+        paddingBottom: Math.max(insets.bottom, 8),
+      }}
+    >
+      {/* En-tête du chat */}
       <View style={[styles.chatHeader, { backgroundColor: theme.card, borderBottomColor: theme.border }]}>
         <TouchableOpacity
-          style={[styles.backButton, largeTouchTargets && { padding: 10 }]}
+          style={styles.backButton}
           onPress={() => setSelectedFriend(null)}>
-          <Ionicons name='arrow-back' size={22} color={theme.primary} />
+          <Ionicons name='arrow-back' size={24} color={theme.primary} />
         </TouchableOpacity>
         <View style={styles.chatHeaderInfo}>
           <Text style={[styles.chatTitle, { color: theme.text }]}>{selectedFriend?.username}</Text>
           <View style={styles.chatStatus}>
+            <Text style={[styles.chatStatusText, { color: theme.textSecondary }]}>
+              {onlineStatus[selectedFriend?.id] ? 'En ligne' : 'Hors ligne'}
+            </Text>
+            <View style={{ width: 6 }} />
             <View style={[
               styles.onlineIndicatorInline,
               { backgroundColor: onlineStatus[selectedFriend?.id] ? '#4cd137' : '#ff6b6b' }
             ]} />
-            <Text style={[styles.chatStatusText, { color: theme.textSecondary }]}>
-              {onlineStatus[selectedFriend?.id] ? 'En ligne' : 'Hors ligne'}
-            </Text>
           </View>
         </View>
       </View>
-      
-      {typingStatus[selectedFriend?.id] && (
-        <View style={[styles.typingIndicator, { backgroundColor: theme.surface }]}>
-          <Text style={[styles.typingText, { color: theme.text }]}>{selectedFriend?.username} est en train d'écrire...</Text>
-        </View>
-      )}
 
-      <FlatList
-        data={messages}
-        keyExtractor={(item) => item.id}
-        renderItem={renderMessage}
-        style={{ flex: 1 }}
-        ListHeaderComponent={selectedFriend ? (
-          <View style={[styles.friendCard, { backgroundColor: theme.card }]}>
-            {friendProfile?.bannerImage ? (
-              <Image source={{ uri: friendProfile.bannerImage }} style={styles.friendCardBanner} resizeMode='cover' />
-            ) : (
-              <View style={[styles.friendCardBanner, { backgroundColor: friendProfile?.bannerColor || theme.surface }]} />
-            )}
-            <View style={styles.friendCardAvatarWrap}>
-              {friendProfile?.photoURL ? (
-                <Image source={{ uri: friendProfile.photoURL }} style={styles.friendCardAvatar} />
-              ) : (
-                <View style={[styles.friendCardAvatar, { backgroundColor: theme.primary, alignItems: 'center', justifyContent: 'center' }]}>
-                  <Text style={{ color: '#fff', fontSize: 22, fontWeight: 'bold' }}>
-                    {(friendProfile?.username || selectedFriend?.username || 'U').slice(0,1).toUpperCase()}
-                  </Text>
-                </View>
-              )}
-            </View>
-            <Text style={[styles.friendCardName, { color: theme.text }]}>{friendProfile?.username || selectedFriend?.username || 'Utilisateur'}</Text>
-            <View style={styles.friendCardCountryRow}>
-              <Text style={styles.friendCardCountryFlag}>
-                {countries.find((c) => c.code === friendProfile?.country)?.flag || '🌍'}
-              </Text>
-              <Text style={[styles.friendCardCountryName, { color: theme.textSecondary }]}>
-                {countries.find((c) => c.code === friendProfile?.country)?.name || ''}
+      {/* Zone des messages */}
+      <View style={[styles.messagesContainer, { paddingHorizontal: 16, paddingBottom: 8 }]}>
+        <FlatList
+          data={messages}
+          keyExtractor={(item) => item.id}
+          renderItem={renderMessage}
+          style={{ flex: 1 }}
+          ListEmptyComponent={
+            <View style={{ paddingVertical: 50, alignItems: 'center' }}>
+              <Ionicons name='chatbubbles-outline' size={48} color={theme.textSecondary} />
+              <Text style={{ color: theme.textSecondary, marginTop: 16, fontSize: 16 }}>
+                Commencez la conversation
               </Text>
             </View>
-            <View style={styles.friendCardStatsRow}>
-              <View style={styles.friendCardStat}>
-                <Ionicons name='trophy' size={18} color='#FFD700' />
-                <Text style={[styles.friendCardStatValue, { color: theme.text }]}>{friendStats?.totalPoints ?? 0}</Text>
-                <Text style={[styles.friendCardStatLabel, { color: theme.textSecondary }]}>Points</Text>
-              </View>
-              <View style={styles.friendCardStat}>
-                {(() => {
-                  const gd = gamesData.find(g => g.id === friendStats?.bestGameId);
-                  if (!gd) return <Ionicons name='extension-puzzle' size={18} color={theme.primary} />;
-                  const img = gd.image;
-                  if (typeof img === 'string') {
-                    return <Text style={{ fontSize: 18 }}>{img}</Text>;
-                  }
-                  return <Image source={img} style={{ width: 22, height: 22 }} resizeMode='contain' />;
-                })()}
-                <Text style={[styles.friendCardStatValue, { color: theme.text }]}>{friendStats?.bestGameId || '-'}</Text>
-                <Text style={[styles.friendCardStatLabel, { color: theme.textSecondary }]}>Meilleur jeu</Text>
-              </View>
-              <View style={styles.friendCardStat}>
-                <Ionicons name='trending-up' size={18} color='#96CEB4' />
-                <Text style={[styles.friendCardStatValue, { color: theme.text }]}>{friendStats?.winRate ?? 0}%</Text>
-                <Text style={[styles.friendCardStatLabel, { color: theme.textSecondary }]}>Victoires</Text>
-              </View>
-            </View>
-            {!!friendProfile?.bio && (
-              <Text style={[styles.friendCardBio, { color: theme.primary }]}>« {friendProfile.bio} »</Text>
-            )}
-          </View>
-        ) : null}
-        ListHeaderComponentStyle={{ zIndex: 1, elevation: 2 }}
-        ListEmptyComponent={selectedFriend ? (
-          <View style={{ paddingVertical: 24, alignItems: 'center' }}>
-            <Ionicons name='chatbubbles-outline' size={22} color={theme.textSecondary} />
-            <Text style={{ color: theme.textSecondary, marginTop: 6 }}>Commencez la conversation</Text>
-          </View>
-        ) : null}
-        contentContainerStyle={{ paddingBottom: largerSpacing ? 120 : 80 }}
-        keyboardShouldPersistTaps='handled'
-        removeClippedSubviews={true}
-        maxToRenderPerBatch={10}
-        windowSize={10}
-        inverted={false}
-      />
-      
-      <View style={styles.inputRow}>
+          }
+          contentContainerStyle={{ paddingBottom: 20 }}
+          keyboardShouldPersistTaps='handled'
+        />
+      </View>
+
+      {/* Zone de saisie */}
+      <View
+        style={[
+          styles.inputRow,
+          {
+            backgroundColor: theme.card,
+            borderTopWidth: 1,
+            borderTopColor: theme.border,
+            paddingBottom: Math.max(insets.bottom, 12),
+          },
+        ]}
+      >
         <TextInput
-          style={[styles.input, 
-            { backgroundColor: theme.card, color: theme.text, borderColor: theme.border },
-            largeTouchTargets && { paddingVertical: 12, fontSize: 16 }
+          style={[
+            styles.input,
+            { backgroundColor: theme.card, color: theme.text, borderColor: theme.border }
           ]}
           value={input}
-          onChangeText={(text) => {
-            setInput(text);
-            if (text.length > 0 && !isTyping) {
-              setIsTyping(true);
-              handleTyping(true);
-            } else if (text.length === 0 && isTyping) {
-              setIsTyping(false);
-              handleTyping(false);
-            }
-          }}
+          onChangeText={setInput}
           placeholder='Votre message...'
           placeholderTextColor={theme.placeholder}
           multiline={false}
         />
-        <TouchableOpacity onPress={sendMessage} style={[styles.sendButton, largeTouchTargets && { padding: 10 }]} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-          <Ionicons name='send' size={26} color={theme.primary} />
+        <TouchableOpacity 
+          onPress={sendMessage} 
+          style={styles.sendButton}
+          disabled={!input.trim()}>
+          <Ionicons 
+            name='send' 
+            size={24} 
+            color={input.trim() ? theme.primary : theme.textSecondary} 
+          />
         </TouchableOpacity>
       </View>
     </View>
@@ -990,229 +973,232 @@ export default function SocialScreen({ route, navigation }) {
 
   // Affichage principal : recherche, liste d'amis et d'utilisateurs
   return (
-    <View style={[styles.container, { backgroundColor: theme.background }]}>
-      <View style={{ paddingTop: insets.top + 10 }}>
-             {/* Section Partager mon profil (affichée uniquement hors conversation) */}
-       {!selectedFriend && (
-         <>
-           <Text style={[styles.sectionTitle, { color: theme.text }]}>Partager mon profil</Text>
-                       <View style={[styles.shareProfileSection, { backgroundColor: theme.card }, largerSpacing && { padding: 24, marginBottom: 24 }]}>
-                             <View style={styles.qrAndLinkRow}>
-                 <TouchableOpacity onPress={expandQRCode} activeOpacity={0.7}>
-                   <QRCode value={myProfileLink} size={90} />
-                 </TouchableOpacity>
-                 <View style={[styles.separator, { backgroundColor: theme.border }]} />
-                 <TouchableOpacity
-                   style={[styles.copyButton, { backgroundColor: theme.surface }]}
-                   onPress={openGallery}>
-                   <Ionicons name='qr-code' size={20} color={theme.primary} />
-                   <Text style={[styles.copyButtonText, { color: theme.primary }]}>Scanner un QR code</Text>
-                 </TouchableOpacity>
-               </View>
+    <View
+      style={{
+        flex: 1,
+        backgroundColor: theme.background,
+        paddingTop: insets.top + 10,
+        paddingBottom: Math.max(insets.bottom, 8),
+      }}
+    >
+        {selectedFriend ? (
+          // Afficher le chat si un ami est sélectionné
+          renderChat()
+        ) : (
+          // Afficher la liste des amis et la recherche si aucun ami n'est sélectionné
+          <>
+            {/* Section Partager mon profil (affichée uniquement hors conversation) */}
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>Partager mon profil</Text>
+            <View style={[styles.shareProfileSection, { backgroundColor: theme.card }, largerSpacing && { padding: 24, marginBottom: 24 }]}>
+              <View style={styles.qrAndLinkRow}>
+                <TouchableOpacity onPress={expandQRCode} activeOpacity={0.7}>
+                  <QRCode value={myProfileLink} size={90} />
+                </TouchableOpacity>
+                <View style={[styles.separator, { backgroundColor: theme.border }]} />
+                <TouchableOpacity
+                  style={[styles.copyButton, { backgroundColor: theme.surface }]}
+                  onPress={openGallery}>
+                  <Ionicons name='qr-code' size={20} color={theme.primary} />
+                  <Text style={[styles.copyButtonText, { color: theme.primary }]}>Scanner un QR code</Text>
+                </TouchableOpacity>
+              </View>
             </View>
-         </>
-       )}
 
-             {/* QR Code agrandi en plein écran */}
-       {qrCodeExpanded && (
-         <View style={styles.qrCodeExpandedOverlay}>
-           <View style={styles.qrCodeExpandedContent}>
-             <TouchableOpacity
-               style={styles.qrCodeCloseButton}
-               onPress={closeExpandedQRCode}>
-               <Ionicons name="close" size={30} color="#fff" />
-             </TouchableOpacity>
-             <View style={styles.qrCodeExpandedContainer}>
-               <QRCode value={myProfileLink} size={300} />
-               <Text style={styles.qrCodeExpandedText}>Scannez ce QR code pour ajouter {user?.displayName || user?.email || 'cet utilisateur'} comme ami</Text>
-             </View>
-           </View>
-         </View>
-       )}
-
-       {/* Scanner QR Code - Interface de traitement */}
-       {scanning && (
-        <View style={styles.scannerOverlay}>
-          <View style={styles.scannerContent}>
-            <Text style={[styles.scannerTitle, { color: theme.primary }]}>Traitement du QR code</Text>
-            {selectedImage && (
-              <Image 
-                source={{ uri: selectedImage }} 
-                style={[styles.selectedImage, { borderColor: theme.primary }]}
-                resizeMode="contain"
-              />
+            {/* QR Code agrandi en plein écran */}
+            {qrCodeExpanded && (
+              <View style={styles.qrCodeExpandedOverlay}>
+                <View style={styles.qrCodeExpandedContent}>
+                  <TouchableOpacity
+                    style={styles.qrCodeCloseButton}
+                    onPress={closeExpandedQRCode}>
+                    <Ionicons name="close" size={30} color="#fff" />
+                  </TouchableOpacity>
+                  <View style={styles.qrCodeExpandedContainer}>
+                    <QRCode value={myProfileLink} size={300} />
+                    <Text style={styles.qrCodeExpandedText}>Scannez ce QR code pour ajouter {user?.displayName || user?.email || 'cet utilisateur'} comme ami</Text>
+                  </View>
+                </View>
+              </View>
             )}
-            <Text style={[styles.scannerMessage, { color: theme.textSecondary }]}>
-              Analyse de l'image en cours...
-            </Text>
-            <View style={styles.loadingIndicator}>
-              <Ionicons name="sync" size={24} color={theme.primary} />
-              <Text style={[styles.loadingText, { color: theme.primary }]}>Traitement...</Text>
-            </View>
-            <TouchableOpacity 
-              onPress={() => {
-                setScanning(false);
-                setSelectedImage(null);
-              }} 
-              style={[styles.scannerButton, { backgroundColor: theme.primary }]}>
-              <Text style={styles.scannerButtonText}>Annuler</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      )}
 
-      {/* Toast pour feedback */}
-      <Toast />
-      {selectedFriend ? (
-        renderChat()
-      ) : (
-        <>
-          <Text style={[styles.sectionTitle, { color: theme.text }]}>Rechercher une personne</Text>
-          <View style={[styles.searchContainer, { backgroundColor: theme.card, borderColor: theme.border }]}>
-            <Ionicons
-              name='search'
-              size={20}
-              color={theme.primary}
-              style={{ marginRight: 8 }}
-            />
-            <TextInput
-              style={[styles.searchInput, { color: theme.text }]}
-              placeholder="Nom d'utilisateur..."
-              placeholderTextColor={theme.placeholder}
-              value={search}
-              onChangeText={(text) => {
-                setSearch(text);
-                // Ne lancer la recherche qu'après 2 caractères
-                if (text.length >= 2) {
-                  searchUsers(text);
-                } else if (text.length < 2) {
-                  setSearchResults([]);
-                  setSearchLoading(false);
-                }
-              }}
-              multiline={false}
-            />
-          </View>
+            {/* Scanner QR Code - Interface de traitement */}
+            {scanning && (
+              <View style={styles.scannerOverlay}>
+                <View style={styles.scannerContent}>
+                  <Text style={[styles.scannerTitle, { color: theme.primary }]}>Traitement du QR code</Text>
+                  {selectedImage && (
+                    <Image 
+                      source={{ uri: selectedImage }} 
+                      style={[styles.selectedImage, { borderColor: theme.primary }]}
+                      resizeMode="contain"
+                    />
+                  )}
+                  <Text style={[styles.scannerMessage, { color: theme.textSecondary }]}>
+                    Analyse de l'image en cours...
+                  </Text>
+                  <View style={styles.loadingIndicator}>
+                    <Ionicons name="sync" size={24} color={theme.primary} />
+                    <Text style={[styles.loadingText, { color: theme.primary }]}>Traitement...</Text>
+                  </View>
+                  <TouchableOpacity 
+                    onPress={() => {
+                      setScanning(false);
+                      setSelectedImage(null);
+                    }} 
+                    style={[styles.scannerButton, { backgroundColor: theme.primary }]}>
+                    <Text style={styles.scannerButtonText}>Annuler</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
 
-          {/* Résultats de recherche */}
-          {searchLoading && search.length >= 2 && (
-            <View style={styles.searchLoadingContainer}>
-              <ActivityIndicator size="small" color={theme.primary} />
-              <Text style={[styles.searchLoadingText, { color: theme.textSecondary }]}>Recherche en cours...</Text>
-            </View>
-          )}
-
-          {searchResults.length > 0 && (
-            <View style={styles.searchResultsContainer}>
-              {searchResults.map((item) => (
-                <View key={item.id} style={[
-                  styles.userItemContainer,
-                  selectedUser && selectedUser.id === item.id && {
-                    ...styles.userItemContainerExpanded,
-                    backgroundColor: theme.card,
-                    borderWidth: 1,
-                    borderColor: theme.border,
-                    position: 'relative',
-                    zIndex: selectedUser && selectedUser.id === item.id ? 10 : 1,
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>Rechercher une personne</Text>
+            <View style={[styles.searchContainer, { backgroundColor: theme.card, borderColor: theme.border }]}>
+              <Ionicons
+                name='search'
+                size={20}
+                color={theme.primary}
+                style={{ marginRight: 8 }}
+              />
+              <TextInput
+                style={[styles.searchInput, { color: theme.text }]}
+                placeholder="Nom d'utilisateur..."
+                placeholderTextColor={theme.placeholder}
+                value={search}
+                onChangeText={(text) => {
+                  setSearch(text);
+                  // Ne lancer la recherche qu'après 2 caractères
+                  if (text.length >= 2) {
+                    searchUsers(text);
+                  } else if (text.length < 2) {
+                    setSearchResults([]);
+                    setSearchLoading(false);
                   }
-                ]}>
-                  {/* Ligne du joueur qui s'agrandit vers le haut */}
-                  <View style={[
-                    styles.userItemExpanded,
+                }}
+                multiline={false}
+              />
+            </View>
+
+            {/* Résultats de recherche */}
+            {searchLoading && search.length >= 2 && (
+              <View style={styles.searchLoadingContainer}>
+                <ActivityIndicator size="small" color={theme.primary} />
+                <Text style={[styles.searchLoadingText, { color: theme.textSecondary }]}>Recherche en cours...</Text>
+              </View>
+            )}
+
+            {searchResults.length > 0 && (
+              <View style={styles.searchResultsContainer}>
+                {searchResults.map((item) => (
+                  <View key={item.id} style={[
+                    styles.userItemContainer,
                     selectedUser && selectedUser.id === item.id && {
-                      position: 'absolute',
-                      bottom: 0,
-                      left: 0,
-                      right: 0,
-                      minHeight: 300,
+                      ...styles.userItemContainerExpanded,
                       backgroundColor: theme.card,
                       borderWidth: 1,
                       borderColor: theme.border,
-                      borderRadius: 12,
+                      position: 'relative',
                       zIndex: selectedUser && selectedUser.id === item.id ? 10 : 1,
-                      elevation: selectedUser && selectedUser.id === item.id ? 5 : 1,
-                      shadowColor: '#000',
-                      shadowOffset: { width: 0, height: -2 },
-                      shadowOpacity: selectedUser && selectedUser.id === item.id ? 0.1 : 0,
-                      shadowRadius: 4,
                     }
                   ]}>
-                    {/* Ligne du joueur - reste en bas */}
-                    <TouchableOpacity
-                      style={[
-                        styles.userItem, 
-                        { 
-                          backgroundColor: theme.card,
-                          position: 'absolute',
-                          bottom: 0,
-                          left: 0,
-                          right: 0,
-                        }
-                      ]}
-                      onPress={() => selectedUser && selectedUser.id === item.id ? setSelectedUser(null) : handleUserSelect(item)}
-                      activeOpacity={0.7}>
-                      <View style={styles.avatarContainer}>
-                        {item.photoURL ? (
-                          <Image source={{ uri: item.photoURL }} style={styles.userAvatar} />
-                        ) : (
-                          <Text style={[styles.userAvatarText, { color: theme.primary }]}>{item.avatar}</Text>
-                        )}
-                      </View>
-                      <View style={styles.userInfo}>
-                        <Text style={[styles.userName, { color: theme.text }]}>{item.username}</Text>
-                        {item.bio && (
-                          <Text style={[styles.userBio, { color: theme.textSecondary }]} numberOfLines={1}>
-                            {item.bio}
-                          </Text>
-                        )}
-                        {item.isFriend && (
-                          <Text style={[styles.userFriendStatus, { color: theme.primary }]}>
-                            ✓ Déjà ami
-                          </Text>
-                        )}
-                      </View>
-                      {!item.isFriend ? (
-                        <TouchableOpacity
-                          onPress={() => addFriend(item)}
-                          style={[styles.addFriendButton, { backgroundColor: theme.primary }]}>
-                          <Ionicons name='add' size={20} color='#fff' />
-                        </TouchableOpacity>
-                      ) : (
-                        <View style={[styles.friendIndicator, { backgroundColor: theme.primary }]}>
-                          <Ionicons name='checkmark' size={20} color='#fff' />
+                    {/* Ligne du joueur qui s'agrandit vers le haut */}
+                    <View style={[
+                      styles.userItemExpanded,
+                      selectedUser && selectedUser.id === item.id && {
+                        position: 'absolute',
+                        bottom: 0,
+                        left: 0,
+                        right: 0,
+                        minHeight: 300,
+                        backgroundColor: theme.card,
+                        borderWidth: 1,
+                        borderColor: theme.border,
+                        borderRadius: 12,
+                        zIndex: selectedUser && selectedUser.id === item.id ? 10 : 1,
+                        elevation: selectedUser && selectedUser.id === item.id ? 5 : 1,
+                        shadowColor: '#000',
+                        shadowOffset: { width: 0, height: -2 },
+                        shadowOpacity: selectedUser && selectedUser.id === item.id ? 0.1 : 0,
+                        shadowRadius: 4,
+                      }
+                    ]}>
+                      {/* Ligne du joueur - reste en bas */}
+                      <TouchableOpacity
+                        style={[
+                          styles.userItem, 
+                          { 
+                            backgroundColor: theme.card,
+                            position: 'absolute',
+                            bottom: 0,
+                            left: 0,
+                            right: 0,
+                          }
+                        ]}
+                        onPress={() => selectedUser && selectedUser.id === item.id ? setSelectedUser(null) : handleUserSelect(item)}
+                        activeOpacity={0.7}>
+                        <View style={styles.avatarContainer}>
+                          {item.photoURL ? (
+                            <Image source={{ uri: item.photoURL }} style={styles.userAvatar} />
+                          ) : (
+                            <Text style={[styles.userAvatarText, { color: theme.primary }]}>{item.avatar}</Text>
+                          )}
                         </View>
-                      )}
-                    </TouchableOpacity>
+                        <View style={styles.userInfo}>
+                          <Text style={[styles.userName, { color: theme.text }]}>{item.username}</Text>
+                          {item.bio && (
+                            <Text style={[styles.userBio, { color: theme.textSecondary }]} numberOfLines={1}>
+                              {item.bio}
+                            </Text>
+                          )}
+                          {item.isFriend && (
+                            <Text style={[styles.userFriendStatus, { color: theme.primary }]}>
+                              ✓ Déjà ami
+                            </Text>
+                          )}
+                        </View>
+                        {!item.isFriend ? (
+                          <TouchableOpacity
+                            onPress={() => addFriend(item)}
+                            style={[styles.addFriendButton, { backgroundColor: theme.primary }]}>
+                            <Ionicons name='add' size={20} color='#fff' />
+                          </TouchableOpacity>
+                        ) : (
+                          <View style={[styles.friendIndicator, { backgroundColor: theme.primary }]}>
+                            <Ionicons name='checkmark' size={20} color='#fff' />
+                          </View>
+                        )}
+                      </TouchableOpacity>
+                    </View>
                   </View>
-                </View>
-              ))}
-            </View>
-          )}
+                ))}
+              </View>
+            )}
 
-          {/* Message quand la recherche est vide mais qu'il y a du texte */}
-          {search.length >= 2 && !searchLoading && searchResults.length === 0 && (
-            <View style={styles.searchEmptyContainer}>
-              <Text style={[styles.searchEmptyText, { color: theme.textSecondary }]}>
-                Aucun utilisateur trouvé pour "{search}"
-              </Text>
-            </View>
-          )}
+            {/* Message quand la recherche est vide mais qu'il y a du texte */}
+            {search.length >= 2 && !searchLoading && searchResults.length === 0 && (
+              <View style={styles.searchEmptyContainer}>
+                <Text style={[styles.searchEmptyText, { color: theme.textSecondary }]}>
+                  Aucun utilisateur trouvé pour "{search}"
+                </Text>
+              </View>
+            )}
 
-          <Text style={[styles.sectionTitle, { color: theme.text }]}>Amis</Text>
-          <FlatList
-            data={friends}
-            keyExtractor={(item) => item.id}
-            renderItem={renderFriend}
-            ListEmptyComponent={
-              <Text style={[styles.emptyText, { color: theme.textSecondary }]}>Aucun ami pour l'instant.</Text>
-            }
-            removeClippedSubviews={true}
-            maxToRenderPerBatch={10}
-            windowSize={10}
-          />
-        </>
-      )}
-      </View>
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>Amis</Text>
+            <FlatList
+              data={friends}
+              keyExtractor={(item) => item.id}
+              renderItem={renderFriend}
+              ListEmptyComponent={
+                <Text style={[styles.emptyText, { color: theme.textSecondary }]}>Aucun ami pour l'instant.</Text>
+              }
+              removeClippedSubviews={true}
+              maxToRenderPerBatch={10}
+              windowSize={10}
+            />
+          </>
+        )}
+      {/* Toast pour feedback */}
+      <Toast />
     </View>
   );
 }
@@ -1251,77 +1237,85 @@ const styles = StyleSheet.create({
     marginVertical: 10,
     marginHorizontal: 16,
   },
-  chatContainer: { flex: 1 },
+  chatContainer: { 
+    flex: 1
+  },
+  messagesContainer: { 
+    flex: 1,
+    paddingHorizontal: 16
+  },
   chatHeader: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 10,
+    padding: 16,
     borderBottomWidth: 1,
+    elevation: 2,
   },
   backButton: {
-    padding: 5,
+    padding: 8,
+    marginRight: 12,
   },
   chatHeaderInfo: {
     flex: 1,
-    marginLeft: 10,
   },
   chatTitle: {
     fontSize: 18,
     fontWeight: "bold",
+    marginBottom: 4,
   },
   chatStatus: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: 2,
   },
   chatStatusText: {
     fontSize: 13,
-    marginLeft: 5,
+    marginLeft: 6,
   },
-  onlineIndicator: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    marginRight: 5,
-  },
-  typingIndicator: {
-    alignSelf: "center",
-    padding: 8,
-    borderRadius: 10,
-    marginTop: 10,
-    marginBottom: 10,
-  },
-  typingText: {
-    fontSize: 14,
+  onlineIndicatorInline: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
   },
   messageBubble: {
-    padding: 10,
-    borderRadius: 10,
-    marginVertical: 4,
+    padding: 12,
+    borderRadius: 16,
+    marginVertical: 6,
     maxWidth: "80%",
     borderWidth: 1,
   },
-  myMessage: { alignSelf: "flex-end" },
-  theirMessage: { alignSelf: "flex-start" },
-  messageText: { fontSize: 15 },
-  messageTime: {
-    fontSize: 11,
-    marginTop: 4,
-    alignSelf: "flex-end",
-    fontStyle: "italic",
+  myMessage: { 
+    alignSelf: "flex-end"
   },
-  inputRow: { flexDirection: "row", alignItems: "center", marginTop: 10 },
+  theirMessage: { 
+    alignSelf: "flex-start"
+  },
+  messageText: { 
+    fontSize: 16,
+    color: '#fff',
+  },
+  messageTime: {
+    fontSize: 12,
+    marginTop: 6,
+    alignSelf: "flex-end",
+    opacity: 0.7,
+  },
+  inputRow: { 
+    flexDirection: "row", 
+    alignItems: "center", 
+    padding: 16
+  },
   input: {
     flex: 1,
     borderRadius: 20,
     paddingHorizontal: 16,
-    paddingVertical: 10,
-    fontSize: 15,
+    paddingVertical: 12,
+    fontSize: 16,
     borderWidth: 1,
-    marginRight: 10,
+    marginRight: 12,
   },
   sendButton: {
-    padding: 6,
+    padding: 12,
+    borderRadius: 20
   },
   backText: { marginLeft: 5, fontSize: 15 },
   searchContainer: {
@@ -1386,10 +1380,9 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   onlineIndicatorInline: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    marginRight: 5,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
   },
   friendInfo: {
     flex: 1,
