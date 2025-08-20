@@ -20,7 +20,7 @@ import QRCode from "react-native-qrcode-svg";
 import Toast from "react-native-toast-message";
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from "../../hooks/useAuth";
-import { doc, getDoc, getDocs, collection, setDoc, deleteDoc, onSnapshot, updateDoc, serverTimestamp, query, orderBy, where, addDoc } from "firebase/firestore";
+import { doc, getDoc, getDocs, collection, setDoc, deleteDoc, onSnapshot, updateDoc, serverTimestamp, query, orderBy, where, addDoc, writeBatch } from "firebase/firestore";
 import { db } from "../../utils/firebaseConfig";
 import { subscribeFriends, subscribeBlocked, addFriend as addFriendSvc, removeFriend as removeFriendSvc } from "../../services/friendsService";
 import { useFocusEffect } from "@react-navigation/native";
@@ -29,6 +29,7 @@ import { gamesData } from "../../constants/gamesData";
 import { countries } from "../../constants/countries";
 import { useAccessibility } from "../../contexts/AccessibilityContext";
 import { useTheme } from "../../contexts/ThemeContext";
+import { useUnreadMessages } from "../../contexts/UnreadMessagesContext";
 import ThemedLayout from "../../components/ThemedLayout";
 import * as Brightness from 'expo-brightness';
 
@@ -44,6 +45,7 @@ export default function SocialScreen({ route, navigation }) {
   const { user } = useAuth();
   const { highContrast, largeTouchTargets, largerSpacing } = useAccessibility();
   const { theme } = useTheme();
+  const { unreadMessages, updateUnreadMessages, markAllAsRead } = useUnreadMessages();
   // Liste d'amis simulée
   const [friends, setFriends] = useState([]);
   const [friendsRaw, setFriendsRaw] = useState([]);
@@ -71,9 +73,11 @@ export default function SocialScreen({ route, navigation }) {
       return onSnapshot(userRef, (doc) => {
         if (doc.exists()) {
           const userData = doc.data();
+          const isOnline = userData.isOnline || false;
+          console.log(`[SocialScreen] Statut ${friend.username}: ${isOnline ? 'En ligne' : 'Hors ligne'}`);
           setOnlineStatus(prev => ({
             ...prev,
-            [friend.id]: userData.isOnline || false
+            [friend.id]: isOnline
           }));
         }
       }, (error) => {
@@ -207,6 +211,36 @@ export default function SocialScreen({ route, navigation }) {
 
   // Écouter les messages en temps réel (désactivé temporairement)
   useEffect(() => {
+    if (!friendsRaw || !user?.id) return;
+
+    // Écouter les messages non lus de tous les amis
+    const unsubscribers = friendsRaw.map(friend => {
+      const chatId = [user.id, friend.id].sort().join('_');
+      const messagesRef = collection(db, 'chats', chatId, 'messages');
+      
+      // Requête simplifiée sans index composite
+      return onSnapshot(messagesRef, (snapshot) => {
+        let unreadCount = 0;
+        snapshot.forEach((doc) => {
+          const messageData = doc.data();
+          // Compter les messages non lus de l'ami (pas de l'utilisateur actuel)
+          if (messageData.senderId !== user.id && !messageData.read) {
+            unreadCount++;
+          }
+        });
+        updateUnreadMessages(friend.id, unreadCount);
+      }, (err) => {
+        console.error(`Erreur écoute messages ${friend.id}:`, err);
+      });
+    });
+
+    return () => {
+      unsubscribers.forEach(unsub => unsub());
+    };
+  }, [friendsRaw, user?.id, updateUnreadMessages]);
+
+  // Écouter les messages en temps réel pour le chat actuel
+  useEffect(() => {
     if (!selectedFriend || !user?.id) return;
 
     const chatId = [user.id, selectedFriend.id].sort().join('_');
@@ -219,12 +253,46 @@ export default function SocialScreen({ route, navigation }) {
         newMessages.push({ id: d.id, ...d.data() });
       });
       setMessages(newMessages);
+      
+      // Marquer les messages comme lus quand on ouvre le chat
+      if (selectedFriend) {
+        markAllAsRead(selectedFriend.id);
+        // Marquer aussi les messages comme lus dans Firestore
+        markMessagesAsReadInFirestore(chatId);
+      }
     }, (err) => {
       Toast.show({ type: 'error', text1: 'Erreur messages', text2: 'Permissions insuffisantes', position: 'top', topOffset: 40 });
     });
 
     return unsubscribe;
-  }, [selectedFriend, user?.id]);
+  }, [selectedFriend, user?.id, markAllAsRead]);
+
+  // Marquer les messages comme lus dans Firestore
+  const markMessagesAsReadInFirestore = async (chatId) => {
+    try {
+      const messagesRef = collection(db, 'chats', chatId, 'messages');
+      
+      // Récupérer tous les messages et filtrer côté client
+      const snapshot = await getDocs(messagesRef);
+      const batch = writeBatch(db);
+      let hasUpdates = false;
+      
+      snapshot.forEach((doc) => {
+        const messageData = doc.data();
+        // Marquer comme lus seulement les messages non lus de l'ami (pas de l'utilisateur actuel)
+        if (messageData.senderId !== user?.id && !messageData.read) {
+          batch.update(doc.ref, { read: true });
+          hasUpdates = true;
+        }
+      });
+      
+      if (hasUpdates) {
+        await batch.commit();
+      }
+    } catch (error) {
+      console.error('Erreur marquage messages lus:', error);
+    }
+  };
 
   // Gérer la frappe (désactivé temporairement)
   const handleTyping = useCallback(async (isTyping) => {
@@ -679,18 +747,29 @@ export default function SocialScreen({ route, navigation }) {
         activeOpacity={0.7}>
         <View style={styles.avatarContainer}>
           <Ionicons name='person-circle' size={28} color={theme.primary} />
-          <View style={[
-            styles.onlineIndicator,
-            { backgroundColor: onlineStatus[item.id] ? '#4cd137' : '#ff6b6b' }
-          ]} />
         </View>
         <View style={styles.friendInfo}>
           <Text style={[styles.friendName, { color: theme.text }]}>{item.username}</Text>
-          <Text style={[styles.onlineStatus, { color: theme.textSecondary }]}>
-            {onlineStatus[item.id] ? 'En ligne' : 'Hors ligne'}
-          </Text>
+          <View style={styles.friendStatusRow}>
+            <View style={[
+              styles.onlineIndicatorInline,
+              { backgroundColor: onlineStatus[item.id] ? '#4cd137' : '#ff6b6b' }
+            ]} />
+            <Text style={[styles.onlineStatus, { color: theme.textSecondary }]}>
+              {onlineStatus[item.id] ? 'En ligne' : 'Hors ligne'}
+            </Text>
+          </View>
         </View>
-        <Ionicons name='chatbubble-ellipses' size={20} color={theme.accent} />
+        <View style={styles.friendActions}>
+          <Ionicons name='chatbubble-ellipses' size={20} color={theme.accent} />
+          {unreadMessages[item.id] > 0 && (
+            <View style={styles.unreadBadge}>
+              <Text style={styles.unreadCount}>
+                {unreadMessages[item.id] > 99 ? '99+' : unreadMessages[item.id]}
+              </Text>
+            </View>
+          )}
+        </View>
         {longPressedFriendId === item.id && (
           <TouchableOpacity
             onPress={() => removeFriend(item.id)}
@@ -700,7 +779,7 @@ export default function SocialScreen({ route, navigation }) {
         )}
       </TouchableOpacity>
     ),
-    [longPressedFriendId, removeFriend, onlineStatus, theme]
+    [longPressedFriendId, removeFriend, onlineStatus, theme, unreadMessages]
   );
 
   // Rendu des résultats de recherche
@@ -787,7 +866,7 @@ export default function SocialScreen({ route, navigation }) {
           <Text style={[styles.chatTitle, { color: theme.text }]}>{selectedFriend?.username}</Text>
           <View style={styles.chatStatus}>
             <View style={[
-              styles.onlineIndicator,
+              styles.onlineIndicatorInline,
               { backgroundColor: onlineStatus[selectedFriend?.id] ? '#4cd137' : '#ff6b6b' }
             ]} />
             <Text style={[styles.chatStatusText, { color: theme.textSecondary }]}>
@@ -1197,6 +1276,12 @@ const styles = StyleSheet.create({
     fontSize: 13,
     marginLeft: 5,
   },
+  onlineIndicator: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    marginRight: 5,
+  },
   typingIndicator: {
     alignSelf: "center",
     padding: 8,
@@ -1298,11 +1383,39 @@ const styles = StyleSheet.create({
     height: 12,
     borderRadius: 6,
   },
+  onlineIndicatorInline: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    marginRight: 5,
+  },
   friendInfo: {
     flex: 1,
   },
   onlineStatus: {
     fontSize: 12,
+  },
+  friendStatusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 2,
+  },
+  friendActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginLeft: 10,
+  },
+  unreadBadge: {
+    backgroundColor: '#FF6B6B',
+    borderRadius: 10,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    marginLeft: 5,
+  },
+  unreadCount: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: 'bold',
   },
 
   scannerOverlay: {

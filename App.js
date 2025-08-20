@@ -8,6 +8,7 @@ import AppNavigator from './src/navigation/AppNavigator';
 import CustomToast from './src/components/CustomToast';
 import { AccessibilityProvider } from './src/contexts/AccessibilityContext';
 import { ThemeProvider } from './src/contexts/ThemeContext';
+import { UnreadMessagesProvider } from './src/contexts/UnreadMessagesContext';
 import ThemedApp from './src/components/ThemedApp';
 import ThemedStatusBar from './src/components/ThemedStatusBar';
 
@@ -19,11 +20,13 @@ export default function App() {
           <ToastProvider>
             <AccessibilityProvider>
               <ThemeProvider>
-                <ThemedStatusBar />
-                <ThemedApp>
-                  <AppNavigator />
+                <UnreadMessagesProvider>
+                  <ThemedStatusBar />
+                  <ThemedApp>
+                    <AppNavigator />
+                  </ThemedApp>
                   <CustomToast />
-                </ThemedApp>
+                </UnreadMessagesProvider>
               </ThemeProvider>
             </AccessibilityProvider>
           </ToastProvider>

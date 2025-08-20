@@ -5,6 +5,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../contexts/ThemeContext";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Platform } from "react-native";
+import { View, Text, StyleSheet } from "react-native";
+import { useUnreadMessages } from "../contexts/UnreadMessagesContext";
 
 // Import des écrans
 import GameScreen from "../screens/jeux/GameScreen";
@@ -43,6 +45,20 @@ const GamesStack = ({ resetCategoryTrigger, forceHomeReset }) => {
   );
 };
 
+// Composant pour l'icône avec pastille de notification
+const TabBarIcon = ({ name, focused, color, size, badgeCount = 0 }) => (
+  <View style={{ position: 'relative' }}>
+    <Ionicons name={name} size={size} color={color} />
+    {badgeCount > 0 && (
+      <View style={styles.badge}>
+        <Text style={styles.badgeText}>
+          {badgeCount > 99 ? '99+' : badgeCount}
+        </Text>
+      </View>
+    )}
+  </View>
+);
+
 // Navigateur principal avec barre de navigation en bas
 const MainTabNavigator = () => {
   const [resetCategoryTrigger, setResetCategoryTrigger] = React.useState(0);
@@ -51,27 +67,40 @@ const MainTabNavigator = () => {
   const [forceHomeReset, setForceHomeReset] = React.useState(0);
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
+  const { getTotalUnreadMessages } = useUnreadMessages();
 
   // Détection si on est sur Android avec navigation par geste
-  const isAndroidWithGesture = Platform.OS === 'android';
-  const bottomPadding = isAndroidWithGesture ? Math.max(insets.bottom, 10) : 5;
-  const tabBarHeight = isAndroidWithGesture ? 60 + Math.max(insets.bottom, 10) : 60;
+  const isAndroidWithGestureNav = Platform.OS === 'android' && insets.bottom > 0;
+  const bottomPadding = isAndroidWithGestureNav ? Math.max(insets.bottom, 10) : 5;
+  const tabBarHeight = isAndroidWithGestureNav ? 60 + Math.max(insets.bottom, 10) : 60;
 
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
         tabBarIcon: ({ focused, color, size }) => {
           let iconName;
+          let badgeCount = 0;
 
-          if (route.name === "Games") {
-            iconName = focused ? "game-controller" : "game-controller-outline";
-          } else if (route.name === "Profile") {
-            iconName = focused ? "person" : "person-outline";
-          } else if (route.name === "Social") {
-            iconName = focused ? "people" : "people-outline";
+          if (route.name === 'Home') {
+            iconName = focused ? 'home' : 'home-outline';
+          } else if (route.name === 'Games') {
+            iconName = focused ? 'game-controller' : 'game-controller-outline';
+          } else if (route.name === 'Social') {
+            iconName = focused ? 'people' : 'people-outline';
+            badgeCount = getTotalUnreadMessages();
+          } else if (route.name === 'Profile') {
+            iconName = focused ? 'person' : 'person-outline';
           }
 
-          return <Ionicons name={iconName} size={size} color={color} />;
+          return (
+            <TabBarIcon 
+              name={iconName} 
+              focused={focused} 
+              color={color} 
+              size={size} 
+              badgeCount={badgeCount}
+            />
+          );
         },
         tabBarActiveTintColor: "#667eea",
         tabBarInactiveTintColor: theme.textSecondary,
@@ -157,3 +186,23 @@ const MainTabNavigator = () => {
 };
 
 export default MainTabNavigator;
+
+const styles = StyleSheet.create({
+  badge: {
+    position: 'absolute',
+    top: -5,
+    right: -5,
+    backgroundColor: 'red',
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1,
+  },
+  badgeText: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+});
