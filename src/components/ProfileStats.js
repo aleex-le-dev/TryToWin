@@ -5,7 +5,6 @@ import {
   StyleSheet,
   ScrollView,
   ActivityIndicator,
-  TouchableOpacity,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { gamesData as GAMES_DATA } from "../constants/gamesData";
@@ -160,7 +159,7 @@ const ProfileStats = ({
         {/* Statistiques par jeu */}
         {statsByGame && Object.keys(statsByGame).length > 0 && (
           <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: theme.text }]}>Par jeu (debug)</Text>
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>Par jeu</Text>
             <View
               style={{
                 flexDirection: "row",
@@ -211,20 +210,6 @@ const ProfileStats = ({
                 </View>
               );
             })}
-          </View>
-        )}
-
-        {/* Bouton de génération de données de test */}
-        {typeof generateAllGamesTestData === "function" && (
-          <View style={styles.testDataSection}>
-            <TouchableOpacity
-              style={[styles.testDataButton, { backgroundColor: gameColor }]}
-              onPress={generateAllGamesTestData}>
-              <Ionicons name='refresh-outline' size={20} color='#fff' />
-              <Text style={styles.testDataButtonText}>
-                Générer des données de test
-              </Text>
-            </TouchableOpacity>
           </View>
         )}
       </View>

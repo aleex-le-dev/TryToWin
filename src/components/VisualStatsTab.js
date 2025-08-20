@@ -8,7 +8,6 @@ import {
   Text,
   Dimensions,
   ScrollView,
-  TouchableOpacity,
 } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { gamesData } from "../constants/gamesData";
@@ -174,26 +173,7 @@ const VisualStatsTab = ({
           ))}
         </View>
       )}
-      {/* Bouton DEBUG : Générer des données de test (toujours visible, centré) */}
-      {typeof generateAllGamesTestData === "function" && (
-        <View style={{ alignItems: "center", marginTop: 10, marginBottom: 20 }}>
-          <TouchableOpacity
-            style={{
-              backgroundColor: "#667eea",
-              borderRadius: 18,
-              paddingVertical: 10,
-              paddingHorizontal: 22,
-              flexDirection: "row",
-              alignItems: "center",
-            }}
-            onPress={generateAllGamesTestData}>
-            <Ionicons name='refresh-outline' size={20} color='#fff' />
-            <Text style={{ color: "#fff", fontWeight: "bold", marginLeft: 8 }}>
-              Générer des données de test pour tous les jeux
-            </Text>
-          </TouchableOpacity>
-        </View>
-      )}
+      {/* Espace réservé si besoin d'actions futures */}
     </ScrollView>
   );
 };

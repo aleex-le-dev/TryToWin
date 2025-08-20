@@ -428,29 +428,80 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
   // Fonction fetchLeaderboard déplacée en dehors du useEffect pour être accessible
   const fetchLeaderboard = async () => {
     if (!user?.id) return;
-    const leaderboard = await getGlobalLeaderboard(100);
-    // Récupère les profils utilisateurs pour enrichir chaque entrée
-    const enriched = await Promise.all(
-      leaderboard.map(async (entry) => {
-        const userDoc = await getDoc(doc(db, "users", entry.userId));
-        const userData = userDoc.exists() ? userDoc.data() : {};
-        return {
-          ...entry,
-          username: userData.username || entry.userId,
-          avatar: userData.avatar || "👤",
-          country: userData.country || null,
-        };
-      })
-    );
-    // Filtrage pays si besoin
-    let filtered = enriched;
-    if (leaderboardType === "country") {
-      filtered = enriched.filter((e) => e.country === selectedCountry.code);
+    
+    try {
+      console.log("Fetching leaderboard...");
+      
+      // Récupérer TOUS les utilisateurs (pas de limite)
+      const leaderboard = await getGlobalLeaderboard();
+      console.log("Raw leaderboard data:", leaderboard);
+      
+      if (!leaderboard || leaderboard.length === 0) {
+        console.log("No leaderboard data received");
+        setTop10Global([]);
+        return;
+      }
+      
+      // Récupère les profils utilisateurs pour enrichir chaque entrée
+      const enriched = await Promise.all(
+        leaderboard.map(async (entry) => {
+          try {
+            const userDoc = await getDoc(doc(db, "users", entry.userId));
+            const userData = userDoc.exists() ? userDoc.data() : {};
+            return {
+              ...entry,
+              username: userData.username || userData.displayName || entry.userId,
+              avatar: userData.avatar || "👤",
+              country: userData.country || null,
+            };
+          } catch (error) {
+            console.log("Error fetching user data for", entry.userId, error);
+            return {
+              ...entry,
+              username: entry.userId,
+              avatar: "👤",
+              country: null,
+            };
+          }
+        })
+      );
+      
+      console.log("Enriched leaderboard data:", enriched);
+      
+      // Filtrage pays si besoin
+      let filtered = enriched;
+      if (leaderboardType === "country") {
+        filtered = enriched.filter((e) => e.country === selectedCountry.code);
+      }
+      
+      // Calcul du rang de l'utilisateur connecté dans le classement complet
+      const userIndex = enriched.findIndex((e) => e.userId === user.id);
+      setUserRank(userIndex >= 0 ? userIndex + 1 : null);
+      
+      // Afficher le top 10 mais s'assurer que l'utilisateur connecté soit visible
+      let displayData = filtered.slice(0, 10);
+      
+      // Si l'utilisateur connecté n'est pas dans le top 10, l'ajouter à la fin
+      if (userIndex >= 0 && userIndex >= 10) {
+        const currentUserEntry = enriched[userIndex];
+        if (currentUserEntry) {
+          // Remplacer le dernier du top 10 par l'utilisateur connecté
+          displayData[9] = {
+            ...currentUserEntry,
+            username: currentUserEntry.username,
+            avatar: currentUserEntry.avatar,
+            country: currentUserEntry.country,
+          };
+        }
+      }
+      
+      console.log("Final display data:", displayData);
+      setTop10Global(displayData);
+      
+    } catch (error) {
+      console.error("Error in fetchLeaderboard:", error);
+      setTop10Global([]);
     }
-    // Calcul du rang de l'utilisateur connecté
-    const userIndex = enriched.findIndex((e) => e.userId === user.id);
-    setUserRank(userIndex >= 0 ? userIndex + 1 : null);
-    setTop10Global(filtered.slice(0, 10));
   };
 
   // Rafraîchissement automatique des stats quand on revient sur l'écran

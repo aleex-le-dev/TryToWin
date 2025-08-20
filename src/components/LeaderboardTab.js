@@ -24,18 +24,20 @@ const LeaderboardTab = ({
   userId,
 }) => {
   // Animation d'apparition
-  const animatedValues = top10Global.map(() => new Animated.Value(0));
+  const animatedValues = (top10Global || []).map(() => new Animated.Value(0));
   React.useEffect(() => {
-    Animated.stagger(
-      80,
-      animatedValues.map((a) =>
-        Animated.timing(a, { toValue: 1, duration: 400, useNativeDriver: true })
-      )
-    ).start();
+    if (top10Global && top10Global.length > 0) {
+      Animated.stagger(
+        80,
+        animatedValues.map((a) =>
+          Animated.timing(a, { toValue: 1, duration: 400, useNativeDriver: true })
+        )
+      ).start();
+    }
   }, [top10Global]);
 
   // Score max pour la barre de progression
-  const maxScore = top10Global.length > 0 ? top10Global[0].totalPoints : 1;
+  const maxScore = (top10Global && top10Global.length > 0) ? Math.max(...top10Global.map(item => item.totalPoints || 0)) : 1;
 
   return (
     <View style={{ padding: 20 }}>
@@ -113,7 +115,7 @@ const LeaderboardTab = ({
       </View>
       {/* Liste du classement */}
       <FlatList
-        data={leaderboardType === "global" ? top10Global : top10Country}
+        data={leaderboardType === "global" ? (top10Global || []) : (top10Country || [])}
         renderItem={({ item, index }) => {
           // Médaille animée top 3
           let medal = null;
@@ -238,10 +240,18 @@ const LeaderboardTab = ({
         scrollEnabled={false}
         style={{ marginBottom: 20 }}
         ListEmptyComponent={
-          <Text
-            style={{ color: "#6c757d", textAlign: "center", marginTop: 20 }}>
-            Aucun joueur trouvé pour ce pays.
-          </Text>
+          <View style={{ alignItems: "center", marginTop: 20, padding: 20 }}>
+            <Text style={{ color: "#6c757d", textAlign: "center", fontSize: 16 }}>
+              {leaderboardType === "global" 
+                ? "Chargement du classement mondial..." 
+                : "Aucun joueur trouvé pour ce pays."}
+            </Text>
+            {leaderboardType === "global" && (
+              <Text style={{ color: "#6c757d", textAlign: "center", marginTop: 10, fontSize: 14 }}>
+                Tous les joueurs sont inclus, même ceux avec 0 point
+              </Text>
+            )}
+          </View>
         }
       />
       {/* Informations supplémentaires */}
