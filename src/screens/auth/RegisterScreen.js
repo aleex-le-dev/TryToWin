@@ -379,11 +379,15 @@ const RegisterScreen = ({ navigation }) => {
               </TouchableOpacity>
               <Text style={styles.termsText}>
                 J'accepte les{" "}
-                <Text style={styles.termsLink}>conditions d'utilisation</Text>{" "}
+                <TouchableOpacity onPress={() => navigation.navigate("TermsOfService")}>
+                  <Text style={styles.termsLink}>conditions d'utilisation</Text>
+                </TouchableOpacity>{" "}
                 et la{" "}
-                <Text style={styles.termsLink}>
-                  politique de confidentialité
-                </Text>
+                <TouchableOpacity onPress={() => navigation.navigate("PrivacyPolicy")}>
+                  <Text style={styles.termsLink}>
+                    politique de confidentialité
+                  </Text>
+                </TouchableOpacity>
               </Text>
             </View>
             
