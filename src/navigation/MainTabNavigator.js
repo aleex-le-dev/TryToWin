@@ -3,6 +3,8 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createStackNavigator } from "@react-navigation/stack";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../contexts/ThemeContext";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Platform } from "react-native";
 
 // Import des écrans
 import GameScreen from "../screens/jeux/GameScreen";
@@ -48,6 +50,12 @@ const MainTabNavigator = () => {
   const [socialTabResetKey, setSocialTabResetKey] = React.useState(0);
   const [forceHomeReset, setForceHomeReset] = React.useState(0);
   const { theme } = useTheme();
+  const insets = useSafeAreaInsets();
+
+  // Détection si on est sur Android avec navigation par geste
+  const isAndroidWithGesture = Platform.OS === 'android';
+  const bottomPadding = isAndroidWithGesture ? Math.max(insets.bottom, 10) : 5;
+  const tabBarHeight = isAndroidWithGesture ? 60 + Math.max(insets.bottom, 10) : 60;
 
   return (
     <Tab.Navigator
@@ -71,9 +79,9 @@ const MainTabNavigator = () => {
           backgroundColor: theme.card,
           borderTopWidth: 1,
           borderTopColor: theme.border,
-          paddingBottom: 5,
+          paddingBottom: bottomPadding,
           paddingTop: 5,
-          height: 60,
+          height: tabBarHeight,
           shadowColor: "#000",
           shadowOffset: {
             width: 0,

@@ -1,6 +1,7 @@
 import React from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { View, StyleSheet, SafeAreaView } from 'react-native';
+import { View, StyleSheet } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider } from './src/contexts/AuthContext';
 import { ToastProvider } from './src/contexts/ToastContext';
 import AppNavigator from './src/navigation/AppNavigator';
@@ -12,21 +13,23 @@ import ThemedStatusBar from './src/components/ThemedStatusBar';
 
 export default function App() {
   return (
-    <SafeAreaView style={styles.container}>
-      <AuthProvider>
-        <ToastProvider>
-          <AccessibilityProvider>
-            <ThemeProvider>
-              <ThemedStatusBar />
-              <ThemedApp>
-                <AppNavigator />
-                <CustomToast />
-              </ThemedApp>
-            </ThemeProvider>
-          </AccessibilityProvider>
-        </ToastProvider>
-      </AuthProvider>
-    </SafeAreaView>
+    <SafeAreaProvider>
+      <View style={styles.container}>
+        <AuthProvider>
+          <ToastProvider>
+            <AccessibilityProvider>
+              <ThemeProvider>
+                <ThemedStatusBar />
+                <ThemedApp>
+                  <AppNavigator />
+                  <CustomToast />
+                </ThemedApp>
+              </ThemeProvider>
+            </AccessibilityProvider>
+          </ToastProvider>
+        </AuthProvider>
+      </View>
+    </SafeAreaProvider>
   );
 }
 
