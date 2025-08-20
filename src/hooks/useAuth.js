@@ -14,10 +14,6 @@ export const useAuth = () => {
   useEffect(() => {
     // Écouteur d'état d'authentification
     const unsubscribe = authService.onAuthStateChange((user) => {
-      logInfo(
-        `Auth state changed: ${user ? user.email : "No user"}`,
-        "useAuth"
-      );
       setUser(user);
       setLoading(false);
       setError(null);

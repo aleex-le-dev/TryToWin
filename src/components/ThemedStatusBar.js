@@ -9,7 +9,6 @@ const ThemedStatusBar = () => {
   return (
     <StatusBar 
       style={isDarkMode ? 'light' : 'dark'} 
-      translucent={false}
     />
   );
 };

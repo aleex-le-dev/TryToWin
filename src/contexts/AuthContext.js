@@ -26,10 +26,6 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     // Écouter les changements d'état d'authentification
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      console.warn(
-        "[DEBUG] Auth state changed:",
-        firebaseUser ? firebaseUser.email : "No user"
-      );
       if (firebaseUser && !firebaseUser.emailVerified) {
         setUser(null);
       } else {

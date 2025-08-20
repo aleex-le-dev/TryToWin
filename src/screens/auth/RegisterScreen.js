@@ -35,6 +35,7 @@ const RegisterScreen = ({ navigation }) => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [acceptTerms, setAcceptTerms] = useState(false);
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
   const [passwordStrength, setPasswordStrength] = useState(null);
@@ -86,6 +87,7 @@ const RegisterScreen = ({ navigation }) => {
       setPasswordStrength(checkPasswordStrength(value));
     }
     if (fieldName === "confirmPassword") setConfirmPassword(value);
+    if (fieldName === "acceptTerms") setAcceptTerms(value);
 
     // Effacer l'erreur si le champ est modifié
     if (errors[fieldName]) {
@@ -118,7 +120,7 @@ const RegisterScreen = ({ navigation }) => {
         email,
         password,
         confirmPassword,
-        acceptTerms: true, // À implémenter avec une checkbox
+        acceptTerms,
       });
 
       if (!validation.isValid) {
@@ -132,7 +134,7 @@ const RegisterScreen = ({ navigation }) => {
           email: true,
           password: true,
           confirmPassword: true,
-          // acceptTerms: true, // si tu veux afficher l'erreur sur la checkbox
+          acceptTerms: true,
         });
         return;
       }
@@ -269,23 +271,8 @@ const RegisterScreen = ({ navigation }) => {
               email={unverifiedEmail}
               onClose={() => setShowUnverifiedPopup(false)}
               onResendEmail={async (email) => {
-                try {
-                  // Logique pour renvoyer l'email de validation
-                  // Note: Cette fonctionnalité nécessite que l'utilisateur soit connecté
-                  // Pour l'instant, on navigue vers la page de validation
-                  setShowUnverifiedPopup(false);
-                  navigation.navigate("EmailValidation", { email });
-                } catch (error) {
-                  logError(error, "RegisterScreen.onResendEmail");
-                  Toast.show({
-                    type: "error",
-                    text1: "Erreur",
-                    text2: "Impossible de renvoyer l'email pour le moment",
-                    position: "top",
-                    topOffset: 40,
-                    visibilityTime: 2000,
-                  });
-                }
+                // Le popup gère maintenant le renvoi d'email directement
+                // Pas besoin de navigation
               }}
             />
 
@@ -371,8 +358,24 @@ const RegisterScreen = ({ navigation }) => {
 
             {/* Conditions d'utilisation */}
             <View style={styles.termsContainer}>
-              <TouchableOpacity style={styles.checkbox}>
-                <Ionicons name='checkbox-outline' size={20} color='#fff' />
+              <TouchableOpacity
+                style={[styles.checkbox, touched.acceptTerms && errors.acceptTerms && styles.checkboxError]}
+                onPress={() => {
+                  setAcceptTerms(!acceptTerms);
+                  // Marquer le champ comme touché
+                  if (!touched.acceptTerms) {
+                    setTouched(prev => ({ ...prev, acceptTerms: true }));
+                  }
+                  // Effacer l'erreur si la checkbox est cochée
+                  if (errors.acceptTerms) {
+                    setErrors(prev => ({ ...prev, acceptTerms: "" }));
+                  }
+                }}>
+                <Ionicons
+                  name={acceptTerms ? "checkbox" : "square-outline"}
+                  size={20}
+                  color='#fff'
+                />
               </TouchableOpacity>
               <Text style={styles.termsText}>
                 J'accepte les{" "}
@@ -383,6 +386,11 @@ const RegisterScreen = ({ navigation }) => {
                 </Text>
               </Text>
             </View>
+            
+            {/* Message d'erreur pour les conditions d'utilisation */}
+            <FormErrorMessage
+              message={touched.acceptTerms && errors.acceptTerms ? errors.acceptTerms : ""}
+            />
 
             {/* Bouton d'inscription */}
             <TouchableOpacity
@@ -551,6 +559,10 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     marginLeft: 6,
     flex: 1,
+  },
+  checkboxError: {
+    borderColor: colors.error,
+    borderWidth: 1,
   },
 });
 

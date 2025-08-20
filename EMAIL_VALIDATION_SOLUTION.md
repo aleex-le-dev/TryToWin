@@ -16,12 +16,20 @@ Le problème était que les emails se mettaient directement en base de données 
 
 - **UnverifiedAccountPopup** (`src/components/UnverifiedAccountPopup.js`) : Popup élégant pour informer l'utilisateur
 - **Message clair** : "Compte non validé" au lieu de "Email déjà utilisé"
-- **Action principale** : Bouton "Renvoyer l'email" pour faciliter la validation
+- **Action principale** : Bouton "Renvoyer l'email" avec champ mot de passe pour faciliter la validation
+- **Fonctionnalité** : Renvoie effectivement l'email de validation (nécessite le mot de passe)
+- **Confirmation** : Message vert de confirmation après envoi réussi
 
 - **EmailVerificationRequiredPopup** (`src/components/EmailVerificationRequiredPopup.js`) : Popup pour la validation d'email requise
 - **Message clair** : "Vérification requise" pour les comptes non validés lors de la connexion
-- **Action principale** : Bouton "Renvoyer l'email" pour faciliter la validation
+- **Action principale** : Bouton "Renvoyer l'email" avec logique intelligente
+- **Logique intelligente** : 
+  - Essaie d'abord sans mot de passe
+  - Si un compte existe, affiche automatiquement le champ mot de passe
+  - Utilise la méthode fonctionnelle Firebase quand possible
 - **Style identique** : Cohérence visuelle avec UnverifiedAccountPopup
+- **Fonctionnalité** : Renvoie effectivement l'email quand possible, sinon simulation
+- **Confirmation** : Message vert de confirmation après envoi
 
 ### 3. Expérience Utilisateur Améliorée
 
@@ -45,7 +53,9 @@ RegisterScreen
 │       └── Détection automatique
 │           └── Popup UnverifiedAccountPopup
 │               ├── Message "Compte non validé"
-│               ├── Bouton "Renvoyer l'email"
+│               ├── Champ mot de passe (requis)
+│               ├── Bouton "Renvoyer l'email" (fonctionnel)
+│               ├── Message de confirmation (vert)
 │               └── Bouton "Fermer"
 
 LoginScreen
@@ -55,19 +65,45 @@ LoginScreen
 │   └── Email non validé
 │       └── Popup EmailVerificationRequiredPopup
 │           ├── Message "Vérification requise"
-│           ├── Bouton "Renvoyer l'email"
+│           ├── Bouton "Renvoyer l'email" (simulé)
+│           ├── Message de confirmation (vert)
 │           └── Bouton "Fermer"
 
-Navigation vers EmailValidation
+Service d'authentification
+├── resendEmailVerificationForUnverifiedAccount() (avec mot de passe)
+│   ├── Connexion temporaire
+│   ├── Vérification du statut email
+│   ├── Renvoi de l'email
+│   └── Déconnexion automatique
+└── resendEmailVerificationWithoutPassword() (logique intelligente)
+    ├── Tentative de vérification du compte
+    ├── Détection automatique si mot de passe requis
+    ├── Renvoi effectif si possible
+    └── Simulation en dernier recours
 ```
 
 ## Flux Utilisateur
 
+### Inscription
 1. **Tentative d'inscription** avec un email déjà utilisé
 2. **Détection automatique** du compte non validé (sans révéler l'email)
 3. **Affichage du popup** "Compte non validé"
 4. **Actions disponibles** :
-   - Renvoyer l'email → Navigation vers EmailValidation
+   - Saisir le mot de passe (requis)
+   - Renvoyer l'email → Email effectivement renvoyé via Firebase
+   - **Message de confirmation** → "Email envoyé avec succès ! Vérifiez votre boîte mail."
+   - Fermer le popup → Retour au formulaire
+
+### Connexion
+1. **Tentative de connexion** avec un email non validé
+2. **Affichage du popup** "Vérification requise"
+3. **Actions disponibles** :
+   - Renvoyer l'email → **Logique intelligente** :
+     - Essaie d'abord sans mot de passe
+     - Si un compte existe, affiche automatiquement le champ mot de passe
+     - Utilise Firebase pour un renvoi effectif quand possible
+     - Simulation en dernier recours si nécessaire
+   - **Message de confirmation** → "Email envoyé avec succès ! Vérifiez votre boîte mail."
    - Fermer le popup → Retour au formulaire
 
 ## Sécurité et Confidentialité
@@ -127,11 +163,22 @@ const message = EMAIL_MESSAGES.UNVERIFIED_ACCOUNT.message;
 - Inscription avec email valide
 - Tentative de réinscription avec email non validé
 - Vérification de l'affichage du popup "Compte non validé"
-- Test du bouton "Renvoyer l'email" dans l'inscription
+- Test du champ mot de passe dans le popup d'inscription
+- Test du bouton "Renvoyer l'email" dans l'inscription (vérifier que l'email est reçu via Firebase)
+- **Vérification du message de confirmation vert** après envoi réussi
 - Connexion avec email non validé
 - Vérification de l'affichage du popup "Vérification requise"
-- Test du bouton "Renvoyer l'email" dans la connexion
-- Validation de la navigation vers EmailValidation
+- **Test de la logique intelligente** dans la connexion :
+  - Premier clic sans mot de passe (détection automatique)
+  - Affichage automatique du champ mot de passe si nécessaire
+  - Utilisation de Firebase pour renvoi effectif
+  - Simulation en dernier recours
+- **Vérification du message de confirmation vert** après envoi
+- Test de gestion des erreurs (mot de passe incorrect, compte inexistant)
+- Validation de la fermeture automatique du popup après succès
+- Vérification de la cohérence visuelle entre les deux popups
+- **Test de persistance du message de confirmation** jusqu'à fermeture du popup
+- **Test de l'adaptation dynamique** du popup selon le contexte (avec/sans mot de passe)
 
 ## Conclusion
 

@@ -1,22 +1,29 @@
 # TryToWin
 
-**TryToWin** est une application mobile de jeux multijoueurs avec profils personnalisés, classement mondial et par pays, QR code de partage, et interface moderne.
+**TryToWin** est une application mobile de jeux multijoueurs contre l'ia Mistral avec profils personnalisés, classement mondial et par pays, QR code de partage, et interface moderne.
+
+### Live 
+
+Pour tester l'application, scannnez le qr code ci dessous à partir de l'application mobile Expo Go : 
+
+![QR Code Expo Go](assets/eas-update.svg)
+
 
 ## 🎮 Fonctionnalités principales
 
-### Jeux disponibles
+### Jeux disponibles (contre IA Mistral)
 
 - **Puissance 4** - Alignez 4 pions pour gagner
 - **Othello** - Retournez les pions adverses
-- **Morpion / TicTacToe** - 3 en ligne pour gagner (avec IA Mistral)
+- **Morpion / TicTacToe** - 3 en ligne pour gagner 
+- **Echec** - Plateau de jeux d'échec
 
 
 ### 🤖 Intelligence Artificielle
 
-- **IA Mistral intégrée** dans le jeu Morpion
-- Stratégies avancées et conseils tactiques
+- **IA Mistral intégrée** dans tous les jeux
 - Alternance intelligente entre joueur et IA
-- Prompts optimisés pour une expérience de jeu enrichie
+
 
 ### 👤 Profils et Social
 
@@ -62,18 +69,3 @@
 - **Navigation** : React Navigation
 - **UI/UX** : React Native Animated, LinearGradient
 - **Notifications** : React Native Toast Message
-
-## 📊 Architecture
-
-```
-src/
-├── components/          # Composants réutilisables
-├── constants/          # Constantes et configurations
-├── contexts/           # Contextes React (Auth, Toast)
-├── games/             # Logique des jeux
-├── hooks/             # Hooks personnalisés
-├── navigation/        # Configuration de navigation
-├── screens/           # Écrans de l'application
-├── services/          # Services (API, Firebase, IA)
-└── utils/             # Utilitaires et configurations
-```

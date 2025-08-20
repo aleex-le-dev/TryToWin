@@ -488,7 +488,6 @@ const GameDetailsScreen = ({ route, navigation }) => {
       {/* StatusBar personnalisé avec la couleur du jeu */}
       <StatusBar 
         style="light" 
-        translucent={false}
         backgroundColor={game.color}
       />
       {loading && (

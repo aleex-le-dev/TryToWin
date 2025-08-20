@@ -58,17 +58,9 @@ const LoginScreen = ({ navigation }) => {
 
   const { showToast } = useToast();
 
-  logInfo(
-    `Google Auth - Request: ${request ? "Prêt" : "Non prêt"}`,
-    "LoginScreen"
-  );
-  logInfo(`Google Auth - Response: ${JSON.stringify(response)}`, "LoginScreen");
+
 
   React.useEffect(() => {
-    logInfo(
-      `Google Auth - Response changed: ${JSON.stringify(response)}`,
-      "LoginScreen"
-    );
 
     if (response?.type === "success") {
       logInfo("Google Auth - Success response received", "LoginScreen");
@@ -196,10 +188,7 @@ const LoginScreen = ({ navigation }) => {
     setLoadingGoogle(true);
     try {
       logInfo("Google Auth - Button pressed", "LoginScreen.handleGoogleLogin");
-      logInfo(
-        `Google Auth - Request available: ${!!request}`,
-        "LoginScreen.handleGoogleLogin"
-      );
+
       logInfo(
         `Google Auth - Loading state: ${loadingGoogle}`,
         "LoginScreen.handleGoogleLogin"
@@ -386,9 +375,8 @@ const LoginScreen = ({ navigation }) => {
         email={verificationEmail}
         onClose={() => setShowVerificationPopup(false)}
         onResendEmail={(email) => {
-          setShowVerificationPopup(false);
-          // Naviguer vers la page de validation d'email
-          navigation.navigate("EmailValidation", { email });
+          // Le popup gère maintenant le renvoi d'email directement
+          // Pas besoin de navigation
         }}
       />
     </LinearGradient>

@@ -16,10 +16,7 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 
-console.warn(
-  "[DEBUG] FIREBASE_API_KEY:",
-  FIREBASE_API_KEY ? FIREBASE_API_KEY.slice(0, 8) + "..." : "NON DEFINIE"
-);
+
 
 export const db = getFirestore(app);
 export const auth = initializeAuth(app, {
