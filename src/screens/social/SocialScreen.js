@@ -889,11 +889,11 @@ export default function SocialScreen({ route, navigation }) {
       }}
     >
       {/* En-tête du chat */}
-      <View style={[styles.chatHeader, { 
-        backgroundColor: theme.card, 
-        borderBottomColor: theme.border,
-        paddingTop: insets.top, // Ajouter le safe area ici
-      }]}>
+                    <View style={[styles.chatHeader, { 
+          backgroundColor: theme.card, 
+          borderBottomColor: theme.border,
+          paddingTop: insets.top, // Utiliser seulement le safe area minimum
+        }]}>
         <TouchableOpacity
           style={styles.backButton}
           onPress={() => setSelectedFriend(null)}>
@@ -957,19 +957,21 @@ export default function SocialScreen({ route, navigation }) {
         />
       </View>
 
-      {/* Zone de saisie */}
-      <View
-        style={[
-          styles.inputRow,
-          {
-            backgroundColor: theme.card,
-            borderTopWidth: 1,
-            borderTopColor: theme.border,
-            paddingBottom: insets.bottom, // Utiliser directement insets.bottom
-            paddingTop: 16, // Réduire le padding top
-          },
-        ]}
-      >
+                                                       {/* Zone de saisie */}
+         <View
+           style={[
+             styles.inputRow,
+             {
+               backgroundColor: theme.card,
+               borderTopWidth: 1,
+               borderTopColor: theme.border,
+               paddingBottom: Math.max(insets.bottom, 8), // Même espace minimum en bas
+               paddingTop: 8, // Espace en haut
+               marginBottom: 0, // Supprimer la marge du bas
+               paddingHorizontal: 16, // Assurer l'espacement horizontal uniforme
+             },
+           ]}
+         >
         <TextInput
           style={[
             styles.input,
@@ -1465,20 +1467,25 @@ const styles = StyleSheet.create({
     alignSelf: "flex-end",
     opacity: 0.7,
   },
-  inputRow: { 
-    flexDirection: "row", 
-    alignItems: "center", 
-    padding: 16
-  },
-  input: {
-    flex: 1,
-    borderRadius: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    fontSize: 16,
-    borderWidth: 1,
-    marginRight: 12,
-  },
+                                               inputRow: { 
+        flexDirection: "row", 
+        alignItems: "center", 
+        paddingHorizontal: 16,
+        paddingTop: 8, // Espace en haut
+        paddingBottom: 8, // Même espace en bas
+        marginBottom: 0, // Supprimer la marge du bas
+        justifyContent: 'center'
+      },
+     input: {
+     flex: 1,
+     borderRadius: 20,
+     paddingHorizontal: 16,
+     paddingVertical: 12,
+     fontSize: 16,
+     borderWidth: 1,
+     marginRight: 12,
+     textAlignVertical: 'center',
+   },
   sendButton: {
     padding: 12,
     borderRadius: 20
