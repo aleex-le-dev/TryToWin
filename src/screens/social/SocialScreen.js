@@ -13,6 +13,8 @@ import {
   ActivityIndicator,
   Dimensions,
   AppState,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import QRCode from "react-native-qrcode-svg";
@@ -880,13 +882,15 @@ export default function SocialScreen({ route, navigation }) {
 
   // Affichage du chat avec un ami
   const renderChat = () => (
-    <View
+    <KeyboardAvoidingView
       style={{
         flex: 1,
         backgroundColor: theme.background,
         paddingTop: 0, // Supprimer le padding top
         paddingBottom: 0, // Supprimer le padding bottom
       }}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
     >
       {/* En-tête du chat */}
                     <View style={[styles.chatHeader, { 
@@ -954,6 +958,7 @@ export default function SocialScreen({ route, navigation }) {
           }
           contentContainerStyle={{ paddingBottom: 20 }}
           keyboardShouldPersistTaps='handled'
+          keyboardDismissMode='interactive'
         />
       </View>
 
@@ -1098,7 +1103,7 @@ export default function SocialScreen({ route, navigation }) {
           </View>
         </View>
       )}
-    </View>
+    </KeyboardAvoidingView>
   );
 
   // Affichage principal : recherche, liste d'amis et d'utilisateurs
