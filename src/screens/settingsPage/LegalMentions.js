@@ -44,7 +44,7 @@ const LegalMentions = ({ navigation }) => (
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
-  header: { flexDirection: 'row', alignItems: 'center', padding: 24, paddingBottom: 12 },
+  header: { flexDirection: 'row', alignItems: 'center', padding: 24, paddingBottom: 12, paddingTop: 50 },
   backBtn: { marginRight: 10, padding: 4 },
   title: { color: '#23272a', fontSize: 22, fontWeight: 'bold' },
   card: { backgroundColor: '#f8f9fa', marginHorizontal: 16, marginTop: 12, borderRadius: 14, padding: 16 },

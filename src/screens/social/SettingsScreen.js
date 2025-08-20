@@ -43,6 +43,7 @@ const SettingsScreen = ({ navigation, route }) => {
           style={[
             styles.header,
             { borderBottomColor: theme.border },
+            { paddingTop: 50 },
           ]}>
           <TouchableOpacity
             onPress={() => navigation.goBack()}
@@ -92,7 +93,7 @@ const SettingsScreen = ({ navigation, route }) => {
               <Text style={[styles.menuItemText, { color: theme.text }]}>Contact</Text>
             </TouchableOpacity>
             <TouchableOpacity style={[styles.menuItem, { backgroundColor: theme.card }]} onPress={() => navigation.navigate('DonateScreen')}>
-              <Text style={[styles.menuItemText, { color: theme.text }]}>Payer un café</Text>
+              <Text style={[styles.menuItemText, { color: theme.text }]}>Payer un café au développeur ☕ </Text>
             </TouchableOpacity>
           </View>
         </ScrollView>

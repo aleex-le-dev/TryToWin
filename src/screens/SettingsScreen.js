@@ -28,7 +28,7 @@ const SettingsScreen = ({ navigation, route }) => {
         <View
           style={[
             styles.header,
-            { borderBottomColor: theme.border },
+            { borderBottomColor: theme.border, paddingTop: 40 },
           ]}>
           <TouchableOpacity
             onPress={() => navigation.goBack()}

@@ -384,7 +384,10 @@ const LeaderboardProfil = ({
         activeOpacity={0.8}
         onPress={() => {
           try {
-            navigation.navigate("PlayerCard", { userId: item.userId });
+            navigation.navigate("Games", {
+              screen: "PlayerCard",
+              params: { userId: item.userId },
+            });
           } catch {}
         }}
       >

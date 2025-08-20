@@ -52,7 +52,8 @@ const styles = StyleSheet.create({
   header: { 
     flexDirection: 'row', 
     alignItems: 'center', 
-    marginBottom: 32 
+    marginBottom: 32,
+    paddingTop: 50,
   },
   backBtn: { 
     marginRight: 6, 

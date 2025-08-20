@@ -17,7 +17,7 @@ const SupportScreen = ({ navigation }) => (
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#fff", padding: 24 },
-  header: { flexDirection: 'row', alignItems: 'center', marginBottom: 18 },
+  header: { flexDirection: 'row', alignItems: 'center', marginBottom: 18, paddingTop: 50 },
   backBtn: { marginRight: 6, padding: 4 },
   title: {
     color: "#23272a",
