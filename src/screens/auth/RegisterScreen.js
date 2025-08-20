@@ -43,9 +43,32 @@ const RegisterScreen = ({ navigation }) => {
   // Validation en temps réel
   const validateField = async (fieldName, value) => {
     try {
-      await authSchemas.register.validateAt(fieldName, { [fieldName]: value });
+      // Fournir le bon contexte à Yup pour éviter les faux "mots de passe ne correspondent pas"
+      let context = { [fieldName]: value };
+      if (fieldName === "confirmPassword") {
+        context = { password, confirmPassword: value };
+      } else if (fieldName === "password") {
+        context = { password: value, confirmPassword };
+      } else if (fieldName === "email") {
+        context = { email: value };
+      } else if (fieldName === "username") {
+        context = { username: value };
+      }
+
+      await authSchemas.register.validateAt(fieldName, context);
       setErrors((prev) => ({ ...prev, [fieldName]: "" }));
     } catch (error) {
+      // Log de debug si la confirmation ne correspond pas
+      if (
+        fieldName === "confirmPassword" &&
+        typeof error?.message === "string" &&
+        error.message.toLowerCase().includes("ne correspondent pas")
+      ) {
+        logInfo(
+          `Password mismatch debug → password:"${password}" | confirm:"${value}"`,
+          "RegisterScreen.validateField"
+        );
+      }
       setErrors((prev) => ({ ...prev, [fieldName]: error.message }));
     }
   };
@@ -69,16 +92,16 @@ const RegisterScreen = ({ navigation }) => {
   // Gestion du focus/blur
   const handleFieldBlur = (fieldName) => {
     setTouched((prev) => ({ ...prev, [fieldName]: true }));
-    validateField(
-      fieldName,
-      fieldName === "username"
-        ? username
-        : fieldName === "email"
-        ? email
-        : fieldName === "password"
-        ? password
-        : confirmPassword
-    );
+    // Valider avec le contexte complet pour éviter les faux négatifs
+    if (fieldName === "confirmPassword") {
+      validateField(fieldName, confirmPassword);
+    } else if (fieldName === "password") {
+      validateField(fieldName, password);
+    } else if (fieldName === "email") {
+      validateField(fieldName, email);
+    } else if (fieldName === "username") {
+      validateField(fieldName, username);
+    }
   };
 
   const handleRegister = async () => {
