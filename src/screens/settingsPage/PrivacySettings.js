@@ -79,8 +79,8 @@ const PrivacySettings = ({ navigation }) => {
         {/* Droits utilisateurs */}
         <View style={[styles.card, { backgroundColor: theme.card }]}>
           <Text style={[styles.cardTitle, { color: theme.text }]}>Vos droits</Text>
-          <Text style={styles.listItem}>• Accès, rectification, suppression, portabilité, opposition</Text>
-          <Text style={styles.listItem}>• Réponse sous 30 jours, par email et confirmation</Text>
+          <Text style={[styles.listItem, { color: theme.text }]}>• Accès, rectification, suppression, portabilité, opposition</Text>
+          <Text style={[styles.listItem, { color: theme.text }]}>• Réponse sous 30 jours, par email et confirmation</Text>
           <TouchableOpacity style={styles.contactBtn} onPress={() => Linking.openURL('mailto:dpo@trytowin.app?subject=Droits%20RGPD')}>
             <Ionicons name='mail' size={18} color='#fff' />
             <Text style={styles.contactText}>Exercer mes droits</Text>
@@ -94,7 +94,7 @@ const PrivacySettings = ({ navigation }) => {
         </View>
 
         {/* Sécurité & notifications */}
-        <View style={styles.card}>
+        <View style={[styles.card, { backgroundColor: theme.card }]}>
           <Text style={[styles.cardTitle, { color: theme.text }]}>Sécurité & notifications</Text>
           <Text style={[styles.paragraph, { color: theme.text }]}>Chiffrement, accès restreints, minimisation. En cas d’incident ou de modification importante, information des utilisateurs et notification à la CNIL si nécessaire.</Text>
         </View>

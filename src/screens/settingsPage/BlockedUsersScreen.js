@@ -5,9 +5,11 @@ import { useAuth } from "../../hooks/useAuth";
 import { db } from "../../utils/firebaseConfig";
 import { collection, onSnapshot, query, orderBy, deleteDoc, doc } from "firebase/firestore";
 import Toast from "react-native-toast-message";
+import { useTheme } from "../../contexts/ThemeContext";
 
 const BlockedUsersScreen = ({ navigation }) => {
   const { user } = useAuth();
+  const { theme } = useTheme();
   const [blocked, setBlocked] = useState([]);
   const [permissionDenied, setPermissionDenied] = useState(false);
 
@@ -69,19 +71,19 @@ const BlockedUsersScreen = ({ navigation }) => {
   );
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
-      <View style={[styles.header, { backgroundColor: "#fff", borderBottomColor: "#e9ecef" }, { paddingTop: 50 }]}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
+      <View style={[styles.header, { backgroundColor: theme.background, borderBottomColor: theme.border, paddingTop: 50 }]}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <Ionicons name='arrow-back' size={24} color='#23272a' />
+          <Ionicons name='arrow-back' size={24} color={theme.icon} />
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: "#23272a" }]}>Joueurs bloqués</Text>
+        <Text style={[styles.headerTitle, { color: theme.text }]}>Joueurs bloqués</Text>
       </View>
       <FlatList
         data={blocked}
         keyExtractor={(it) => it.id}
         renderItem={renderItem}
         contentContainerStyle={{ padding: 18 }}
-        ListEmptyComponent={<Text style={{ color: "#6c757d", textAlign: "center" }}>{permissionDenied ? "Permissions insuffisantes pour afficher la liste." : "Aucun joueur bloqué."}</Text>}
+        ListEmptyComponent={<Text style={{ color: theme.textSecondary, textAlign: "center" }}>{permissionDenied ? "Permissions insuffisantes pour afficher la liste." : "Aucun joueur bloqué."}</Text>}
       />
       <Toast />
     </SafeAreaView>
@@ -109,7 +111,7 @@ const styles = StyleSheet.create({
   item: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#f8f9fa",
+    backgroundColor: "#1f2124",
     borderRadius: 12,
     padding: 12,
     marginBottom: 10,
@@ -117,7 +119,7 @@ const styles = StyleSheet.create({
   avatarWrap: { marginRight: 10 },
   avatar: { width: 40, height: 40, borderRadius: 20 },
   avatarFallback: { width: 40, height: 40, borderRadius: 20, backgroundColor: "#667eea", alignItems: "center", justifyContent: "center" },
-  name: { color: "#23272a", fontSize: 16, fontWeight: "500" },
+  name: { color: "#fff", fontSize: 16, fontWeight: "500" },
   iconOnlyBtn: {
     width: 40,
     height: 40,

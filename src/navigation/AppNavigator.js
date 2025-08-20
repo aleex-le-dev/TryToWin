@@ -10,7 +10,7 @@ import MainTabNavigator from "./MainTabNavigator";
 import { useAuth } from "../contexts/AuthContext";
 import EmailValidationScreen from "../screens/auth/EmailValidationScreen";
 import SettingsScreen from "../screens/social/SettingsScreen";
-import BlockedUsersScreen from "../screens/social/BlockedUsersScreen";
+import BlockedUsersScreen from "../screens/settingsPage/BlockedUsersScreen";
 import AccessibilitySettings from "../screens/settingsPage/AccessibilitySettings";
 import AccountSettings from "../screens/settingsPage/AccountSettings";
 import AppearanceSettings from "../screens/settingsPage/AppearanceSettings";

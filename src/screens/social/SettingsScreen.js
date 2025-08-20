@@ -56,43 +56,43 @@ const SettingsScreen = ({ navigation, route }) => {
           {/* Section Compte */}
           <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>Compte</Text>
-            <TouchableOpacity style={[styles.menuItem, { backgroundColor: theme.card }]} onPress={() => navigation.navigate('AccountSettings')}>
+            <TouchableOpacity style={[styles.menuItem, { backgroundColor: theme.card, borderColor: theme.border, borderWidth: 1 }]} onPress={() => navigation.navigate('AccountSettings')}>
               <Text style={[styles.menuItemText, { color: theme.text }]}>Compte</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.menuItem, { backgroundColor: theme.card }]} onPress={() => navigation.navigate('PrivacySettings')}>
+            <TouchableOpacity style={[styles.menuItem, { backgroundColor: theme.card, borderColor: theme.border, borderWidth: 1 }]} onPress={() => navigation.navigate('PrivacySettings')}>
               <Text style={[styles.menuItemText, styles.menuItemTextBold, { color: theme.text }]}>Données et confidentialité</Text>
             </TouchableOpacity>
           </View>
           {/* Section Abonnement */}
           <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>Abonnement</Text>
-            <TouchableOpacity style={[styles.menuItem, { backgroundColor: theme.card }]} onPress={() => navigation.navigate('ShopScreen')}>
+            <TouchableOpacity style={[styles.menuItem, { backgroundColor: theme.card, borderColor: theme.border, borderWidth: 1 }]} onPress={() => navigation.navigate('ShopScreen')}>
               <Text style={[styles.menuItemText, { color: theme.text }]}>Boutique</Text>
             </TouchableOpacity>
           </View>
           {/* Section Application */}
           <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>Application</Text>
-            <TouchableOpacity style={[styles.menuItem, { backgroundColor: theme.card }]} onPress={() => navigation.navigate('AppearanceSettings')}>
+            <TouchableOpacity style={[styles.menuItem, { backgroundColor: theme.card, borderColor: theme.border, borderWidth: 1 }]} onPress={() => navigation.navigate('AppearanceSettings')}>
               <Text style={[styles.menuItemText, { color: theme.text }]}>Mode sombre</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.menuItem, { backgroundColor: theme.card }]} onPress={() => navigation.navigate('AccessibilitySettings')}>
+            <TouchableOpacity style={[styles.menuItem, { backgroundColor: theme.card, borderColor: theme.border, borderWidth: 1 }]} onPress={() => navigation.navigate('AccessibilitySettings')}>
               <Text style={[styles.menuItemText, styles.menuItemTextBold, { color: theme.text }]}>Accessibilité</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.menuItem, { backgroundColor: theme.card }]} onPress={() => navigation.navigate('LanguageSettings')}>
+            <TouchableOpacity style={[styles.menuItem, { backgroundColor: theme.card, borderColor: theme.border, borderWidth: 1 }]} onPress={() => navigation.navigate('LanguageSettings')}>
               <Text style={[styles.menuItemText, { color: theme.text }]}>Langue</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.menuItem, { backgroundColor: theme.card }]} onPress={() => navigation.navigate('BlockedUsers')}>
+            <TouchableOpacity style={[styles.menuItem, { backgroundColor: theme.card, borderColor: theme.border, borderWidth: 1 }]} onPress={() => navigation.navigate('BlockedUsers')}>
               <Text style={[styles.menuItemText, styles.menuItemTextBold, { color: theme.text }]}>Joueurs bloqués ({blockedCount})</Text>
             </TouchableOpacity>
           </View>
           {/* Section Assistance */}
           <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>Assistance</Text>
-            <TouchableOpacity style={[styles.menuItem, { backgroundColor: theme.card }]} onPress={() => navigation.navigate('SupportScreen')}>
+            <TouchableOpacity style={[styles.menuItem, { backgroundColor: theme.card, borderColor: theme.border, borderWidth: 1 }]} onPress={() => navigation.navigate('SupportScreen')}>
               <Text style={[styles.menuItemText, { color: theme.text }]}>Contact</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.menuItem, { backgroundColor: theme.card }]} onPress={() => navigation.navigate('DonateScreen')}>
+            <TouchableOpacity style={[styles.menuItem, { backgroundColor: theme.card, borderColor: theme.border, borderWidth: 1 }]} onPress={() => navigation.navigate('DonateScreen')}>
               <Text style={[styles.menuItemText, { color: theme.text }]}>Payer un café au développeur ☕ </Text>
             </TouchableOpacity>
           </View>
