@@ -387,17 +387,32 @@ const GameDetailsScreen = ({ route, navigation }) => {
   const filteredLeaderboardData =
     leaderboardType === "global"
       ? leaderboardData
-      : leaderboardData
-          .filter(
-            (item) =>
-              (item.country?.code || item.country) ===
-              (selectedCountry || userCountry)
-          )
-          .sort((a, b) => b.score - a.score)
-          .map((item, index) => ({
-            ...item,
-            rank: index + 1, // Recalculer les rangs pour le pays
-          }));
+      : (() => {
+          // Filtrer par pays et trier par points décroissants
+          const countryPlayers = leaderboardData
+            .filter(
+              (item) =>
+                (item.country?.code || item.country) ===
+                (selectedCountry || userCountry)
+            )
+            .sort((a, b) => b.score - a.score);
+          
+          // Appliquer la logique de classement dense (même rang pour même points)
+          let currentRank = 1;
+          let prevScore = null;
+          
+          return countryPlayers.map((item, index) => {
+            if (prevScore !== null && item.score !== prevScore) {
+              currentRank = index + 1;
+            }
+            prevScore = item.score;
+            
+            return {
+              ...item,
+              rank: currentRank,
+            };
+          });
+        })();
 
   // Calculer le rang de l'utilisateur dans le classement filtré
   const getUserRankInFilteredData = () => {
