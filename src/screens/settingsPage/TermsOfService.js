@@ -23,7 +23,7 @@ const TermsOfService = ({ navigation }) => {
           >
             <Ionicons name="arrow-back" size={24} color="#fff" />
           </TouchableOpacity>
-          <Text style={styles.title}>Conditions d'Utilisation</Text>
+          <Text style={styles.title}>Conditions d'utilisation</Text>
         </View>
 
         {/* Contenu */}
@@ -89,7 +89,7 @@ const TermsOfService = ({ navigation }) => {
             <Text style={styles.sectionTitle}>8. Contact</Text>
             <Text style={styles.text}>
               Pour toute question concernant ces conditions, contactez-nous à : 
-              support@trytowin.com
+              alexandre.janacek@gmail.com
             </Text>
           </View>
 
@@ -115,7 +115,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 20,
-    paddingTop: 20,
+    paddingTop: 70,
     paddingBottom: 20,
   },
   backButton: {

@@ -22,6 +22,7 @@ import ShopScreen from "../screens/settingsPage/ShopScreen";
 import SupportScreen from "../screens/settingsPage/SupportScreen";
 import PrivacyPolicy from "../screens/settingsPage/PrivacyPolicy";
 import LegalMentions from "../screens/settingsPage/LegalMentions";
+import TermsOfService from "../screens/settingsPage/TermsOfService";
 
 
 const Stack = createStackNavigator();
@@ -73,6 +74,20 @@ const AppNavigator = () => {
                 title: "Validation email",
               }}
             />
+            <Stack.Screen
+              name='TermsOfService'
+              component={TermsOfService}
+              options={{
+                title: "Conditions d'utilisation",
+              }}
+            />
+            <Stack.Screen
+              name='PrivacyPolicy'
+              component={PrivacyPolicy}
+              options={{
+                title: "Politique de confidentialité",
+              }}
+            />
           </>
         )}
         {/* Écrans principaux après authentification - affichés seulement si l'utilisateur est connecté */}
@@ -106,6 +121,7 @@ const AppNavigator = () => {
             <Stack.Screen name='LegalMentions' options={{ headerShown: false }}>{(p) => <LegalMentions {...p} />}</Stack.Screen>
             <Stack.Screen name='ShopScreen' options={{ headerShown: false }}>{(p) => <ShopScreen {...p} />}</Stack.Screen>
             <Stack.Screen name='SupportScreen' options={{ headerShown: false }}>{(p) => <SupportScreen {...p} />}</Stack.Screen>
+            <Stack.Screen name='TermsOfService' options={{ headerShown: false }}>{(p) => <TermsOfService {...p} />}</Stack.Screen>
           </>
         )}
       </Stack.Navigator>
