@@ -160,60 +160,44 @@ const ProfileStats = ({
         {statsByGame && Object.keys(statsByGame).length > 0 && (
           <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: theme.text }]}>Par jeu</Text>
-            <View
-              style={{
-                flexDirection: "row",
-                justifyContent: "space-between",
-                marginBottom: 6,
-              }}>
-              <Text style={{ flex: 2, fontWeight: "bold", color: theme.text }}>Jeu</Text>
-              <Text
-                style={{ flex: 1, textAlign: "center", fontWeight: "bold", color: theme.text }}>
-                Parties
-              </Text>
-              <Text
-                style={{ flex: 1, textAlign: "center", fontWeight: "bold", color: theme.text }}>
-                V
-              </Text>
-              <Text
-                style={{ flex: 1, textAlign: "center", fontWeight: "bold", color: theme.text }}>
-                N
-              </Text>
-              <Text
-                style={{ flex: 1, textAlign: "center", fontWeight: "bold", color: theme.text }}>
-                D
-              </Text>
-              <Text
-                style={{ flex: 1, textAlign: "center", fontWeight: "bold", color: theme.text }}>
-                Points
-              </Text>
-            </View>
-            {GAMES_DATA.map((g) => {
-              const gameId = g.id;
-              const s = (statsByGame && statsByGame[gameId]) || {};
-              const totalGames = Number(s.totalGames) || 0;
-              const wins = Number(s.win ?? s.wins) || 0;
-              const draws = Number(s.draw ?? s.draws) || 0;
-              const loses = Number(s.lose ?? s.loses) || 0;
-              const points = Number(s.totalPoints ?? s.points) || 0;
+            <View style={[styles.tableContainer, { backgroundColor: theme.card, borderColor: theme.divider }]}>
+              <View style={[styles.tableHeaderRow, { borderBottomColor: theme.divider }]}>
+                <Text style={[styles.tableHeaderCellGame, { color: theme.text }]}>Jeu</Text>
+                <Text style={[styles.tableHeaderCell, { color: theme.text }]}>Parties</Text>
+                <Text style={[styles.tableHeaderCell, { color: theme.text }]}>V</Text>
+                <Text style={[styles.tableHeaderCell, { color: theme.text }]}>N</Text>
+                <Text style={[styles.tableHeaderCell, { color: theme.text }]}>D</Text>
+                <Text style={[styles.tableHeaderCell, { color: theme.text }]}>Points</Text>
+              </View>
+              {GAMES_DATA.map((g, index) => {
+                const gameId = g.id;
+                const s = (statsByGame && statsByGame[gameId]) || {};
+                const totalGames = Number(s.totalGames) || 0;
+                const wins = Number(s.win ?? s.wins) || 0;
+                const draws = Number(s.draw ?? s.draws) || 0;
+                const loses = Number(s.lose ?? s.loses) || 0;
+                const points = Number(s.totalPoints ?? s.points) || 0;
 
-              return (
-                <View
-                  key={gameId}
-                  style={{
-                    flexDirection: "row",
-                    justifyContent: "space-between",
-                    marginBottom: 6,
-                  }}>
-                  <Text style={{ flex: 2, color: theme.text }}>{g.title}</Text>
-                  <Text style={{ flex: 1, textAlign: "center", color: theme.text }}>{totalGames}</Text>
-                  <Text style={{ flex: 1, textAlign: "center", color: theme.text }}>{wins}</Text>
-                  <Text style={{ flex: 1, textAlign: "center", color: theme.text }}>{draws}</Text>
-                  <Text style={{ flex: 1, textAlign: "center", color: theme.text }}>{loses}</Text>
-                  <Text style={{ flex: 1, textAlign: "center", color: theme.text }}>{points}</Text>
-                </View>
-              );
-            })}
+                return (
+                  <View
+                    key={gameId}
+                    style={[
+                      styles.tableRow,
+                      { backgroundColor: index % 2 === 0 ? theme.surface : "transparent" },
+                    ]}>
+                    <View style={styles.tableCellGameWrapper}>
+                      <View style={[styles.gameDot, { backgroundColor: g.color }]} />
+                      <Text style={[styles.tableCellGameText, { color: theme.text }]}>{g.title}</Text>
+                    </View>
+                    <Text style={[styles.tableCell, { color: theme.text }]}>{totalGames}</Text>
+                    <Text style={[styles.tableCell, { color: theme.text }]}>{wins}</Text>
+                    <Text style={[styles.tableCell, { color: theme.text }]}>{draws}</Text>
+                    <Text style={[styles.tableCell, { color: theme.text }]}>{loses}</Text>
+                    <Text style={[styles.tableCell, { color: theme.text }]}>{points}</Text>
+                  </View>
+                );
+              })}
+            </View>
           </View>
         )}
       </View>
@@ -367,6 +351,52 @@ const styles = StyleSheet.create({
   premiumStatLabel: {
     fontSize: 12,
     marginTop: 1,
+  },
+  // Tableau stylé “Par jeu”
+  tableContainer: {
+    borderWidth: 1,
+    borderRadius: 12,
+    overflow: "hidden",
+  },
+  tableHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderBottomWidth: 1,
+  },
+  tableHeaderCellGame: {
+    flex: 2,
+    fontWeight: "bold",
+  },
+  tableHeaderCell: {
+    flex: 1,
+    textAlign: "center",
+    fontWeight: "bold",
+  },
+  tableRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+  },
+  tableCellGameWrapper: {
+    flex: 2,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  gameDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    marginRight: 8,
+  },
+  tableCellGameText: {
+    fontWeight: "600",
+  },
+  tableCell: {
+    flex: 1,
+    textAlign: "center",
   },
 });
 
