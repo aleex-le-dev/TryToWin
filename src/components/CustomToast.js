@@ -69,7 +69,7 @@ const CustomToast = ({ visible, type = "info", title, message, onHide }) => {
               <Text style={[styles.title, { color: theme.text }]}>{title}</Text>
               <Text style={[styles.message, { color: theme.text }]}>{message}</Text>
             </View>
-          ) : (
+          ) : (             
             <>
               {title ? <Text style={[styles.title, { color: theme.text }]}>{title}</Text> : null}
               {!!message && <Text style={[styles.message, { color: theme.text }]}>{message}</Text>}
