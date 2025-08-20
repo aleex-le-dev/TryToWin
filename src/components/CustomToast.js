@@ -6,12 +6,14 @@ import {
   View,
   Text,
   StyleSheet,
-  TouchableOpacity,
+  Dimensions,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useTheme } from "../contexts/ThemeContext";
 
 const CustomToast = ({ visible, type = "info", title, message, onHide }) => {
   const translateY = useRef(new Animated.Value(-100)).current;
+  const { theme } = useTheme();
 
   useEffect(() => {
     if (visible) {
@@ -33,45 +35,47 @@ const CustomToast = ({ visible, type = "info", title, message, onHide }) => {
 
   if (!visible) return null;
 
+  const maxToastWidth = Math.min(420, Dimensions.get("window").width - 24);
+  const accent = type === "success" ? "#43e97b" : type === "error" ? "#ff6b6b" : (theme.primary || "#667eea");
+
   return (
     <Animated.View style={[styles.container, { transform: [{ translateY }] }]}>
       <View
         style={[
           styles.toast,
           {
-            borderLeftColor:
-              type === "success"
-                ? "#43e97b"
-                : type === "error"
-                ? "#ff6b6b"
-                : "#667eea",
+            borderLeftColor: accent,
+            backgroundColor: theme.card,
+            borderColor: theme.border,
+            maxWidth: maxToastWidth,
+            alignSelf: "center",
           },
         ]}>
+        <Ionicons
+          name={
+            type === "success"
+              ? "checkmark-circle-outline"
+              : type === "error"
+              ? "close-circle-outline"
+              : "information-circle-outline"
+          }
+          size={22}
+          color={accent}
+          style={styles.icon}
+        />
         <View style={styles.textContainer}>
-          <Ionicons
-            name={
-              type === "success"
-                ? "checkmark-circle-outline"
-                : type === "error"
-                ? "close-circle-outline"
-                : "information-circle-outline"
-            }
-            size={24}
-            color={
-              type === "success"
-                ? "#43e97b"
-                : type === "error"
-                ? "#ff6b6b"
-                : "#667eea"
-            }
-            style={styles.icon}
-          />
-          {title ? <Text style={styles.title}>{title}</Text> : null}
-          <Text style={styles.message}>{message}</Text>
+          {title && message ? (
+            <View>
+              <Text style={[styles.title, { color: theme.text }]}>{title}</Text>
+              <Text style={[styles.message, { color: theme.text }]}>{message}</Text>
+            </View>
+          ) : (
+            <>
+              {title ? <Text style={[styles.title, { color: theme.text }]}>{title}</Text> : null}
+              {!!message && <Text style={[styles.message, { color: theme.text }]}>{message}</Text>}
+            </>
+          )}
         </View>
-        <TouchableOpacity onPress={onHide} style={styles.closeBtn}>
-          <Ionicons name='close' size={20} color='#fff' />
-        </TouchableOpacity>
       </View>
     </Animated.View>
   );
@@ -87,9 +91,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   toast: {
-    minWidth: 180,
-    maxWidth: 340,
-    alignSelf: "center",
     marginTop: 40,
     backgroundColor: "#fff",
     borderRadius: 18,
@@ -97,6 +98,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: 12,
     paddingHorizontal: 18,
+    borderWidth: 1,
     shadowColor: "#000",
     shadowOpacity: 0.1,
     shadowRadius: 8,
@@ -104,7 +106,7 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   icon: { marginRight: 10 },
-  textContainer: { flex: 1 },
+  textContainer: { flexShrink: 1 },
   title: {
     color: "#23272a",
     fontWeight: "bold",
@@ -112,7 +114,6 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   message: { color: "#23272a", fontSize: 15 },
-  closeBtn: { marginLeft: 10, padding: 4 },
 });
 
 export default CustomToast;
