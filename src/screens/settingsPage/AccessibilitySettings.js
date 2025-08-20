@@ -14,11 +14,13 @@ import Ionicons from "react-native-vector-icons/Ionicons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Linking from "expo-linking";
 import { useAccessibility, A11Y_KEYS } from "../../contexts/AccessibilityContext";
+import { useTheme } from "../../contexts/ThemeContext";
 
 const STORAGE_KEYS = A11Y_KEYS;
 
 const AccessibilitySettings = ({ navigation }) => {
 	const a11y = useAccessibility();
+	const { theme } = useTheme();
 	// États des préférences d'accessibilité
 	const [highContrast, setHighContrast] = useState(a11y.highContrast);
 	const [largeTouchTargets, setLargeTouchTargets] = useState(a11y.largeTouchTargets);
@@ -66,22 +68,22 @@ const AccessibilitySettings = ({ navigation }) => {
 	};
 
 	return (
-		<View style={styles.container}>
+		<View style={[styles.container, { backgroundColor: theme.background }]}>
 			<View style={styles.header}>
 				<TouchableOpacity
 					accessibilityLabel="Revenir en arrière"
 					accessibilityRole="button"
 					onPress={() => navigation.goBack()}
 					style={styles.backBtn}>
-					<Ionicons name='arrow-back' size={22} color='#23272a' />
+					<Ionicons name='arrow-back' size={22} color={theme.icon} />
 				</TouchableOpacity>
-				<Text style={styles.title}>Accessibilité et éthique</Text>
+				<Text style={[styles.title, { color: theme.text }]}>Accessibilité et éthique</Text>
 			</View>
 
 			<ScrollView contentContainerStyle={{ paddingBottom: 36 }}>
 				{/* Contraste élevé, ergonomie mobile, labels accessibles */}
-				<View style={styles.card}>
-					<Text style={styles.cardTitle}>Contraste et ergonomie</Text>
+				<View style={[styles.card, { backgroundColor: theme.card }]}>
+					<Text style={[styles.cardTitle, { color: theme.text }]}>Contraste et ergonomie</Text>
 					<Row
 						label="Contraste élevé"
 						desc="Renforce les contrastes pour une meilleure lisibilité"
@@ -98,12 +100,12 @@ const AccessibilitySettings = ({ navigation }) => {
 							setLargeTouchTargets(v); a11y.setLargeTouchTargets(v);
 						}}
 					/>
-					<Text style={styles.note}>Tous les contrôles disposent d'un label accessible (compatibles VoiceOver/TalkBack).</Text>
+					<Text style={[styles.note, { color: theme.textSecondary }]}>Tous les contrôles disposent d'un label accessible (compatibles VoiceOver/TalkBack).</Text>
 				</View>
 
 				{/* Navigation et tailles/espacements */}
-				<View style={styles.card}>
-					<Text style={styles.cardTitle}>Navigation et tailles</Text>
+				<View style={[styles.card, { backgroundColor: theme.card }]}>
+					<Text style={[styles.cardTitle, { color: theme.text }]}>Navigation et tailles</Text>
 					<Row
 						label="Respecter les préférences de l'OS"
 						desc="Taille du texte, contraste renforcé, etc."
@@ -128,12 +130,12 @@ const AccessibilitySettings = ({ navigation }) => {
 							setLargerSpacing(v); a11y.setLargerSpacing(v);
 						}}
 					/>
-					<Text style={styles.note}>Les parcours sont pensés pour l'usage à une main sur smartphone et tablette.</Text>
+					<Text style={[styles.note, { color: theme.textSecondary }]}>Les parcours sont pensés pour l'usage à une main sur smartphone et tablette.</Text>
 				</View>
 
 				{/* Documentation, tutoriels, feedback */}
-				<View style={styles.card}>
-					<Text style={styles.cardTitle}>Aide et feedback</Text>
+				<View style={[styles.card, { backgroundColor: theme.card }]}>
+					<Text style={[styles.cardTitle, { color: theme.text }]}>Aide et feedback</Text>
 					<Row
 						label="Tutoriels et overlays d'aide"
 						desc="Afficher des tutoriels contextuels à la première utilisation"
@@ -158,22 +160,22 @@ const AccessibilitySettings = ({ navigation }) => {
 							setSounds(v); a11y.setSounds(v);
 						}}
 					/>
-					<Text style={styles.note}>FAQ et tutoriels sont accessibles depuis l'app et lors de la découverte de nouvelles fonctions.</Text>
+					<Text style={[styles.note, { color: theme.textSecondary }]}>FAQ et tutoriels sont accessibles depuis l'app et lors de la découverte de nouvelles fonctions.</Text>
 				</View>
 
 				{/* Pratiques avancées et responsabilités éthiques */}
-				<View style={styles.card}>
-					<Text style={styles.cardTitle}>Pratiques avancées et éthique</Text>
-					<Text style={styles.paragraph}>
+				<View style={[styles.card, { backgroundColor: theme.card }]}>
+					<Text style={[styles.cardTitle, { color: theme.text }]}>Pratiques avancées et éthique</Text>
+					<Text style={[styles.paragraph, { color: theme.text }]}>
 						Compatibilité privilégiée avec VoiceOver et TalkBack (annonces vocales, focus auto, textes alternatifs).
 						Sons/animations désactivables. Multilingue prévu, gestion RTL lorsque nécessaire. Langage clair et navigation pour limiter la charge cognitive.
 					</Text>
 				</View>
 
 				{/* Charte éthique et contact */}
-				<View style={styles.card}>
-					<Text style={styles.cardTitle}>Charte éthique et inclusion</Text>
-					<Text style={styles.paragraph}>
+				<View style={[styles.card, { backgroundColor: theme.card }]}>
+					<Text style={[styles.cardTitle, { color: theme.text }]}>Charte éthique et inclusion</Text>
+					<Text style={[styles.paragraph, { color: theme.text }]}>
 						L'application s'oppose à toute discrimination et favorise la diversité.
 						Collecte de données minimale (privacy by design) et usage transparent.
 					</Text>

@@ -70,7 +70,7 @@ const BlockedUsersScreen = ({ navigation }) => {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
-      <View style={[styles.header, { backgroundColor: "#fff", borderBottomColor: "#e9ecef" }]}>
+      <View style={[styles.header, { backgroundColor: "#fff", borderBottomColor: "#e9ecef" }, { paddingTop: 50 }]}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
           <Ionicons name='arrow-back' size={24} color='#23272a' />
         </TouchableOpacity>

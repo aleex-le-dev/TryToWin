@@ -1,6 +1,7 @@
 // Page Paramètres > Données et confidentialité (RGPD)
 import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
+import { useTheme } from "../../contexts/ThemeContext";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { useAuth } from "../../hooks/useAuth";
 import { recordConsent, getLastConsent } from "../../services/consentService";
@@ -32,20 +33,21 @@ const PrivacySettings = ({ navigation }) => {
     } catch {}
   };
 
+  const { theme } = useTheme();
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <Ionicons name='arrow-back' size={22} color='#23272a' />
+          <Ionicons name='arrow-back' size={22} color={theme.icon} />
         </TouchableOpacity>
-        <Text style={styles.title}>Données et confidentialité</Text>
+        <Text style={[styles.title, { color: theme.text }]}>Données et confidentialité</Text>
       </View>
 
       <ScrollView contentContainerStyle={{ paddingBottom: 36 }}>
         {/* Mentions légales et politique */}
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Mentions légales & Politique</Text>
-          <Text style={styles.paragraph}>Consultez les mentions légales et la politique de confidentialité.</Text>
+        <View style={[styles.card, { backgroundColor: theme.card }]}>
+          <Text style={[styles.cardTitle, { color: theme.text }]}>Mentions légales & Politique</Text>
+          <Text style={[styles.paragraph, { color: theme.text }]}>Consultez les mentions légales et la politique de confidentialité.</Text>
           <View style={styles.rowBtns}>
             <OutlineBtn label='Mentions légales' onPress={() => navigation.navigate('LegalMentions')} />
             <OutlineBtn label='Politique de confidentialité' onPress={() => navigation.navigate('PrivacyPolicy') } />
@@ -53,10 +55,10 @@ const PrivacySettings = ({ navigation }) => {
         </View>
 
         {/* Consentements */}
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Consentements</Text>
-          <Text style={styles.paragraph}>Vous pouvez accepter ou retirer vos consentements à tout moment.</Text>
-          <Text style={[styles.paragraph, { marginTop: 4 }]}>État actuel: {privacyAccepted === null ? '—' : (privacyAccepted ? 'accepté' : 'retiré')}</Text>
+        <View style={[styles.card, { backgroundColor: theme.card }]}>
+          <Text style={[styles.cardTitle, { color: theme.text }]}>Consentements</Text>
+          <Text style={[styles.paragraph, { color: theme.text }]}>Vous pouvez accepter ou retirer vos consentements à tout moment.</Text>
+          <Text style={[styles.paragraph, { marginTop: 4, color: theme.text }]}>État actuel: {privacyAccepted === null ? '—' : (privacyAccepted ? 'accepté' : 'retiré')}</Text>
           <View style={styles.rowBtns}>
             <SolidBtn label='Accepter la politique' onPress={() => saveConsent('privacy', true)} />
             <OutlineBtn label='Retirer' onPress={() => saveConsent('privacy', false)} />
@@ -65,18 +67,18 @@ const PrivacySettings = ({ navigation }) => {
         </View>
 
         {/* Données personnelles */}
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Données personnelles</Text>
-          <Text style={styles.listItem}>• Données collectées: profil, email, scores, interactions sociales</Text>
-          <Text style={styles.listItem}>• Finalités: fonctionnement, personnalisation, sécurité</Text>
-          <Text style={styles.listItem}>• Conservation: limitée au nécessaire; voir politique</Text>
-          <Text style={styles.listItem}>• Tiers: Firebase/Google, analytics éventuels</Text>
-          <Text style={styles.listItem}>• Base légale: exécution du service, consentement</Text>
+        <View style={[styles.card, { backgroundColor: theme.card }]}>
+          <Text style={[styles.cardTitle, { color: theme.text }]}>Données personnelles</Text>
+          <Text style={[styles.listItem, { color: theme.text }]}>• Données collectées: profil, email, scores, interactions sociales</Text>
+          <Text style={[styles.listItem, { color: theme.text }]}>• Finalités: fonctionnement, personnalisation, sécurité</Text>
+          <Text style={[styles.listItem, { color: theme.text }]}>• Conservation: limitée au nécessaire; voir politique</Text>
+          <Text style={[styles.listItem, { color: theme.text }]}>• Tiers: Firebase/Google, analytics éventuels</Text>
+          <Text style={[styles.listItem, { color: theme.text }]}>• Base légale: exécution du service, consentement</Text>
         </View>
 
         {/* Droits utilisateurs */}
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Vos droits</Text>
+        <View style={[styles.card, { backgroundColor: theme.card }]}>
+          <Text style={[styles.cardTitle, { color: theme.text }]}>Vos droits</Text>
           <Text style={styles.listItem}>• Accès, rectification, suppression, portabilité, opposition</Text>
           <Text style={styles.listItem}>• Réponse sous 30 jours, par email et confirmation</Text>
           <TouchableOpacity style={styles.contactBtn} onPress={() => Linking.openURL('mailto:dpo@trytowin.app?subject=Droits%20RGPD')}>
@@ -86,15 +88,15 @@ const PrivacySettings = ({ navigation }) => {
         </View>
 
         {/* Registre & Responsable */}
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Registre & Responsable</Text>
-          <Text style={styles.paragraph}>Un registre des traitements est tenu à jour (finalité, base légale, destinataire, durée, sécurité). Responsable & DPO: contact dans la politique.</Text>
+        <View style={[styles.card, { backgroundColor: theme.card }]}>
+          <Text style={[styles.cardTitle, { color: theme.text }]}>Registre & Responsable</Text>
+          <Text style={[styles.paragraph, { color: theme.text }]}>Un registre des traitements est tenu à jour (finalité, base légale, destinataire, durée, sécurité). Responsable & DPO: contact dans la politique.</Text>
         </View>
 
         {/* Sécurité & notifications */}
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>Sécurité & notifications</Text>
-          <Text style={styles.paragraph}>Chiffrement, accès restreints, minimisation. En cas d’incident ou de modification importante, information des utilisateurs et notification à la CNIL si nécessaire.</Text>
+          <Text style={[styles.cardTitle, { color: theme.text }]}>Sécurité & notifications</Text>
+          <Text style={[styles.paragraph, { color: theme.text }]}>Chiffrement, accès restreints, minimisation. En cas d’incident ou de modification importante, information des utilisateurs et notification à la CNIL si nécessaire.</Text>
         </View>
       </ScrollView>
     </View>
