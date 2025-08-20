@@ -4,7 +4,7 @@
 
 ### Live 
 
-Pour tester l'application, scannnez le qr code ci dessous à partir de l'application mobile Expo Go : 
+Pour tester l'application, scannez le QR Code ci dessous à partir de l'application mobile Expo Go : 
 
 ![QR Code Expo Go](assets/eas-update.svg)
 
