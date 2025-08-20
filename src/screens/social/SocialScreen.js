@@ -773,9 +773,13 @@ export default function SocialScreen({ route, navigation }) {
         onPress={() => setSelectedFriend(item)}
         onLongPress={() => setLongPressedFriendId(item.id)}
         activeOpacity={0.7}>
-        <View style={styles.avatarContainer}>
-          <Ionicons name='person-circle' size={28} color={theme.primary} />
-        </View>
+                 <View style={styles.avatarContainer}>
+           {item.photoURL ? (
+             <Image source={{ uri: item.photoURL }} style={styles.friendAvatar} />
+           ) : (
+             <Text style={[styles.friendAvatarText, { color: theme.primary }]}>{item.avatar || '👤'}</Text>
+           )}
+         </View>
         <View style={styles.friendInfo}>
           <Text style={[styles.friendName, { color: theme.text }]}>{item.username}</Text>
           <View style={styles.friendStatusRow}>
@@ -1384,17 +1388,30 @@ const styles = StyleSheet.create({
     height: 10,
     borderRadius: 5,
   },
+  friendAvatar: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+  },
+  friendAvatarText: {
+    fontSize: 20,
+    width: 28,
+    height: 28,
+    textAlign: 'center',
+    lineHeight: 28,
+  },
   friendInfo: {
     flex: 1,
   },
   onlineStatus: {
     fontSize: 12,
   },
-  friendStatusRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 2,
-  },
+     friendStatusRow: {
+     flexDirection: 'row',
+     alignItems: 'center',
+     marginTop: 2,
+     marginLeft: 10,
+   },
   friendActions: {
     flexDirection: 'row',
     alignItems: 'center',
