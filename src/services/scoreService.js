@@ -240,32 +240,29 @@ export async function getLeaderboard(game, topN = 10, currentUser = null) {
       const userId = userDoc.id;
       const userProfile = userDoc.data();
       const scoreSnap = await getDoc(doc(db, "users", userId, "scores", game));
-      const data = scoreSnap.exists() ? scoreSnap.data() : {};
-
-      // Créer une entrée de score si elle n'existe pas
-      if (!scoreSnap.exists()) {
-        await ensureScoreEntry(userId, game);
+      if (scoreSnap.exists()) {
+        const data = scoreSnap.data() || {};
+        if ((data.totalGames || 0) > 0) {
+          leaderboard.push({
+            userId,
+            name:
+              userProfile.username ||
+              userProfile.displayName ||
+              userProfile.email ||
+              "Joueur",
+            points: data.totalPoints || 0,
+            country: userProfile.country || "FR",
+            win: data.win || 0,
+            draw: data.draw || 0,
+            lose: data.lose || 0,
+            totalGames: data.totalGames || 0,
+            winRate: data.winRate || 0,
+            currentStreak: data.currentStreak || 0,
+            avatar: userProfile.avatar || null,
+            email: userProfile.email || null,
+          });
+        }
       }
-
-      // Inclure tous les joueurs (maintenant qu'ils ont tous une entrée de score)
-      leaderboard.push({
-        userId,
-        name:
-          userProfile.username ||
-          userProfile.displayName ||
-          userProfile.email ||
-          "Joueur",
-        points: data.totalPoints || 0,
-        country: userProfile.country || "FR",
-        win: data.win || 0,
-        draw: data.draw || 0,
-        lose: data.lose || 0,
-        totalGames: data.totalGames || 0,
-        winRate: data.winRate || 0,
-        currentStreak: data.currentStreak || 0,
-        avatar: userProfile.avatar || null,
-        email: userProfile.email || null,
-      });
     }
 
     // Ajout/actualisation de l'utilisateur courant si besoin
