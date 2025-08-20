@@ -194,11 +194,16 @@ const Othello = ({ navigation }) => {
   }, [user?.id]);
 
   useEffect(() => {
+    console.log("🔄 [Othello] useEffect - board/currentPlayer/gameOver changés");
+    console.log("🎯 [Othello] Joueur actuel:", currentPlayer, "IA commence:", iaCommence);
     setValidMoves(getValidMoves(board, currentPlayer));
     const moves = getValidMoves(board, currentPlayer);
+    console.log("✅ [Othello] Coups valides pour le joueur", currentPlayer, ":", moves.length);
     if (moves.length === 0) {
+      console.log("⚠️ [Othello] Aucun coup valide pour le joueur", currentPlayer);
       const oppMoves = getValidMoves(board, getOpponent(currentPlayer));
       if (oppMoves.length === 0) {
+        console.log("🏁 [Othello] Partie terminée - aucun coup valide pour aucun joueur");
         setGameOver(true);
         const { black, white } = countTokens(board);
         const winnerValue = black > white ? 1 : white > black ? 2 : 0;
@@ -226,12 +231,16 @@ const Othello = ({ navigation }) => {
           })();
         }
       } else {
+        console.log("🔄 [Othello] Changement de joueur - aucun coup pour", currentPlayer);
         setCurrentPlayer(getOpponent(currentPlayer));
       }
       return;
     }
-    // Appel IA si c'est à l'IA de jouer (joueur 2)
-    if (currentPlayer === 2 && !gameOver) {
+    // Appel IA si c'est à l'IA de jouer
+    const humanPlayer = iaCommence ? 2 : 1;
+    const aiPlayer = getOpponent(humanPlayer);
+    if (currentPlayer === aiPlayer && !gameOver) {
+      console.log("🤖 [Othello] Tour de l'IA (joueur", aiPlayer, ")");
       (async () => {
         // Conversion board 2D -> 1D (null, 'X', 'O')
         const flatBoard = board
@@ -240,11 +249,12 @@ const Othello = ({ navigation }) => {
         const iaMove = await getIaMove(flatBoard);
         if (iaMove) {
           const [row, col] = iaMove.split(",").map(Number);
+          console.log("🤖 [Othello] IA joue en position:", row, col);
           // Afficher le coup de l'IA pendant 1 seconde avant de le jouer
           setIaMovePreview([row, col]);
           setTimeout(() => {
-            setBoard(applyMove(board, row, col, 2));
-            setCurrentPlayer(1);
+            setBoard(applyMove(board, row, col, aiPlayer));
+            setCurrentPlayer(humanPlayer);
             setIaMovePreview(null);
           }, 1000);
         }
@@ -253,7 +263,12 @@ const Othello = ({ navigation }) => {
   }, [board, currentPlayer, gameOver]);
 
   const handleCellPress = (row, col) => {
-    if (gameOver || !isValidMove(board, row, col, currentPlayer)) return;
+    console.log("👆 [Othello] Clic sur cellule:", row, col, "Joueur actuel:", currentPlayer);
+    if (gameOver || !isValidMove(board, row, col, currentPlayer)) {
+      console.log("❌ [Othello] Coup invalide ou partie terminée");
+      return;
+    }
+    console.log("✅ [Othello] Coup valide, application du mouvement");
     const newBoard = applyMove(board, row, col, currentPlayer);
     setBoard(newBoard);
     setCurrentPlayer(getOpponent(currentPlayer));
@@ -300,17 +315,18 @@ const Othello = ({ navigation }) => {
   };
 
   const resetGame = () => {
+    console.log("🔄 [Othello] Redémarrage de la partie");
     setBoard(initialBoard());
     setGameOver(false);
     setWinner(null);
     // Alterner qui commence
     const nouvelleValeur = !iaCommence;
     setIaCommence(nouvelleValeur);
-    if (nouvelleValeur) {
-      setCurrentPlayer(2); // L'IA commence (blanc)
-    } else {
-      setCurrentPlayer(1); // Joueur commence (noir)
-    }
+    const human = nouvelleValeur ? 2 : 1;
+    const ai = getOpponent(human);
+    // Si l'IA commence, c'est à l'IA de jouer, sinon c'est au joueur
+    setCurrentPlayer(nouvelleValeur ? ai : human);
+    console.log("🔄 [Othello] Nouvelle configuration - IA commence:", nouvelleValeur, "Joueur humain:", human, "IA:", ai, "Tour actuel:", nouvelleValeur ? ai : human);
   };
 
   const handleFirstTurnOverlayComplete = (quiCommence = iaCommence) => {
@@ -319,6 +335,7 @@ const Othello = ({ navigation }) => {
   };
 
   const handleResultOverlayComplete = () => {
+    console.log("🏁 [Othello] Overlay de résultat terminé, redémarrage automatique");
     setShowResultOverlay(false);
     // Redémarrage automatique après l'overlay
     setTimeout(() => {
