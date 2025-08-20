@@ -177,6 +177,10 @@ const ProfileStats = ({
               </Text>
               <Text
                 style={{ flex: 1, textAlign: "center", fontWeight: "bold", color: theme.text }}>
+                N
+              </Text>
+              <Text
+                style={{ flex: 1, textAlign: "center", fontWeight: "bold", color: theme.text }}>
                 D
               </Text>
               <Text
@@ -184,29 +188,29 @@ const ProfileStats = ({
                 Points
               </Text>
             </View>
-            {Object.entries(statsByGame).map(([gameId, gameStats]) => {
-              const game = GAMES_DATA.find((g) => g.id === gameId);
+            {GAMES_DATA.map((g) => {
+              const gameId = g.id;
+              const s = (statsByGame && statsByGame[gameId]) || {};
+              const totalGames = Number(s.totalGames) || 0;
+              const wins = Number(s.win ?? s.wins) || 0;
+              const draws = Number(s.draw ?? s.draws) || 0;
+              const loses = Number(s.lose ?? s.loses) || 0;
+              const points = Number(s.totalPoints ?? s.points) || 0;
+
               return (
                 <View
                   key={gameId}
                   style={{
                     flexDirection: "row",
                     justifyContent: "space-between",
-                    marginBottom: 2,
+                    marginBottom: 6,
                   }}>
-                  <Text style={{ flex: 2, color: theme.text }}>{game?.title || gameId}</Text>
-                  <Text style={{ flex: 1, textAlign: "center", color: theme.text }}>
-                    {gameStats.totalGames || 0}
-                  </Text>
-                  <Text style={{ flex: 1, textAlign: "center", color: theme.text }}>
-                    {gameStats.wins || 0}
-                  </Text>
-                  <Text style={{ flex: 1, textAlign: "center", color: theme.text }}>
-                    {gameStats.loses || 0}
-                  </Text>
-                  <Text style={{ flex: 1, textAlign: "center", color: theme.text }}>
-                    {gameStats.points || 0}
-                  </Text>
+                  <Text style={{ flex: 2, color: theme.text }}>{g.title}</Text>
+                  <Text style={{ flex: 1, textAlign: "center", color: theme.text }}>{totalGames}</Text>
+                  <Text style={{ flex: 1, textAlign: "center", color: theme.text }}>{wins}</Text>
+                  <Text style={{ flex: 1, textAlign: "center", color: theme.text }}>{draws}</Text>
+                  <Text style={{ flex: 1, textAlign: "center", color: theme.text }}>{loses}</Text>
+                  <Text style={{ flex: 1, textAlign: "center", color: theme.text }}>{points}</Text>
                 </View>
               );
             })}
