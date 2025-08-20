@@ -22,6 +22,7 @@ import { countries } from "../constants";
 import { AVATAR_COLLECTIONS } from "../constants/avatars";
 import SkeletonLeaderboard from "./SkeletonLeaderboard";
 import { useTheme } from "../contexts/ThemeContext";
+import { useNavigation } from "@react-navigation/native";
 
 /**
  * Composant de classement pour le profil utilisateur (ProfileScreen)
@@ -37,6 +38,7 @@ const LeaderboardProfil = ({
 }) => {
   const { user } = useAuth();
   const { theme } = useTheme();
+  const navigation = useNavigation();
   const [activeTab, setActiveTab] = useState("global");
   const [leaderboard, setLeaderboard] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -378,6 +380,14 @@ const LeaderboardProfil = ({
 
   const renderPlayer = ({ item, index }) => {
     return (
+      <TouchableOpacity
+        activeOpacity={0.8}
+        onPress={() => {
+          try {
+            navigation.navigate("PlayerCard", { userId: item.userId });
+          } catch {}
+        }}
+      >
       <View
         style={[
           styles.playerItem,
@@ -493,6 +503,7 @@ const LeaderboardProfil = ({
           </Text>
         </View>
       </View>
+      </TouchableOpacity>
     );
   };
 
