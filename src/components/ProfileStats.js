@@ -186,8 +186,7 @@ const ProfileStats = ({
                       { backgroundColor: index % 2 === 0 ? theme.surface : "transparent" },
                     ]}>
                     <View style={styles.tableCellGameWrapper}>
-                      <View style={[styles.gameDot, { backgroundColor: g.color }]} />
-                      <Text style={[styles.tableCellGameText, { color: theme.text }]}>{g.title}</Text>
+                      <Text style={[styles.tableCellGameText, { color: g.color }]}>{g.title}</Text>
                     </View>
                     <Text style={[styles.tableCell, { color: theme.text }]}>{totalGames}</Text>
                     <Text style={[styles.tableCell, { color: theme.text }]}>{wins}</Text>
@@ -384,12 +383,6 @@ const styles = StyleSheet.create({
     flex: 2,
     flexDirection: "row",
     alignItems: "center",
-  },
-  gameDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    marginRight: 8,
   },
   tableCellGameText: {
     fontWeight: "600",
