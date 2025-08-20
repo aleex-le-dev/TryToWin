@@ -13,6 +13,7 @@ import {
   SafeAreaView,
   ActivityIndicator,
   Dimensions,
+  AppState,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import QRCode from "react-native-qrcode-svg";
@@ -60,6 +61,30 @@ export default function SocialScreen({ route, navigation }) {
     const unsub = subscribeBlocked(user.id, (ids) => setBlockedIds(ids));
     return () => unsub();
   }, [user?.id]);
+
+  // Écouter le statut en ligne des amis en temps réel
+  useEffect(() => {
+    if (!friendsRaw || friendsRaw.length === 0) return;
+
+    const unsubscribers = friendsRaw.map(friend => {
+      const userRef = doc(db, 'users', friend.id);
+      return onSnapshot(userRef, (doc) => {
+        if (doc.exists()) {
+          const userData = doc.data();
+          setOnlineStatus(prev => ({
+            ...prev,
+            [friend.id]: userData.isOnline || false
+          }));
+        }
+      }, (error) => {
+        console.error(`Erreur écoute statut ${friend.id}:`, error);
+      });
+    });
+
+    return () => {
+      unsubscribers.forEach(unsub => unsub());
+    };
+  }, [friendsRaw]);
 
   // Recalcule la liste d'amis visible en excluant les bloqués
   useEffect(() => {
@@ -129,15 +154,50 @@ export default function SocialScreen({ route, navigation }) {
     loadFriend();
   }, [selectedFriend?.id]);
 
-  // Réinitialiser l’écran (fermer la conversation) à chaque focus sur l’onglet Social
+  // Réinitialiser l'écran (fermer la conversation) à chaque focus sur l'onglet Social
   useFocusEffect(
     React.useCallback(() => {
       setSelectedFriend(null);
       setLongPressedFriendId(null);
       setSelectedUser(null);
       setSearchResults([]);
-    }, [])
+      
+      // Mettre à jour le statut en ligne de l'utilisateur actuel
+      if (user?.id) {
+        const userRef = doc(db, 'users', user.id);
+        updateDoc(userRef, {
+          isOnline: true,
+          lastSeen: serverTimestamp()
+        }).catch(error => {
+          console.error('Erreur mise à jour statut en ligne:', error);
+        });
+      }
+    }, [user?.id])
   );
+
+  // Mettre à jour le statut hors ligne quand l'utilisateur quitte l'écran
+  useEffect(() => {
+    const handleAppStateChange = () => {
+      if (user?.id) {
+        const userRef = doc(db, 'users', user.id);
+        updateDoc(userRef, {
+          isOnline: false,
+          lastSeen: serverTimestamp()
+        }).catch(error => {
+          console.error('Erreur mise à jour statut hors ligne:', error);
+        });
+      }
+    };
+
+    // Écouter les changements d'état de l'app
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
+    
+    return () => {
+      subscription?.remove();
+      // Mettre à jour le statut hors ligne au démontage
+      handleAppStateChange();
+    };
+  }, [user?.id]);
 
 
 
