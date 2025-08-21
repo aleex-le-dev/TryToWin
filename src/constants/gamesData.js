@@ -3,7 +3,7 @@
 export const gamesData = [
   {
     id: "Puissance4",
-    title: "Puissance4",
+    title: "Puissance 4",
     description: "Alignez 4 pions pour gagner",
     category: "Stratégie",
     image: require("../../assets/jeux/puissance4.png"),

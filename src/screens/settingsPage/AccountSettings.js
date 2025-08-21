@@ -1,5 +1,5 @@
 // Page Paramètres > Compte
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert, Modal } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { useTheme } from "../../contexts/ThemeContext";
@@ -16,6 +16,11 @@ const AccountSettings = ({ navigation }) => {
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   
+  // État local pour forcer la mise à jour de l'interface
+  const [localUsername, setLocalUsername] = useState(user?.username || "");
+  const [localEmail, setLocalEmail] = useState(user?.email || "");
+  const [refreshKey, setRefreshKey] = useState(0);
+  
   // États pour le changement de mot de passe
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -29,6 +34,29 @@ const AccountSettings = ({ navigation }) => {
   // États pour le changement d'email
   const [newEmail, setNewEmail] = useState("");
   const [isChangingEmail, setIsChangingEmail] = useState(false);
+
+  // Pré-remplir les champs avec les valeurs actuelles
+  useEffect(() => {
+    if (showUsernameModal && user?.username) {
+      setNewUsername(user.username);
+    }
+  }, [showUsernameModal, user?.username]);
+
+  useEffect(() => {
+    if (showEmailModal && user?.email) {
+      setNewEmail(user.email);
+    }
+  }, [showEmailModal, user?.email]);
+
+  // Mettre à jour les états locaux quand l'utilisateur change
+  useEffect(() => {
+    if (user?.username) {
+      setLocalUsername(user.username);
+    }
+    if (user?.email) {
+      setLocalEmail(user.email);
+    }
+  }, [user?.username, user?.email]);
 
   const handleChangePassword = async () => {
     if (newPassword !== confirmPassword) {
@@ -71,16 +99,22 @@ const AccountSettings = ({ navigation }) => {
 
     setIsChangingUsername(true);
     try {
-      const userRef = doc(db, "users", user.id);
-      await updateDoc(userRef, {
-        username: newUsername.trim()
-      });
+      // Utiliser updateUserProfile qui met à jour à la fois Firestore et l'état local
+      const success = await updateUserProfile({ username: newUsername.trim() });
       
-      await updateUserProfile({ username: newUsername.trim() });
-      Alert.alert("Succès", "Nom d'utilisateur modifié avec succès");
-      setShowUsernameModal(false);
-      setNewUsername("");
+      if (success) {
+        // Mettre à jour l'état local immédiatement
+        setLocalUsername(newUsername.trim());
+        // Forcer le rafraîchissement de l'interface
+        setRefreshKey(prev => prev + 1);
+        Alert.alert("Succès", "Nom d'utilisateur modifié avec succès");
+        setShowUsernameModal(false);
+        setNewUsername("");
+      } else {
+        Alert.alert("Erreur", "Impossible de modifier le nom d'utilisateur");
+      }
     } catch (error) {
+      console.error("Erreur lors du changement de nom d'utilisateur:", error);
       Alert.alert("Erreur", "Impossible de modifier le nom d'utilisateur");
     } finally {
       setIsChangingUsername(false);
@@ -95,15 +129,22 @@ const AccountSettings = ({ navigation }) => {
 
     setIsChangingEmail(true);
     try {
-      const userRef = doc(db, "users", user.id);
-      await updateDoc(userRef, {
-        email: newEmail.trim()
-      });
+      // Utiliser updateUserProfile qui met à jour à la fois Firestore et l'état local
+      const success = await updateUserProfile({ email: newEmail.trim() });
       
-      Alert.alert("Succès", "Email modifié avec succès");
-      setShowEmailModal(false);
-      setNewEmail("");
+      if (success) {
+        // Mettre à jour l'état local immédiatement
+        setLocalEmail(newEmail.trim());
+        // Forcer le rafraîchissement de l'interface
+        setRefreshKey(prev => prev + 1);
+        Alert.alert("Succès", "Email modifié avec succès");
+        setShowEmailModal(false);
+        setNewEmail("");
+      } else {
+        Alert.alert("Erreur", "Impossible de modifier l'email");
+      }
     } catch (error) {
+      console.error("Erreur lors du changement d'email:", error);
       Alert.alert("Erreur", "Impossible de modifier l'email");
     } finally {
       setIsChangingEmail(false);
@@ -201,14 +242,14 @@ const AccountSettings = ({ navigation }) => {
           {renderSettingItem({
             icon: "person-outline",
             title: "Nom d'utilisateur",
-            subtitle: user?.username || "Non défini",
+            subtitle: localUsername || "Non défini",
             onPress: () => setShowUsernameModal(true)
           })}
           
           {renderSettingItem({
             icon: "mail-outline",
             title: "Adresse email",
-            subtitle: user?.email || "Non défini",
+            subtitle: localEmail || "Non défini",
             onPress: () => setShowEmailModal(true)
           })}
           
