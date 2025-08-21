@@ -73,7 +73,6 @@ function GameCard({ item, onPress }) {
             />
           )}
           <Text style={[styles.gameTitleModern, isChessGame && styles.gameTitleLocked]}>{item.title}</Text>
-          <Text style={[styles.gameDescriptionModern, isChessGame && styles.gameDescriptionLocked]}>{item.description}</Text>
           
 
         </View>
@@ -543,7 +542,8 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   section: {
-    padding: 20,
+    paddingHorizontal: 20,
+    paddingVertical: 20,
   },
   sectionHeader: {
     flexDirection: "row",
@@ -648,12 +648,12 @@ const styles = StyleSheet.create({
   },
   row: {
     justifyContent: "space-between",
-    paddingHorizontal: 20,
+    paddingHorizontal: 0,
     marginBottom: 20,
     gap: 20,
   },
   gameCard: {
-    width: (width - 60) / 2 - 10,
+    width: (width - 60) / 2,
     height: 180,
     borderRadius: 28,
     backgroundColor: "#fff",
@@ -670,8 +670,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#e0e0e0",
   },
   gameCardGradient: {
-    padding: 22,
-    height: 180,
+    width: "100%",
+    height: "100%",
     justifyContent: "center",
     alignItems: "center",
     borderRadius: 28,
@@ -679,8 +679,9 @@ const styles = StyleSheet.create({
   gameCardContent: {
     alignItems: "center",
     width: "100%",
-    flex: 1,
-    justifyContent: "space-between",
+    height: "100%",
+    justifyContent: "center",
+    padding: 20,
   },
   gameCardHeader: {
     flexDirection: "row",
@@ -703,22 +704,22 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   gameTitleModern: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: "bold",
     color: "#fff",
     textAlign: "center",
-    marginBottom: 2,
-    marginTop: 2,
+    marginBottom: 4,
+    marginTop: 20,
     textShadowColor: "rgba(0,0,0,0.12)",
     textShadowOffset: { width: 0, height: 2 },
     textShadowRadius: 4,
   },
   gameDescriptionModern: {
-    fontSize: 13,
+    fontSize: 18,
     color: "rgba(255,255,255,0.92)",
     textAlign: "center",
-    marginBottom: 10,
-    marginTop: 2,
+    marginBottom: 15,
+    marginTop: 6,
   },
   gameMetaModern: {
     flexDirection: "row",
@@ -742,7 +743,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   gameIconCentered: {
-    fontSize: 44,
+    fontSize: 48,
     alignSelf: "center",
   },
   gameMeta: {
