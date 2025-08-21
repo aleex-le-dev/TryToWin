@@ -7,6 +7,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import { doc, updateDoc } from "firebase/firestore";
 import { db } from "../../utils/firebaseConfig";
 import { updatePassword, EmailAuthProvider, reauthenticateWithCredential } from "firebase/auth";
+import { LinearGradient } from "expo-linear-gradient";
 
 const AccountSettings = ({ navigation }) => {
   const { theme } = useTheme();
@@ -528,6 +529,14 @@ const styles = StyleSheet.create({
   },
   modalButtonConfirm: {
     backgroundColor: "#667eea",
+  },
+  modalButtonCancelPurple: {
+    backgroundColor: "rgba(118, 75, 162, 0.2)",
+    borderWidth: 1,
+    borderColor: "rgba(118, 75, 162, 0.5)",
+  },
+  modalButtonConfirmPurple: {
+    backgroundColor: "#764ba2",
   },
   modalButtonText: {
     fontSize: 16,
