@@ -3,6 +3,7 @@
 # dependencies
 node_modules/
 Dossier_Professionnel_TryToWin/
+package-lock.json
 
 # Expo
 .expo/
