@@ -11,60 +11,22 @@ class ErrorHandler {
 
   // Log d'erreur avec style console
   logError(error, context = "") {
+    // Désactiver les logs console en runtime pour un app propre
     this.errorCount++;
     const timestamp = new Date().toISOString();
-
-    console.group(`🚨 ERREUR #${this.errorCount} - ${timestamp}`);
-    console.log(`📍 Contexte: ${context}`);
-    console.log(`❌ Message: ${error.message || error}`);
-    console.log(`🔍 Type: ${error.name || "Error"}`);
-
-    if (error.code) {
-      console.log(`🔢 Code: ${error.code}`);
-    }
-
-    if (error.stack && this.isDevelopment) {
-      console.log(`📚 Stack trace:`);
-      console.trace(error);
-    }
-
-    console.groupEnd();
-
-    // Log dans un fichier en production si nécessaire
     if (!this.isDevelopment) {
       this.logToFile(error, context, timestamp);
     }
   }
 
   // Log d'avertissement
-  logWarning(message, context = "") {
-    const timestamp = new Date().toISOString();
-
-    console.group(`⚠️ AVERTISSEMENT - ${timestamp}`);
-    console.log(`📍 Contexte: ${context}`);
-    console.log(`⚠️ Message: ${message}`);
-    console.groupEnd();
-  }
+  logWarning(_message, _context = "") {}
 
   // Log d'information
-  logInfo(message, context = "") {
-    const timestamp = new Date().toISOString();
-
-    console.group(`ℹ️ INFO - ${timestamp}`);
-    console.log(`📍 Contexte: ${context}`);
-    console.log(`ℹ️ Message: ${message}`);
-    console.groupEnd();
-  }
+  logInfo(_message, _context = "") {}
 
   // Log de succès
-  logSuccess(message, context = "") {
-    const timestamp = new Date().toISOString();
-
-    console.group(`✅ SUCCÈS - ${timestamp}`);
-    console.log(`📍 Contexte: ${context}`);
-    console.log(`✅ Message: ${message}`);
-    console.groupEnd();
-  }
+  logSuccess(_message, _context = "") {}
 
   // Gestion des erreurs d'authentification
   handleAuthError(error, context = "Authentication") {
@@ -191,7 +153,7 @@ class ErrorHandler {
 
     // Ici vous pouvez implémenter l'envoi vers un service
     // comme Sentry, LogRocket, ou un fichier local
-    console.log("📄 Log sauvegardé:", errorLog);
+    // Redirigez vers un service externe si nécessaire
   }
 
   // Récupération des statistiques d'erreurs
@@ -206,7 +168,7 @@ class ErrorHandler {
   // Réinitialisation du compteur d'erreurs
   resetErrorCount() {
     this.errorCount = 0;
-    this.logInfo("Compteur d'erreurs réinitialisé", "ErrorHandler");
+    // No-op en production
   }
 }
 

@@ -213,9 +213,16 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
           const docSnap = await getDoc(docRef);
           if (docSnap.exists()) {
             const data = docSnap.data();
-            setProfile(data);
-            saveProfileLocally(user.id, data); // Ecrase le cache local avec la version serveur
-            if (data.photoURL) setProfilePhoto(data.photoURL);
+            // Garantit la présence du champ id sur le profil
+            if (!data.id && user?.id) {
+              try {
+                await updateDoc(docRef, { id: user.id });
+              } catch {}
+            }
+            const dataWithId = data.id ? data : { ...data, id: user.id };
+            setProfile(dataWithId);
+            saveProfileLocally(user.id, dataWithId); // Ecrase le cache local avec la version serveur
+            if (dataWithId.photoURL) setProfilePhoto(dataWithId.photoURL);
             setProfileFromFirestoreLoaded(true);
           } else {
             // Si pas de doc, on génère un tag localement aussi

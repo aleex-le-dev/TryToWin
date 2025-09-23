@@ -328,12 +328,19 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
           const docSnap = await getDoc(docRef);
           if (docSnap.exists()) {
             const data = docSnap.data();
-            if (!data.tag) {
+            // Assurer la présence du champ id
+            if (!data.id && user?.id) {
+              try {
+                await updateDoc(docRef, { id: user.id });
+              } catch {}
+            }
+            const dataWithId = data.id ? data : { ...data, id: user.id };
+            if (!dataWithId.tag) {
               // Génère un tag localement
               const newTag = generateTag();
               console.log("Tag généré localement :", newTag);
-              setProfile({ ...data, tag: newTag });
-              saveProfileLocally(user.id, { ...data, tag: newTag });
+              setProfile({ ...dataWithId, tag: newTag });
+              saveProfileLocally(user.id, { ...dataWithId, tag: newTag });
               // Tente de le sauvegarder en BDD (en arrière-plan)
               try {
                 await updateDoc(docRef, { tag: newTag });
@@ -348,9 +355,9 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
               }
               setProfileFromFirestoreLoaded(true);
             } else {
-              setProfile(data);
-              saveProfileLocally(user.id, data); // Ecrase le cache local avec la version serveur
-              if (data.photoURL) setProfilePhoto(data.photoURL);
+              setProfile(dataWithId);
+              saveProfileLocally(user.id, dataWithId); // Ecrase le cache local avec la version serveur
+              if (dataWithId.photoURL) setProfilePhoto(dataWithId.photoURL);
               setProfileFromFirestoreLoaded(true);
             }
           } else {

@@ -15,14 +15,7 @@ import {
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import Toast from "react-native-toast-message";
-import * as Google from "expo-auth-session/providers/google";
-import * as WebBrowser from "expo-web-browser";
-import {
-  ANDROID_CLIENT_ID,
-  EXPO_CLIENT_ID,
-} from "../../utils/googleAuthConfig";
 import { auth } from "../../utils/firebaseConfig";
-import { GoogleAuthProvider, signInWithCredential } from "firebase/auth";
 import { authService } from "../../services/authService";
 import { authSchemas, validateForm } from "../../schemas/validationSchemas";
 import { useAuth } from "../../hooks/useAuth";
@@ -33,7 +26,6 @@ import FormErrorMessage from "../../components/FormErrorMessage";
 import EmailVerificationRequiredPopup from "../../components/EmailVerificationRequiredPopup";
 import { useToast } from "../../contexts/ToastContext";
 
-WebBrowser.maybeCompleteAuthSession();
 
 // Écran de connexion principal avec design moderne et interactif
 const LoginScreen = ({ navigation }) => {
@@ -50,51 +42,11 @@ const LoginScreen = ({ navigation }) => {
   const [loadingEmail, setLoadingEmail] = useState(false);
   const [loadingGoogle, setLoadingGoogle] = useState(false);
 
-  // Google Auth avec logs de débogage
-  const [request, response, promptAsync] = Google.useAuthRequest({
-    expoClientId: EXPO_CLIENT_ID,
-    androidClientId: ANDROID_CLIENT_ID,
-  });
-
   const { showToast } = useToast();
 
 
 
-  React.useEffect(() => {
-
-    if (response?.type === "success") {
-      logInfo("Google Auth - Success response received", "LoginScreen");
-      const { id_token } = response.params;
-      logInfo(
-        `Google Auth - ID Token: ${id_token ? "Présent" : "Manquant"}`,
-        "LoginScreen"
-      );
-
-      const credential = GoogleAuthProvider.credential(id_token);
-      setLoadingEmail(true);
-
-      signInWithCredential(auth, credential)
-        .then((result) => {
-          logSuccess(
-            `Google Auth - Firebase signin success: ${result.user.email}`,
-            "LoginScreen"
-          );
-          Alert.alert("Succès", "Connecté avec Google !");
-          navigation.navigate("MainTabs");
-        })
-        .catch((err) => {
-          logError(err, "LoginScreen.GoogleAuth");
-          Alert.alert("Erreur", err.message);
-        })
-        .finally(() => setLoadingEmail(false));
-    } else if (response?.type === "error") {
-      logError(
-        new Error(`Google Auth Error: ${response.error}`),
-        "LoginScreen.GoogleAuth"
-      );
-      Alert.alert("Erreur", "Erreur lors de l'authentification Google");
-    }
-  }, [response]);
+  // Auth Google supprimée
 
   // Validation en temps réel
   const validateField = async (fieldName, value) => {
@@ -184,46 +136,7 @@ const LoginScreen = ({ navigation }) => {
     }
   };
 
-  const handleGoogleLogin = async () => {
-    setLoadingGoogle(true);
-    try {
-      logInfo("Google Auth - Button pressed", "LoginScreen.handleGoogleLogin");
-
-      logInfo(
-        `Google Auth - Loading state: ${loadingGoogle}`,
-        "LoginScreen.handleGoogleLogin"
-      );
-
-      if (!request) {
-        logError(
-          new Error("Configuration Google non prête"),
-          "LoginScreen.handleGoogleLogin"
-        );
-        setLoadingGoogle(false);
-        return;
-      }
-
-      if (loadingGoogle) {
-        logInfo(
-          "Google Auth - Already loading",
-          "LoginScreen.handleGoogleLogin"
-        );
-        setLoadingGoogle(false);
-        return;
-      }
-
-      logInfo("Google Auth - Starting prompt", "LoginScreen.handleGoogleLogin");
-      await promptAsync();
-    } catch (error) {
-      logError(error, "LoginScreen.handleGoogleLogin");
-      Alert.alert(
-        "Erreur",
-        "Erreur lors du lancement de l'authentification Google"
-      );
-    } finally {
-      setLoadingGoogle(false);
-    }
-  };
+  const handleGoogleLogin = async () => {};
 
   const handleRegister = () => {
     navigation.navigate("Register");
@@ -351,22 +264,7 @@ const LoginScreen = ({ navigation }) => {
               <Text style={styles.registerButtonText}>Créer un compte</Text>
             </TouchableOpacity>
 
-            {/* Connexion rapide */}
-            <View style={styles.quickLogin}>
-              <Text style={styles.quickLoginText}>Connexion rapide</Text>
-              <View style={styles.socialButtons}>
-                <TouchableOpacity
-                  style={styles.socialButton}
-                  onPress={handleGoogleLogin}
-                  disabled={loadingGoogle}>
-                  {loadingGoogle ? (
-                    <ActivityIndicator size='small' color='#fff' />
-                  ) : (
-                    <Ionicons name='logo-google' size={24} color='#fff' />
-                  )}
-                </TouchableOpacity>
-              </View>
-            </View>
+            {/* Connexion rapide retirée */}
           </View>
         </ScrollView>
       </KeyboardAvoidingView>

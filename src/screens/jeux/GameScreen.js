@@ -15,7 +15,7 @@ import {
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../../contexts/AuthContext";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, updateDoc, setDoc } from "firebase/firestore";
 import { db } from "../../utils/firebaseConfig";
 import { useIsFocused } from "@react-navigation/native";
 import { gamesData } from "../../constants/gamesData";
@@ -281,14 +281,45 @@ const GameScreen = ({ navigation, resetCategoryTrigger, forceHomeReset }) => {
           const docRef = doc(db, "users", user.id);
           const docSnap = await getDoc(docRef);
           if (docSnap.exists()) {
+            // Assure la présence du champ id sur le document profil
             const profileData = docSnap.data();
-
-            setProfile(profileData);
+            // Normalise id et email pour éviter les incohérences
+            const ensuredProfile = {
+              ...(profileData || {}),
+              id: profileData?.id || user.id,
+              email: profileData?.email || user.email || null,
+            };
+            // Ecrit le champ id manquant en base de données si nécessaire
+            if (!profileData?.id) {
+              try {
+                await updateDoc(docRef, { id: user.id });
+              } catch (writeErr) {
+                // Ignorer en offline: l'état local suffit et sera synchronisé plus tard
+              }
+            }
+            // Aligne l'email s'il ne correspond pas à l'utilisateur connecté
+            if (user?.email && profileData?.email !== user.email) {
+              try {
+                await updateDoc(docRef, { email: user.email });
+              } catch {}
+            }
+            setProfile(ensuredProfile);
           } else {
-            console.log(
-              "[GameScreen] Aucun profil trouvé pour user.id:",
-              user.id
-            );
+            // Le profil n'existe pas encore: on l'initialise immédiatement
+            const bootstrapProfile = {
+              id: user.id,
+              email: user.email || null,
+              username: user.username || user.displayName || user.email || "Utilisateur",
+              photoURL: user.photoURL || null,
+              isOnline: true,
+              lastSeen: new Date(),
+            };
+            try {
+              await setDoc(docRef, bootstrapProfile, { merge: true });
+            } catch (createErr) {
+              // On ignore si offline; l'état local permettra d'afficher le profil
+            }
+            setProfile(bootstrapProfile);
           }
         } catch (error) {
           console.error("[GameScreen] Erreur chargement profil:", error);

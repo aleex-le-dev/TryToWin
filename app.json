@@ -27,7 +27,7 @@
       },
       "edgeToEdgeEnabled": true,
       "package": "com.diiablex62.TryToWin",
-      "googleServicesFile": "./google-services.json",
+      
       "permissions": [
         "READ_EXTERNAL_STORAGE",
         "WRITE_EXTERNAL_STORAGE",
@@ -47,7 +47,9 @@
       "url": "https://u.expo.dev/ca537eea-f01b-42fd-8254-04fed214820b"
     },
     "plugins": [
-      "expo-barcode-scanner"
+      "expo-web-browser",
+      "expo-asset",
+      "expo-font"
     ],
     "owner": "diiablex62"
   }

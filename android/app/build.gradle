@@ -176,4 +176,7 @@ dependencies {
     }
 }
 
-apply plugin: 'com.google.gms.google-services'
+// Apply Google Services plugin only if google-services.json is present to avoid build failures in debug/local
+if (file("${project.projectDir}/google-services.json").exists()) {
+    apply plugin: 'com.google.gms.google-services'
+}
