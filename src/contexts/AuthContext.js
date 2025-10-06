@@ -90,9 +90,13 @@ export const AuthProvider = ({ children }) => {
     // Écouter les changements d'état d'authentification
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser && !firebaseUser.emailVerified) {
+        // Bloquer l'accès tant que l'email n'est pas vérifié
         setUser(null);
         setLoading(false);
-      } else if (firebaseUser) {
+        return;
+      }
+
+      if (firebaseUser) {
         try {
           const userWithData = await fetchUserData(firebaseUser);
           setUser(User.fromFirebase(userWithData));
@@ -115,6 +119,7 @@ export const AuthProvider = ({ children }) => {
     user,
     loading,
     isAuthenticated: !!user,
+    // Indique si l'email actuel n'est pas vérifié (utile pour l'UI)
     emailNotVerified:
       auth.currentUser &&
       auth.currentUser.email &&

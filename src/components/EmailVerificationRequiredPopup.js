@@ -3,7 +3,7 @@
 // Style identique à UnverifiedAccountPopup pour la cohérence
 
 import React, { useState } from "react";
-import { View, Text, TouchableOpacity, StyleSheet, Modal, ActivityIndicator, TextInput } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, Modal, ActivityIndicator } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { EMAIL_MESSAGES } from "../constants/emailMessages";
@@ -18,99 +18,45 @@ const EmailVerificationRequiredPopup = ({
 }) => {
   const [loading, setLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [password, setPassword] = useState("");
-  const [passwordError, setPasswordError] = useState("");
 
   const handleResendEmail = async () => {
-    console.log(`[EmailVerificationRequiredPopup] Début de handleResendEmail pour: ${email}`);
-    
-    if (!password.trim()) {
-      console.log(`[EmailVerificationRequiredPopup] Mot de passe requis pour: ${email}`);
-      setPasswordError("Mot de passe obligatoire");
-      Toast.show({
-        type: "error",
-        text1: "Erreur",
-        text2: "Veuillez entrer votre mot de passe",
-        position: "top",
-        topOffset: 40,
-        visibilityTime: 3000,
-      });
-      return;
-    }
-
-    // Effacer l'erreur si le mot de passe est saisi
-    setPasswordError("");
+    console.log(`[EmailVerificationRequiredPopup] Renvoi d'email pour: ${email}`);
     setLoading(true);
     setEmailSent(false);
-    
     try {
-      console.log(`[EmailVerificationRequiredPopup] Utilisation de la méthode avec mot de passe pour: ${email}`);
-      
-      // Utiliser la méthode fonctionnelle avec mot de passe
-      const result = await authService.resendEmailVerificationForUnverifiedAccount(email, password);
-      console.log(`[EmailVerificationRequiredPopup] Résultat avec mot de passe:`, result);
-      
-      if (result.success) {
-        console.log(`[EmailVerificationRequiredPopup] Succès de l'envoi pour: ${email}`);
+      const result = await authService.resendEmailVerification(email);
+      if (result?.success !== false) {
         setEmailSent(true);
         Toast.show({
           type: "success",
           text1: "Succès",
-          text2: result.message,
+          text2: "Email de validation renvoyé !",
           position: "top",
           topOffset: 40,
           visibilityTime: 4000,
         });
-        // Ne pas fermer automatiquement, laisser l'utilisateur voir la confirmation
+      } else if (result?.error) {
+        throw new Error(result.error);
       }
     } catch (error) {
-      console.error(`[EmailVerificationRequiredPopup] Erreur lors de l'envoi pour: ${email}:`, error);
+      console.error(`[EmailVerificationRequiredPopup] Erreur d'envoi pour ${email}:`, error);
       Toast.show({
         type: "error",
         text1: "Erreur",
-        text2: error.message,
+        text2: error.message || "Impossible de renvoyer l'email",
         position: "top",
         topOffset: 40,
         visibilityTime: 4000,
       });
     } finally {
-      console.log(`[EmailVerificationRequiredPopup] Fin de handleResendEmail pour: ${email}`);
       setLoading(false);
     }
   };
 
-  const handleForgotPassword = async () => {
-    console.log(`[EmailVerificationRequiredPopup] Mot de passe oublié pour: ${email}`);
-    try {
-      const result = await authService.resetPassword(email);
-      if (result.success) {
-        Toast.show({
-          type: "success",
-          text1: "Succès",
-          text2: "Email de réinitialisation envoyé ! Vérifiez votre boîte mail",
-          position: "top",
-          topOffset: 40,
-          visibilityTime: 4000,
-        });
-      }
-    } catch (error) {
-      Toast.show({
-        type: "error",
-        text1: "Erreur",
-        text2: error.message,
-        position: "top",
-        topOffset: 40,
-        visibilityTime: 4000,
-      });
-    }
-  };
+  const handleForgotPassword = async () => {};
 
   const handleClose = () => {
     setEmailSent(false);
-    setPassword("");
-    setShowPassword(false);
-    setPasswordError("");
     onClose();
   };
 
@@ -142,41 +88,6 @@ const EmailVerificationRequiredPopup = ({
 
             {/* Actions */}
             <View style={styles.actionsContainer}>
-              {/* Champ mot de passe */}
-              <View style={styles.passwordContainer}>
-                <Text style={styles.passwordLabel}>Mot de passe :</Text>
-                <View style={styles.passwordInputContainer}>
-                  <TextInput
-                    style={styles.passwordInput}
-                    placeholder="Entrez votre mot de passe"
-                    placeholderTextColor="rgba(255, 255, 255, 0.7)"
-                    value={password}
-                    onChangeText={(text) => {
-                      setPassword(text);
-                      // Effacer l'erreur quand l'utilisateur tape
-                      if (passwordError) {
-                        setPasswordError("");
-                      }
-                    }}
-                    secureTextEntry={!showPassword}
-                    autoCapitalize="none"
-                  />
-                  <TouchableOpacity
-                    style={styles.eyeIcon}
-                    onPress={() => setShowPassword(!showPassword)}
-                  >
-                    <Ionicons
-                      name={showPassword ? "eye-outline" : "eye-off-outline"}
-                      size={20}
-                      color="#fff"
-                    />
-                  </TouchableOpacity>
-                </View>
-                {passwordError ? (
-                  <Text style={styles.passwordErrorText}>{passwordError}</Text>
-                ) : null}
-              </View>
-
               {/* Bouton Renvoyer l'email */}
               <TouchableOpacity
                 style={[styles.resendButton, loading && styles.disabledButton]}
@@ -209,15 +120,6 @@ const EmailVerificationRequiredPopup = ({
                   </Text>
                 </View>
               )}
-
-              {/* Bouton Mot de passe oublié */}
-              <TouchableOpacity
-                style={styles.forgotPasswordButton}
-                onPress={handleForgotPassword}
-                disabled={loading}
-              >
-                <Text style={styles.forgotPasswordText}>Mot de passe oublié ?</Text>
-              </TouchableOpacity>
 
               {/* Bouton Fermer */}
               <TouchableOpacity

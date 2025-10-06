@@ -103,10 +103,11 @@ const LoginScreen = ({ navigation }) => {
       const result = await login(email, password);
 
       if (result.success) {
-        // Vérification de l'email
+        // Bloquer l'accès si l'email n'est pas vérifié: afficher le popup et rester sur la pile d'auth
         if (!result.user?.emailVerified) {
           setVerificationEmail(email);
           setShowVerificationPopup(true);
+          await authService.logout();
           return;
         }
         logSuccess(
@@ -272,10 +273,7 @@ const LoginScreen = ({ navigation }) => {
         visible={showVerificationPopup}
         email={verificationEmail}
         onClose={() => setShowVerificationPopup(false)}
-        onResendEmail={(email) => {
-          // Le popup gère maintenant le renvoi d'email directement
-          // Pas besoin de navigation
-        }}
+        onResendEmail={() => {}}
       />
     </LinearGradient>
   );
