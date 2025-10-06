@@ -33,6 +33,15 @@ class AuthService {
         password
       );
 
+      // Vérifier si le compte est anonymisé côté Firestore
+      try {
+        const userDoc = await getDoc(doc(db, "users", userCredential.user.uid));
+        if (userDoc.exists() && userDoc.data()?.isAnonymized) {
+          await signOut(auth);
+          return { success: false, user: null, error: "Compte supprimé" };
+        }
+      } catch {}
+
       logSuccess(
         `Connexion réussie pour: ${email}`,
         "AuthService.loginWithEmail"

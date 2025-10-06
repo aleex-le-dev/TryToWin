@@ -3,6 +3,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { auth } from "../utils/firebaseConfig";
+import { signOut } from "firebase/auth";
 import { onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { db } from "../utils/firebaseConfig";
@@ -99,7 +100,13 @@ export const AuthProvider = ({ children }) => {
       if (firebaseUser) {
         try {
           const userWithData = await fetchUserData(firebaseUser);
-          setUser(User.fromFirebase(userWithData));
+          // Bloquer les comptes anonymisés (suppression RGPD)
+          if (userWithData?.isAnonymized) {
+            try { await signOut(auth); } catch {}
+            setUser(null);
+          } else {
+            setUser(User.fromFirebase(userWithData));
+          }
         } catch (error) {
           console.error("Erreur lors de la récupération des données utilisateur:", error);
           setUser(User.fromFirebase(firebaseUser));

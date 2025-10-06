@@ -6,6 +6,8 @@ import Ionicons from "react-native-vector-icons/Ionicons";
 import { useAuth } from "../../hooks/useAuth";
 import { recordConsent, getLastConsent } from "../../services/consentService";
 import * as Linking from "expo-linking";
+import { Alert } from "react-native";
+import { privacyService } from "../../services/privacyService";
 
 const PrivacySettings = ({ navigation }) => {
   const { user } = useAuth();
@@ -85,6 +87,29 @@ const PrivacySettings = ({ navigation }) => {
             <Ionicons name='mail' size={18} color='#fff' />
             <Text style={styles.contactText}>Contacter le support</Text>
           </TouchableOpacity>
+          {/* Bouton RGPD: suppression/anonymisation des données */}
+          <TouchableOpacity
+            style={styles.deleteBtn}
+            onPress={() => {
+              Alert.alert(
+                'Supprimer mes données',
+                "Votre compte sera anonymisé et archivé, et vous allez être déconnecté. Cette action est irréversible. Confirmer ?",
+                [
+                  { text: 'Annuler', style: 'cancel' },
+                  { text: 'Confirmer', style: 'destructive', onPress: async () => {
+                      const res = await privacyService.archiveAndAnonymizeCurrentUser();
+                      if (!res.success) {
+                        Alert.alert('Erreur', res.error || "Échec de la suppression");
+                      }
+                      // La navigation bascule automatiquement via l'état d'authentification
+                    } },
+                ]
+              );
+            }}
+          >
+            <Ionicons name='trash' size={18} color='#fff' />
+            <Text style={styles.deleteText}>Supprimer mes données</Text>
+          </TouchableOpacity>
         </View>
 
         {/* Registre & Responsable */}
@@ -132,6 +157,8 @@ const styles = StyleSheet.create({
   solidBtnText: { color: '#fff', fontWeight: 'bold' },
   contactBtn: { marginTop: 10, backgroundColor: '#667eea', borderRadius: 10, paddingVertical: 10, paddingHorizontal: 14, flexDirection: 'row', alignItems: 'center', gap: 8, alignSelf: 'flex-start' },
   contactText: { color: '#fff', fontWeight: 'bold' },
+  deleteBtn: { marginTop: 10, backgroundColor: '#FF3B30', borderRadius: 10, paddingVertical: 10, paddingHorizontal: 14, flexDirection: 'row', alignItems: 'center', gap: 8, alignSelf: 'flex-start' },
+  deleteText: { color: '#fff', fontWeight: 'bold' },
 });
 
 export default PrivacySettings;

@@ -8,6 +8,7 @@ import { doc, updateDoc } from "firebase/firestore";
 import { db } from "../../utils/firebaseConfig";
 import { updatePassword, EmailAuthProvider, reauthenticateWithCredential } from "firebase/auth";
 import { LinearGradient } from "expo-linear-gradient";
+import { privacyService } from "../../services/privacyService";
 
 const AccountSettings = ({ navigation }) => {
   const { theme } = useTheme();
@@ -16,6 +17,7 @@ const AccountSettings = ({ navigation }) => {
   const [showUsernameModal, setShowUsernameModal] = useState(false);
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   
   // État local pour forcer la mise à jour de l'interface
   const [localUsername, setLocalUsername] = useState(user?.username || "");
@@ -153,21 +155,7 @@ const AccountSettings = ({ navigation }) => {
   };
 
   const handleDeleteAccount = () => {
-    Alert.alert(
-      "Supprimer le compte",
-      "Cette action est irréversible. Toutes vos données seront définitivement supprimées.",
-      [
-        { text: "Annuler", style: "cancel" },
-        { 
-          text: "Supprimer", 
-          style: "destructive",
-          onPress: () => {
-            // Logique de suppression du compte
-            Alert.alert("Fonctionnalité à venir", "La suppression de compte sera bientôt disponible");
-          }
-        }
-      ]
-    );
+    setShowDeleteModal(true);
   };
 
   const renderSettingItem = ({ icon, title, subtitle, onPress, isDestructive = false }) => (
@@ -213,7 +201,7 @@ const AccountSettings = ({ navigation }) => {
               <Text style={[styles.modalButtonText, { color: theme.textSecondary }]}>Annuler</Text>
             </TouchableOpacity>
             <TouchableOpacity 
-              style={[styles.modalButton, styles.modalButtonConfirm, { backgroundColor: theme.primary }]} 
+              style={[styles.modalButton, styles.modalButtonConfirm, { backgroundColor: '#ef4444' }]} 
               onPress={onConfirm}
               disabled={isLoading}
             >
@@ -299,6 +287,34 @@ const AccountSettings = ({ navigation }) => {
           })}
         </View>
       </ScrollView>
+
+      {/* Modal suppression de compte */}
+      {renderModal({
+        visible: showDeleteModal,
+        onClose: () => setShowDeleteModal(false),
+        title: "Supprimer le compte",
+        onConfirm: async () => {
+          setIsDeleting(true);
+          const res = await privacyService.archiveAndAnonymizeCurrentUser();
+          setIsDeleting(false);
+          setShowDeleteModal(false);
+          if (res?.success) {
+            Alert.alert("Compte supprimé", "Vos données identifiantes ont été anonymisées.");
+            // Ne pas forcer la navigation: l'écouteur d'auth gère déjà l'écran de login
+          } else {
+            Alert.alert("Erreur", res?.error || "Impossible de supprimer le compte");
+          }
+        },
+        confirmText: "Supprimer",
+        isLoading: isDeleting,
+        children: (
+          <View style={styles.modalBody}>
+            <Text style={[{ color: theme.textSecondary, fontSize: 15 }]}>
+              Votre compte sera anonymisé et archivé (email/pseudo hachés). Cette action est irréversible. Confirmer ?
+            </Text>
+          </View>
+        )
+      })}
 
       {/* Modal changement de mot de passe */}
       {renderModal({
