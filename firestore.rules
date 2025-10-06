@@ -9,15 +9,19 @@ service cloud.firestore {
     }
     // Règles pour les utilisateurs
     match /users/{userId} {
+
       // Lecture publique des profils utilisateurs
       allow read: if true;
+
       // Écriture uniquement par l'utilisateur propriétaire
       allow write: if isOwner(userId);
       
       // Règles pour les scores des utilisateurs
       match /scores/{gameId} {
+
         // Lecture publique des scores
         allow read: if true;
+        
         // Écriture uniquement par l'utilisateur propriétaire
         allow write: if isOwner(userId);
       }

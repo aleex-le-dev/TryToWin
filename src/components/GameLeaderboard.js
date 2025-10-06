@@ -137,7 +137,12 @@ const GameLeaderboard = ({
                     <View style={styles.userInfo}>
                       <View style={styles.userAvatar}>
                         {item.avatar && item.avatar.startsWith("http") ? (
-                          <Image source={{ uri: item.avatar }} style={{ width: 40, height: 40, borderRadius: 20 }} resizeMode='cover' />
+                          <Image 
+                            source={{ uri: item.avatar }} 
+                            style={{ width: 40, height: 40, borderRadius: 20 }} 
+                            resizeMode='cover'
+                            accessibilityLabel={`Avatar de ${item.username}`}
+                          />
                         ) : (
                           <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: "#bbb", justifyContent: "center", alignItems: "center" }}>
                             <Text style={{ color: "#fff", fontSize: 22, fontWeight: "bold" }}>

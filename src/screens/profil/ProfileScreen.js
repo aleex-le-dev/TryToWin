@@ -496,7 +496,6 @@ const ProfileScreen = ({ navigation, profileTabResetKey }) => {
       let photoURL = editData.photoURL;
       let avatar = editData.avatar;
       let bannerImage = editData.bannerImage;
-      // Si une photo a été uploadée, on la compress et on la upload
       if (photoURL && (photoURL.startsWith("file") || photoURL.startsWith("content") || photoURL.startsWith("data") || photoURL.includes("://") === false)) {
         console.log("[handleSaveProfile] Image locale détectée, début compression", photoURL);
         const manipResult = await ImageManipulator.manipulateAsync(

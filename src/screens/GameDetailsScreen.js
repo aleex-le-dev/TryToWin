@@ -542,7 +542,7 @@ const GameDetailsScreen = ({ route, navigation }) => {
                   maxToRenderPerBatch={20}
                   windowSize={10}
                   getItemLayout={(data, index) => ({
-                    length: 80, // Hauteur approximative de chaque item
+                    length: 80, 
                     offset: 80 * index,
                     index,
                   })}

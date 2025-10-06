@@ -824,7 +824,11 @@ export default function SocialScreen({ route, navigation }) {
         activeOpacity={0.7}>
                  <View style={styles.avatarContainer}>
            {item.photoURL ? (
-             <Image source={{ uri: item.photoURL }} style={styles.friendAvatar} />
+             <Image 
+               source={{ uri: item.photoURL }} 
+               style={styles.friendAvatar}
+               accessibilityLabel={`Photo de profil de ${item.username}`}
+             />
            ) : (
              <Text style={[styles.friendAvatarText, { color: theme.primary }]}>{item.avatar || '👤'}</Text>
            )}
@@ -873,7 +877,11 @@ export default function SocialScreen({ route, navigation }) {
         activeOpacity={0.7}>
         <View style={styles.avatarContainer}>
           {item.photoURL ? (
-            <Image source={{ uri: item.photoURL }} style={styles.userAvatar} />
+            <Image 
+              source={{ uri: item.photoURL }} 
+              style={styles.userAvatar}
+              accessibilityLabel={`Photo de profil de ${item.username}`}
+            />
           ) : (
             <Text style={[styles.userAvatarText, { color: theme.primary }]}>{item.avatar}</Text>
           )}
@@ -979,7 +987,11 @@ export default function SocialScreen({ route, navigation }) {
             activeOpacity={0.8}
           >
             {friendProfile?.photoURL || selectedFriend?.photoURL ? (
-              <Image source={{ uri: friendProfile?.photoURL || selectedFriend?.photoURL }} style={styles.miniProfileAvatar} />
+              <Image 
+                source={{ uri: friendProfile?.photoURL || selectedFriend?.photoURL }} 
+                style={styles.miniProfileAvatar}
+                accessibilityLabel={`Photo de profil de ${friendProfile?.username || selectedFriend?.username}`}
+              />
             ) : (
               <View style={[styles.miniProfileAvatar, { backgroundColor: theme.primary }]}> 
                 <Text style={styles.miniProfileAvatarText}>{friendProfile?.avatar || selectedFriend?.avatar || '👤'}</Text>
@@ -1350,7 +1362,11 @@ export default function SocialScreen({ route, navigation }) {
                         activeOpacity={0.7}>
                         <View style={styles.avatarContainer}>
                           {item.photoURL ? (
-                            <Image source={{ uri: item.photoURL }} style={styles.userAvatar} />
+                            <Image 
+                              source={{ uri: item.photoURL }} 
+                              style={styles.userAvatar}
+                              accessibilityLabel={`Photo de profil de ${item.username}`}
+                            />
                           ) : (
                             <Text style={[styles.userAvatarText, { color: theme.primary }]}>{item.avatar}</Text>
                           )}

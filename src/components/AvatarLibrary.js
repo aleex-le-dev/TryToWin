@@ -48,7 +48,11 @@ const HorizontalGridCarousel = ({
               key={item.key}
               onPress={() => onSelect(item.url)}
               style={btnStyle}>
-              <Image source={{ uri: item.url }} style={imageStyle} />
+              <Image 
+                source={{ uri: item.url }} 
+                style={imageStyle}
+                accessibilityLabel={`Avatar ${item.name}`}
+              />
             </TouchableOpacity>
           ))}
           {/* Si la colonne n'a qu'un élément (dernier impair), on ajoute un espace vide pour garder la grille */}

@@ -48,7 +48,11 @@ const BlockedUsersScreen = ({ navigation }) => {
     <View style={styles.item}>
       <View style={styles.avatarWrap}>
         {item.photoURL ? (
-          <Image source={{ uri: item.photoURL }} style={styles.avatar} />
+          <Image 
+            source={{ uri: item.photoURL }} 
+            style={styles.avatar}
+            accessibilityLabel={`Photo de profil de ${item.username}`}
+          />
         ) : (
           <View style={[styles.avatar, styles.avatarFallback]}>
             <Text style={{ color: "#fff", fontWeight: "bold" }}>

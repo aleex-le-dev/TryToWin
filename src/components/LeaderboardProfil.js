@@ -120,19 +120,16 @@ const LeaderboardProfil = ({
     
     if (userIndex !== -1 && userIndex < leaderboard.length) {
       try {
-        console.log("[DEBUG] Scroll manuel vers l'index:", userIndex);
         flatListRef.current.scrollToIndex({
           index: userIndex,
           animated: true,
           viewPosition: 0.3,
         });
       } catch (error) {
-        console.log("[DEBUG] Erreur scroll manuel:", error);
         // Fallback vers le haut
         try {
           flatListRef.current.scrollToOffset({ offset: 0, animated: true });
         } catch (fallbackError) {
-          console.log("[DEBUG] Fallback échoué:", fallbackError);
         }
       }
     }
@@ -176,7 +173,6 @@ const LeaderboardProfil = ({
         winRate,
       };
     } catch (error) {
-      console.log("Erreur lors de la récupération des stats:", error);
       return null;
     }
   };
@@ -198,7 +194,6 @@ const LeaderboardProfil = ({
               const userDoc = await getDoc(doc(db, "users", entry.userId));
               userData = userDoc.exists() ? userDoc.data() : {};
             } catch (error) {
-              console.log("Erreur lors de la récupération des données utilisateur:", error);
             }
 
             const playerData = {
@@ -215,7 +210,6 @@ const LeaderboardProfil = ({
               isCurrentUser: entry.userId === currentUserId,
             };
             
-            console.log("[LEADERBOARD] Player data mapped", { userId: entry.userId, playerData });
             return playerData;
           })
         );
@@ -258,7 +252,6 @@ const LeaderboardProfil = ({
         
         // Si aucun joueur trouvé, essayer de récupérer les données utilisateur pour vérifier le pays
         if (countryPlayers.length === 0) {
-          console.log("[DEBUG] Aucun joueur trouvé avec le pays dans les scores, vérification des profils utilisateurs...");
           
           // Récupérer les données utilisateur pour les premiers joueurs
           const userDataPromises = rawData.slice(0, 20).map(async (entry) => {
@@ -282,7 +275,6 @@ const LeaderboardProfil = ({
         
         // Si toujours aucun joueur trouvé, inclure au moins l'utilisateur actuel
         if (countryPlayers.length === 0) {
-          console.log("[DEBUG] Aucun joueur du pays trouvé, ajout de l'utilisateur actuel");
           const userStats = await getUserRealStats();
           if (userStats) {
             countryPlayers.push({
@@ -423,7 +415,6 @@ const LeaderboardProfil = ({
         }
       }
 
-      console.log("[DEBUG] leaderboard JEUX", data);
       setLeaderboard(data);
     } catch (error) {
       setLeaderboard([]);
