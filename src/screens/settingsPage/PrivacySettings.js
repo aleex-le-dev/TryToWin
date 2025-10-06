@@ -83,7 +83,7 @@ const PrivacySettings = ({ navigation }) => {
           <Text style={[styles.listItem, { color: theme.text }]}>• Réponse sous 30 jours, par email et confirmation</Text>
           <TouchableOpacity style={styles.contactBtn} onPress={() => Linking.openURL('mailto:dpo@trytowin.app?subject=Droits%20RGPD')}>
             <Ionicons name='mail' size={18} color='#fff' />
-            <Text style={styles.contactText}>Exercer mes droits</Text>
+            <Text style={styles.contactText}>Contacter le support</Text>
           </TouchableOpacity>
         </View>
 
