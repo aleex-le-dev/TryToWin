@@ -30,6 +30,7 @@ Pour tester l'application, scannez le QR Code ci-dessous à partir de l'applicat
 - **Nouveau :** Bibliothèque d'avatars personnalisables avec palette de couleurs
 - Classements : Top 10 mondial et par pays, pour chaque jeu et pour le profil
 - Partage de profil via QR code ou lien unique
+- **Nouveau :** Scan de QR code via la caméra (expo-camera), ajout d'ami instantané
 - Ajout d'ami par scan ou lien
 - Statistiques détaillées par joueur et par jeu (victoires, défaites, nuls, points, séries de victoires)
 - **Nouveau :** Système de blocage d'utilisateurs et gestion des amis
@@ -49,6 +50,7 @@ Pour tester l'application, scannez le QR Code ci-dessous à partir de l'applicat
 - Réinitialisation de mot de passe et gestion des erreurs utilisateur
 - Upload et synchronisation de la photo de profil (Cloudinary)
 - **Nouveau :** Gestion des consentements et politique de confidentialité
+- **Nouveau :** Suppression RGPD – anonymisation du compte (email et pseudo hachés SHA‑256), déconnexion et blocage de reconnexion
 
 ### 🎨 Interface et UX
 
