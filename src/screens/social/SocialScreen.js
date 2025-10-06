@@ -20,6 +20,7 @@ import { Ionicons } from "@expo/vector-icons";
 import QRCode from "react-native-qrcode-svg";
 import Toast from "react-native-toast-message";
 import * as ImagePicker from 'expo-image-picker';
+import { Camera, CameraView } from 'expo-camera';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from "../../hooks/useAuth";
 import { doc, getDoc, getDocs, collection, setDoc, deleteDoc, onSnapshot, updateDoc, serverTimestamp, query, orderBy, where, addDoc, writeBatch } from "firebase/firestore";
@@ -44,6 +45,8 @@ import * as Brightness from 'expo-brightness';
 // ];
 
 export default function SocialScreen({ route, navigation }) {
+  // Orientation caméra par défaut
+  const CAMERA_FACING = 'back';
   const { user } = useAuth();
   const { highContrast, largeTouchTargets, largerSpacing } = useAccessibility();
   const { theme } = useTheme();
@@ -137,8 +140,12 @@ export default function SocialScreen({ route, navigation }) {
   const [input, setInput] = useState("");
   const [search, setSearch] = useState("");
   const [longPressedFriendId, setLongPressedFriendId] = useState(null);
-  const [scanning, setScanning] = useState(false);
-  const [selectedImage, setSelectedImage] = useState(null);
+  // Mode caméra uniquement pour le scan QR
+  const [scanning, setScanning] = useState(false); // conservé pour compat mais inutilisé
+  const [selectedImage, setSelectedImage] = useState(null); // inutilisé
+  const [cameraVisible, setCameraVisible] = useState(false);
+  const [hasCameraPermission, setHasCameraPermission] = useState(null);
+  const cameraScannedRef = useRef(false);
   const [onlineStatus, setOnlineStatus] = useState({});
   const [typingStatus, setTypingStatus] = useState({});
   const [isTyping, setIsTyping] = useState(false);
@@ -391,72 +398,32 @@ export default function SocialScreen({ route, navigation }) {
     }
   }, [input, selectedFriend, user, handleTyping, isTyping, messages]);
 
-  // Demander les permissions de galerie quand le scan est activé
-  useEffect(() => {
-    if (scanning) {
-      (async () => {
-        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-        if (status !== 'granted') {
-          Alert.alert(
-            'Permission requise',
-            'L\'accès à la galerie est nécessaire pour sélectionner des images de QR code.',
-            [{ text: 'OK' }]
-          );
-          setScanning(false);
-          setSelectedImage(null);
-        }
-      })();
-    }
-  }, [scanning]);
+  // Le scan par galerie est désactivé; aucune permission galerie nécessaire
 
-  // Ouvrir la galerie pour sélectionner une image
-  const openGallery = async () => {
-    const hasPermission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (hasPermission.status !== 'granted') {
-      Alert.alert(
-        'Permission requise',
-        'L\'accès à la galerie est nécessaire pour sélectionner des images de QR code.',
-        [{ text: 'OK' }]
-      );
-      return;
-    }
-
+  // Ouvrir la caméra pour scanner un QR code
+  const openCameraForQR = async () => {
     try {
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        aspect: [1, 1],
-        quality: 1,
-      });
-
-      if (!result.canceled && result.assets[0]) {
-        setSelectedImage(result.assets[0].uri);
-        setScanning(true);
-        // Simuler le traitement du QR code (dans une vraie app, on utiliserait une librairie de décodage)
-        simulateQRCodeProcessing();
+      const { status } = await Camera.requestCameraPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert(
+          'Permission requise',
+          "L'accès à la caméra est nécessaire pour scanner un QR code.",
+          [{ text: 'OK' }]
+        );
+        return;
       }
-    } catch (error) {
-      console.error('Erreur lors de la sélection d\'image:', error);
-      Toast.show({
-        type: 'error',
-        text1: 'Erreur',
-        text2: 'Impossible d\'ouvrir la galerie',
-        position: 'top',
-        topOffset: 40,
-        visibilityTime: 3000,
-      });
+      cameraScannedRef.current = false;
+      setHasCameraPermission(true);
+      setCameraVisible(true);
+    } catch (e) {
+      setHasCameraPermission(false);
+      Toast.show({ type: 'error', text1: 'Caméra indisponible', position: 'top', topOffset: 40 });
     }
   };
 
-  // Simuler le traitement du QR code (remplacez par une vraie librairie de décodage)
-  const simulateQRCodeProcessing = () => {
-    // Simulation d'un délai de traitement
-    setTimeout(() => {
-      // Pour la démonstration, on simule un QR code valide
-      const simulatedQRData = `trytowin://addfriend/test-user-${Date.now()}`;
-      handleQRCodeData(simulatedQRData);
-    }, 2000);
-  };
+  // Ouverture galerie supprimée pour forcer l'usage de la caméra
+
+  // Traitement par simulation supprimé: le scan vient de la caméra
 
   // Récupérer les informations d'un utilisateur depuis Firestore
   const getUserFromFirestore = async (userId) => {
@@ -1221,7 +1188,7 @@ export default function SocialScreen({ route, navigation }) {
                 <View style={[styles.separator, { backgroundColor: theme.border }]} />
                 <TouchableOpacity
                   style={[styles.copyButton, { backgroundColor: theme.surface }]}
-                  onPress={openGallery}>
+                  onPress={openCameraForQR}>
                   <Ionicons name='qr-code' size={20} color={theme.primary} />
                   <Text style={[styles.copyButtonText, { color: theme.primary }]}>Scanner un QR code</Text>
                 </TouchableOpacity>
@@ -1245,33 +1212,35 @@ export default function SocialScreen({ route, navigation }) {
               </View>
             )}
 
-            {/* Scanner QR Code - Interface de traitement */}
-            {scanning && (
+            {/* Interface de traitement par image supprimée */}
+
+            {/* Scanner QR Code - Caméra */}
+            {cameraVisible && (
               <View style={styles.scannerOverlay}>
-                <View style={styles.scannerContent}>
-                  <Text style={[styles.scannerTitle, { color: theme.primary }]}>Traitement du QR code</Text>
-                  {selectedImage && (
-                    <Image 
-                      source={{ uri: selectedImage }} 
-                      style={[styles.selectedImage, { borderColor: theme.primary }]}
-                      resizeMode="contain"
-                    />
-                  )}
-                  <Text style={[styles.scannerMessage, { color: theme.textSecondary }]}>
-                    Analyse de l'image en cours...
-                  </Text>
-                  <View style={styles.loadingIndicator}>
-                    <Ionicons name="sync" size={24} color={theme.primary} />
-                    <Text style={[styles.loadingText, { color: theme.primary }]}>Traitement...</Text>
+                <View style={styles.scannerContainer}>
+                  <CameraView
+                    style={styles.scanner}
+                    facing={CAMERA_FACING}
+                    barcodeScannerSettings={{ barcodeTypes: ['qr'] }}
+                    onBarcodeScanned={({ data }) => {
+                      if (cameraScannedRef.current) return;
+                      cameraScannedRef.current = true;
+                      setCameraVisible(false);
+                      handleQRCodeData(String(data || ''));
+                    }}
+                  />
+                  <View style={styles.scannerOverlayContent}>
+                    <View style={styles.scannerFrame}>
+                      <View style={[styles.scannerCorner, { top: 0, left: 0 }]} />
+                      <View style={[styles.scannerCorner, styles.scannerCornerTopRight]} />
+                      <View style={[styles.scannerCorner, styles.scannerCornerBottomLeft]} />
+                      <View style={[styles.scannerCorner, styles.scannerCornerBottomRight]} />
+                    </View>
+                    <Text style={styles.scannerInstruction}>Alignez le QR code dans le cadre</Text>
+                    <TouchableOpacity style={styles.scannerCloseButton} onPress={() => setCameraVisible(false)}>
+                      <Ionicons name='close' size={24} color='#fff' />
+                    </TouchableOpacity>
                   </View>
-                  <TouchableOpacity 
-                    onPress={() => {
-                      setScanning(false);
-                      setSelectedImage(null);
-                    }} 
-                    style={[styles.scannerButton, { backgroundColor: theme.primary }]}>
-                    <Text style={styles.scannerButtonText}>Annuler</Text>
-                  </TouchableOpacity>
                 </View>
               </View>
             )}
