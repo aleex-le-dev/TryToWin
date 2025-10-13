@@ -105,30 +105,6 @@ export default function SocialScreen({ route, navigation }) {
     return () => unsub();
   }, [user?.id]);
 
-  // Écouter le statut en ligne des amis en temps réel
-  useEffect(() => {
-    if (!friendsRaw || friendsRaw.length === 0) return;
-
-    const unsubscribers = friendsRaw.map(friend => {
-      const userRef = doc(db, 'users', friend.id);
-      return onSnapshot(userRef, (doc) => {
-        if (doc.exists()) {
-          const userData = doc.data();
-          const isOnline = userData.isOnline || false;
-          setOnlineStatus(prev => ({
-            ...prev,
-            [friend.id]: isOnline
-          }));
-        }
-      }, (error) => {
-        // Erreur lors de l'écoute du statut
-      });
-    });
-
-    return () => {
-      unsubscribers.forEach(unsub => unsub());
-    };
-  }, [friendsRaw]);
 
   // Recalcule la liste d'amis visible en excluant les bloqués
   useEffect(() => {
@@ -146,7 +122,6 @@ export default function SocialScreen({ route, navigation }) {
   const [cameraVisible, setCameraVisible] = useState(false);
   const [hasCameraPermission, setHasCameraPermission] = useState(null);
   const cameraScannedRef = useRef(false);
-  const [onlineStatus, setOnlineStatus] = useState({});
   const [typingStatus, setTypingStatus] = useState({});
   const [isTyping, setIsTyping] = useState(false);
   const [showFriendCard, setShowFriendCard] = useState(false);
@@ -227,20 +202,33 @@ export default function SocialScreen({ route, navigation }) {
         }).catch(error => {
           // Erreur lors de la mise à jour du statut en ligne
         });
+        
       }
     }, [user?.id])
   );
 
   // Mettre à jour le statut hors ligne quand l'utilisateur quitte l'écran
   useEffect(() => {
-    const handleAppStateChange = () => {
+    const handleAppStateChange = (nextAppState) => {
       if (user?.id) {
         const userRef = doc(db, 'users', user.id);
-        updateDoc(userRef, {
-          isOnline: false,
-          lastSeen: serverTimestamp()
-        }).catch(error => {
-        });
+        if (nextAppState === 'background' || nextAppState === 'inactive') {
+          // Mettre hors ligne quand l'app passe en arrière-plan
+          updateDoc(userRef, {
+            isOnline: false,
+            lastSeen: serverTimestamp()
+          }).catch(error => {
+            // Erreur silencieuse
+          });
+        } else if (nextAppState === 'active') {
+          // Remettre en ligne quand l'app redevient active
+          updateDoc(userRef, {
+            isOnline: true,
+            lastSeen: serverTimestamp()
+          }).catch(error => {
+            // Erreur silencieuse
+          });
+        }
       }
     };
 
@@ -250,7 +238,15 @@ export default function SocialScreen({ route, navigation }) {
     return () => {
       subscription?.remove();
       // Mettre à jour le statut hors ligne au démontage
-      handleAppStateChange();
+      if (user?.id) {
+        const userRef = doc(db, 'users', user.id);
+        updateDoc(userRef, {
+          isOnline: false,
+          lastSeen: serverTimestamp()
+        }).catch(error => {
+          // Erreur silencieuse
+        });
+      }
     };
   }, [user?.id]);
 
@@ -802,16 +798,6 @@ export default function SocialScreen({ route, navigation }) {
          </View>
         <View style={styles.friendInfo}>
           <Text style={[styles.friendName, { color: theme.text }]}>{item.username}</Text>
-          <View style={styles.friendStatusRow}>
-            <Text style={[styles.onlineStatus, { color: theme.textSecondary }]}>
-              {onlineStatus[item.id] ? 'En ligne' : 'Hors ligne'}
-            </Text>
-            <View style={{ width: 6 }} />
-            <View style={[
-              styles.onlineIndicatorInline,
-              { backgroundColor: onlineStatus[item.id] ? '#4cd137' : '#ff6b6b' }
-            ]} />
-          </View>
         </View>
         <View style={styles.friendActions}>
           <Ionicons name='chatbubble-ellipses' size={20} color={theme.accent} />
@@ -832,7 +818,7 @@ export default function SocialScreen({ route, navigation }) {
         )}
       </TouchableOpacity>
     ),
-    [longPressedFriendId, removeFriend, onlineStatus, theme, unreadMessages]
+    [longPressedFriendId, removeFriend, theme, unreadMessages]
   );
 
   // Rendu des résultats de recherche
@@ -935,16 +921,6 @@ export default function SocialScreen({ route, navigation }) {
         </TouchableOpacity>
         <View style={styles.chatHeaderInfo}>
           <Text style={[styles.chatTitle, { color: theme.text }]}>{selectedFriend?.username}</Text>
-          <View style={styles.chatStatus}>
-            <Text style={[styles.chatStatusText, { color: theme.textSecondary }]}>
-              {onlineStatus[selectedFriend?.id] ? 'En ligne' : 'Hors ligne'}
-            </Text>
-            <View style={{ width: 6 }} />
-            <View style={[
-              styles.onlineIndicatorInline,
-              { backgroundColor: onlineStatus[selectedFriend?.id] ? '#4cd137' : '#ff6b6b' }
-            ]} />
-          </View>
         </View>
         <View style={styles.chatHeaderActions}>
           <TouchableOpacity
@@ -1639,15 +1615,6 @@ const styles = StyleSheet.create({
   friendInfo: {
     flex: 1,
   },
-  onlineStatus: {
-    fontSize: 12,
-  },
-     friendStatusRow: {
-     flexDirection: 'row',
-     alignItems: 'center',
-     marginTop: 2,
-     marginLeft: 10,
-   },
   friendActions: {
     flexDirection: 'row',
     alignItems: 'center',
